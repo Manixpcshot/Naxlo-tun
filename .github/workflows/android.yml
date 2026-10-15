@@ -41,59 +41,37 @@ jobs:
         with:
           gradle-version: "8.9"
 
-      - name: Unit tests
+      - name: Build and diagnostics
         run: |
-          set -o pipefail
-          cd android && gradle testDebugUnitTest --no-daemon --console=plain 2>&1 | tee build.log
-
-      - name: Assemble debug APK
-        if: always()
-        run: |
-          set -o pipefail
-          cd android && gradle assembleDebug --no-daemon --console=plain 2>&1 | tee -a build.log
-
-      - name: Assemble release APK
-        if: startsWith(github.ref, 'refs/tags/')
-        run: |
-          set -o pipefail
-          cd android && gradle assembleRelease --no-daemon --console=plain 2>&1 | tee -a build.log
-
-      - name: Post build log tail
-        if: always()
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -x
-          cd android
-          if [ -f build.log ]; then
-            tail -c 5000 build.log > tail.txt
-            cat tail.txt >> "$GITHUB_STEP_SUMMARY"
-            PR=$(gh pr view --json number -q .number || true)
-            if [ -n "$PR" ]; then
-              gh pr comment "$PR" --body-file tail.txt || true
-            fi
-            gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/comments" -f body=@"tail.txt" || true
-          fi
-
-      - name: Publish build log to ci-logs branch
-        if: always()
-        run: |
+          set +e
+          cd "$GITHUB_WORKSPACE"
           {
             echo "== pwd: $(pwd)"
-            ls -la . | head -20
-            echo "== android dir:"
-            ls -la android | head -30
-            echo "== build.log tail:"
-            tail -c 4500 android/build.log 2>&1
-          } > diag.txt 2>&1
+            ls -la
+            echo "== android:"
+            ls -la android
+            echo "== gradle version:"
+            gradle --version 2>&1 | head -8
+            echo "== testDebugUnitTest:"
+            cd android
+            gradle testDebugUnitTest --no-daemon --console=plain --stacktrace 2>&1 | tail -c 22000
+            echo "== assembleDebug:"
+            gradle assembleDebug --no-daemon --console=plain --stacktrace 2>&1 | tail -c 22000
+            if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+              echo "== assembleRelease:"
+              gradle assembleRelease --no-daemon --console=plain 2>&1 | tail -c 8000
+            fi
+          } > "$RUNNER_TEMP/diag.txt" 2>&1
+          tail -c 12000 "$RUNNER_TEMP/diag.txt" > diag-tail.txt
           git config user.name naxlo-ci
           git config user.email ci@users.noreply.github.com
-          git fetch origin ci-logs || true
+          git fetch origin ci-logs 2>/dev/null
           git checkout -B ci-logs origin/ci-logs 2>/dev/null || git checkout -b ci-logs
-          cp diag.txt android-build.log
+          cp diag-tail.txt android-build.log
           git add android-build.log
-          git commit -m "ci: android diag for ${GITHUB_SHA}" || true
-          git push -f origin ci-logs || true
+          git commit -m "ci: android diag ${GITHUB_SHA}" 2>/dev/null
+          git push -f origin ci-logs 2>&1 | tail -3
+          exit 0
 
       - uses: actions/upload-artifact@v4
         with:
