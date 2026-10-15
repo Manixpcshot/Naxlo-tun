@@ -1,0 +1,95 @@
+name: Android
+
+on:
+  push:
+    branches: [main]
+    paths: ["android/**", ".github/workflows/android.yml"]
+    tags: ["v*"]
+  pull_request:
+    paths: ["android/**", ".github/workflows/android.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch libv2ray.aar (Xray-core bound with gomobile)
+        run: |
+          mkdir -p android/app/libs
+          curl -sL -o android/app/libs/libv2ray.aar \
+            https://github.com/2dust/AndroidLibXrayLite/releases/download/v26.10.10/libv2ray.aar
+          ls -la android/app/libs
+
+      - name: Fetch geo routing assets
+        run: |
+          mkdir -p android/app/assets
+          curl -sL -o android/app/assets/geoip.dat https://github.com/v2fly/geoip/releases/latest/download/geoip.dat
+          curl -sL -o android/app/assets/geosite.dat https://github.com/v2fly/domain-list-community/releases/latest/download/dlc.dat
+          ls -la android/app/assets
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+
+      - name: Build and diagnostics
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          cd "$GITHUB_WORKSPACE"
+          {
+            echo "== pwd: $(pwd)"
+            ls -la
+            echo "== android:"
+            ls -la android
+            echo "== gradle version:"
+            gradle --version 2>&1 | head -8
+            echo "== testDebugUnitTest:"
+            cd android
+            gradle testDebugUnitTest --no-daemon --console=plain --stacktrace 2>&1 | tail -c 22000
+            echo "== assembleDebug:"
+            gradle assembleDebug --no-daemon --console=plain --stacktrace 2>&1 | tail -c 22000
+            if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+              echo "== assembleRelease:"
+              gradle assembleRelease --no-daemon --console=plain 2>&1 | tail -c 8000
+            fi
+          } > "$RUNNER_TEMP/diag.txt" 2>&1
+          RC=$?
+          tail -c 12000 "$RUNNER_TEMP/diag.txt" > diag-tail.txt
+          if [ $RC -ne 0 ] || grep -q "FAILURE: Build failed" diag-tail.txt; then
+            B64=$(base64 -w0 diag-tail.txt)
+            SHA=$(gh api "repos/$GITHUB_REPOSITORY/contents/android-build.log?ref=ci-logs" --jq .sha 2>/dev/null || true)
+            if [ -n "$SHA" ]; then
+              gh api -X PUT "repos/$GITHUB_REPOSITORY/contents/android-build.log" -f message="ci: android diag ${GITHUB_SHA}" -f content="$B64" -f branch=ci-logs -f sha="$SHA" >/dev/null || true
+            else
+              gh api -X PUT "repos/$GITHUB_REPOSITORY/contents/android-build.log" -f message="ci: android diag ${GITHUB_SHA}" -f content="$B64" -f branch=ci-logs >/dev/null || true
+            fi
+            echo "BUILD FAILED" >> diag-tail.txt
+            exit 1
+          fi
+          exit 0
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: naxlo-android-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Publish APKs to the release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk "Naxlo-android-${TAG}-debug.apk"
+          cp android/app/build/outputs/apk/release/app-release-unsigned.apk "Naxlo-android-${TAG}-unsigned.apk"
+          gh release upload "$TAG" "Naxlo-android-${TAG}-debug.apk" "Naxlo-android-${TAG}-unsigned.apk" --clobber
