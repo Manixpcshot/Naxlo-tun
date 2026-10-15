@@ -15,11 +15,11 @@ import {
   type ConnectionState,
   type ServerConfig,
   type ServerView,
-  type Settings,
-  type SubscriptionInfo,
+  type SubscriptionView,
   type Toast
 } from '../shared/bridge'
 import { log } from './lib/logger'
+import { getVault } from './lib/secretStore'
 import type { LString } from '../shared/i18n'
 
 const SCOPE = 'state'
@@ -29,6 +29,7 @@ let state: AppState = {
   serversRevision: 0,
   selectedServerId: null,
   activeServerId: null,
+  activeSubscriptionId: null,
   activeServerName: null,
   activeServerAddressMasked: null,
   socksPort: 10808,
@@ -57,16 +58,7 @@ let state: AppState = {
     progress: null,
     error: null
   },
-  subscription: {
-    hasUrl: false,
-    maskedUrl: '',
-    lastUpdated: null,
-    lastError: null,
-    totalConfigs: 0,
-    supportedConfigs: 0,
-    autoRefreshMinutes: 0,
-    fetching: false
-  }
+  subscriptions: []
 }
 
 type Listener = (state: AppState) => void
@@ -94,8 +86,32 @@ export function patchCore(patch: Partial<AppState['core']>): AppState {
   return state
 }
 
-export function patchSubscription(patch: Partial<SubscriptionInfo>): AppState {
-  state = { ...state, subscription: { ...state.subscription, ...patch } }
+/** Per-subscription "fetching" flags live outside the vault (transient). */
+const subscriptionFetching = new Map<string, boolean>()
+
+export function setSubscriptionFetching(id: string, fetching: boolean): AppState {
+  subscriptionFetching.set(id, fetching)
+  return syncSubscriptions()
+}
+
+/** Rebuild the (masked) subscription views from the vault and broadcast. */
+export function syncSubscriptions(): AppState {
+  const vault = getVault()
+  const views: SubscriptionView[] = vault.subscriptions.map((sub) => {
+    const servers = vault.servers.filter((server) => server.subscriptionId === sub.id)
+    return {
+      id: sub.id,
+      name: sub.name,
+      maskedUrl: maskUrl(sub.url),
+      updatedAt: sub.updatedAt,
+      userinfo: sub.userinfo,
+      lastError: sub.lastError,
+      fetching: subscriptionFetching.get(sub.id) ?? false,
+      totalConfigs: servers.length,
+      supportedConfigs: servers.filter((server) => server.supported).length
+    }
+  })
+  state = { ...state, subscriptions: views }
   broadcast()
   return state
 }
@@ -168,16 +184,3 @@ export function toServerView(server: ServerConfig, reveal = false): ServerView {
   return view
 }
 
-export function subscriptionView(url: string | null, settings: Settings, extra?: Partial<SubscriptionInfo>): SubscriptionInfo {
-  return {
-    hasUrl: Boolean(url),
-    maskedUrl: maskUrl(url),
-    lastUpdated: null,
-    lastError: null,
-    totalConfigs: 0,
-    supportedConfigs: 0,
-    autoRefreshMinutes: settings.autoRefreshMinutes,
-    fetching: false,
-    ...extra
-  }
-}

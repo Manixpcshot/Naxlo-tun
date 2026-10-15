@@ -85,6 +85,7 @@ function unsupported(protocol: Protocol, raw: string, reason: string): ParseResu
       network: 'unknown',
       addedAt: Date.now(),
       source: 'subscription',
+      subscriptionId: null,
       latencyMs: null,
       latencyAt: null
     }
@@ -156,6 +157,7 @@ function parseVless(raw: string): ParseResult | null {
     muxConcurrency: intParam(params.get('muxConcurrency'), params.get('xudpConcurrency')),
     addedAt: Date.now(),
     source: 'subscription',
+    subscriptionId: null,
     latencyMs: null,
     latencyAt: null,
     raw
@@ -205,6 +207,7 @@ function parseTrojan(raw: string): ParseResult | null {
     grpcMultiMode: boolParam(params.get('mode'), undefined),
     addedAt: Date.now(),
     source: 'subscription',
+    subscriptionId: null,
     latencyMs: null,
     latencyAt: null,
     raw
@@ -262,6 +265,7 @@ function parseVmess(raw: string): ParseResult | null {
     headerType: typeof data.type === 'string' ? data.type : undefined,
     addedAt: Date.now(),
     source: 'subscription',
+    subscriptionId: null,
     latencyMs: null,
     latencyAt: null,
     raw

@@ -172,6 +172,68 @@ export const MESSAGES = {
   clearedSubToast: { fa: 'اشتراک و سرورها حذف شدند', en: 'Subscription and servers removed' },
   never: { fa: 'هرگز', en: 'never' },
 
+  /* --------- multi-subscription, quota & speed --------- */
+  subsList: { fa: 'اشتراک‌های شما', en: 'Your subscriptions' },
+  subsListDesc: {
+    fa: 'هر اشتراک جدا نگه داشته می‌شود؛ نام، حجم و تاریخ انقضا از خود سرویس خوانده می‌شود.',
+    en: 'Each subscription is kept separately; its name, quota and expiry come from the service itself.'
+  },
+  subsAdd: { fa: 'افزودن اشتراک', en: 'Add subscription' },
+  subsAddHint: {
+    fa: 'لینک اشتراک را بچسبانید؛ اگر قبلاً ذخیره شده باشد فقط به‌روزرسانی می‌شود.',
+    en: 'Paste a subscription link; if it is already stored it will only be refreshed.'
+  },
+  subsEmpty: { fa: 'هنوز اشتراکی اضافه نکرده‌اید', en: 'No subscriptions yet' },
+  subsEmptyHint: {
+    fa: 'لینک اشتراک را بالا بچسبانید یا یک فایل کانفیگ وارد کنید.',
+    en: 'Paste a subscription link above or import a config file.'
+  },
+  subsCount: { fa: '{n} اشتراک', en: '{n} subscriptions' },
+  subUnnamed: { fa: 'اشتراک بدون نام', en: 'Unnamed subscription' },
+  subFromPanel: { fa: 'نام از سرور اشتراک', en: 'Name from the subscription panel' },
+  subRefreshOne: { fa: 'به‌روزرسانی این اشتراک', en: 'Refresh this subscription' },
+  subRemoveOne: { fa: 'حذف این اشتراک', en: 'Remove this subscription' },
+  subRemoveTitle: { fa: 'حذف اشتراک؟', en: 'Remove subscription?' },
+  subRemoveConfirm: {
+    fa: 'همهٔ سرورهای این اشتراک حذف می‌شوند. اشتراک‌های دیگر دست‌نخورده می‌مانند.',
+    en: 'All servers of this subscription are removed. Other subscriptions stay untouched.'
+  },
+  subRevealUrl: { fa: 'نمایش لینک کامل', en: 'Reveal full link' },
+  subConfigs: { fa: '{total} کانفیگ · {supported} قابل اتصال', en: '{total} configs · {supported} connectable' },
+  subUpdated: { fa: 'به‌روزرسانی: {when}', en: 'Updated {when}' },
+  subNeverUpdated: { fa: 'هنوز دریافت نشده', en: 'Not fetched yet' },
+  subFetching: { fa: 'در حال دریافت…', en: 'Fetching…' },
+  subImportFile: { fa: 'وارد کردن فایل', en: 'Import file' },
+
+  usageTitle: { fa: 'حجم اشتراک', en: 'Subscription quota' },
+  usageUsed: { fa: 'مصرف‌شده', en: 'Used' },
+  usageRemaining: { fa: 'باقی‌مانده', en: 'Remaining' },
+  usageTotal: { fa: 'کل حجم', en: 'Total' },
+  usageUnlimited: { fa: 'نامحدود', en: 'Unlimited' },
+  usagePercent: { fa: '{p}٪ مصرف‌شده', en: '{p}% used' },
+  usageExpire: { fa: 'انقضا', en: 'Expires' },
+  usageNoExpiry: { fa: 'بدون انقضا', en: 'No expiry' },
+  usageExpired: { fa: 'منقضی شده', en: 'Expired' },
+  usageDaysLeft: { fa: '{n} روز مانده', en: '{n} days left' },
+  usageNoQuota: {
+    fa: 'سرور اشتراک اطلاعات حجم را گزارش نکرد',
+    en: 'The panel did not report quota information'
+  },
+
+  speedTitle: { fa: 'سرعت', en: 'Speed' },
+  speedRun: { fa: 'تست سرعت', en: 'Run speed test' },
+  speedRunning: { fa: 'در حال اندازه‌گیری…', en: 'Measuring…' },
+  speedHint: {
+    fa: 'دانلود واقعی از طریق پروکسی فعال اندازه‌گیری می‌شود.',
+    en: 'A real download is measured through the active proxy.'
+  },
+  speedNeedConnect: { fa: 'برای تست سرعت ابتدا متصل شوید', en: 'Connect first to run a speed test' },
+  speedValue: { fa: '{n} مگابیت بر ثانیه', en: '{n} Mbps' },
+  speedLatency: { fa: 'تأخیر', en: 'Latency' },
+
+  groupManual: { fa: 'کانفیگ‌های دستی / وارد شده', en: 'Manual / imported configs' },
+  groupOfSub: { fa: 'سرورهای این اشتراک', en: 'Servers of this subscription' },
+
   /* ---------------- settings ---------------- */
   settingsTitle: { fa: 'تنظیمات', en: 'Settings' },
   settingsDesc: { fa: 'پورت‌های پروکسی محلی، مسیریابی ترافیک، هستهٔ Xray و رفتار برنامه.', en: 'Local proxy ports, routing, the Xray core and app behaviour.' },

@@ -66,12 +66,20 @@ export interface NaxloApi {
   }
 
   subscription: {
+    /** Add (or re-fetch, if already stored) a subscription and return the report. */
     save(url: string): Promise<FetchReportView>
     /** Explicit user action: returns the real URL so it can be edited. */
-    reveal(): Promise<string | null>
-    refresh(): Promise<FetchReportView>
+    reveal(id: string): Promise<string | null>
+    /** Refresh one subscription (by id) or all of them. */
+    refresh(id?: string): Promise<FetchReportView | FetchReportView[]>
+    remove(id: string): Promise<boolean>
     clear(): Promise<boolean>
     importFile(): Promise<FetchReportView | { imported: number }>
+  }
+
+  speed: {
+    /** Download-throughput measurement through the local proxy (Mbps). */
+    test(): Promise<{ mbps: number; bytes: number; ms: number }>
   }
 
   connection: {

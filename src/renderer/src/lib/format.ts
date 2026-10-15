@@ -5,6 +5,7 @@
  * it, so components stay free of locale plumbing.
  */
 import type { Lang } from '@shared/i18n'
+import type { SubUserinfo } from '@shared/bridge'
 
 let locale: 'fa-IR' | 'en-US' = 'fa-IR'
 let lang: Lang = 'fa'
@@ -89,6 +90,43 @@ export function shortDuration(ms: number | null): string {
   const s = String(total % 60).padStart(2, '0')
   const raw = `${h}:${m}:${s}`
   return lang === 'fa' ? raw.replace(/\d/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[Number(d)]) : raw
+}
+
+/** Human readable byte size in the active locale (binary units). */
+export function formatBytes(bytes: number | null | undefined): string {
+  if (bytes === null || bytes === undefined || !Number.isFinite(bytes)) return '—'
+  const units = ['B', 'KB', 'MB', 'GB', 'TB']
+  let value = bytes
+  let unit = 0
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024
+    unit++
+  }
+  const rounded = value >= 100 || unit === 0 ? Math.round(value) : Math.round(value * 10) / 10
+  return `${fa(rounded)} ${units[unit]}`
+}
+
+/** Bytes consumed from a subscription quota (upload + download). */
+export function subUsed(info: SubUserinfo): number {
+  return info.upload + info.download
+}
+
+/** Bytes left, or null when the panel reports unlimited traffic. */
+export function subRemaining(info: SubUserinfo): number | null {
+  if (!info.total) return null
+  return Math.max(0, info.total - subUsed(info))
+}
+
+/** 0–100 usage ratio, or null for unlimited quotas. */
+export function subPercent(info: SubUserinfo): number | null {
+  if (!info.total) return null
+  return Math.min(100, Math.round((subUsed(info) / info.total) * 100))
+}
+
+/** Whole days left until the quota expires (negative = expired). */
+export function subDaysLeft(info: SubUserinfo): number | null {
+  if (!info.expire) return null
+  return Math.floor((info.expire * 1000 - Date.now()) / 86_400_000)
 }
 
 export function latencyClass(ms: number | null | undefined): string {

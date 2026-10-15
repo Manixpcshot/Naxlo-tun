@@ -15,9 +15,9 @@ import {
   syncSubscriptionCounts
 } from './ipc'
 import { initLogger, log, closeLogger } from './lib/logger'
-import { loadVault, getVault } from './lib/secretStore'
+import { loadVault, getVault, updateVault } from './lib/secretStore'
 import { getSettings } from './lib/settings'
-import { patchState, patchSubscription, setConnection, subscribeToState } from './state'
+import { patchState, setConnection, setSubscriptionFetching, subscribeToState, syncSubscriptions } from './state'
 import { manager } from './lib/xray/manager'
 import { refreshSubscription, SubscriptionError } from './lib/subscription'
 import { redact } from './lib/redact'
@@ -73,6 +73,7 @@ async function bootstrap(): Promise<void> {
     systemProxyEnabled: settings.applySystemProxy,
     selectedServerId: getVault().selectedServerId
   })
+  syncSubscriptions()
 
   initAutoUpdater()
   checkForUpdatesOnLaunch()
@@ -85,24 +86,26 @@ async function bootstrap(): Promise<void> {
 }
 
 async function autoRefreshSubscription(): Promise<void> {
-  const url = getVault().subscriptionUrl
-  if (!url) return
-  patchSubscription({ fetching: true, lastError: null })
-  try {
-    const report = await refreshSubscription(url)
-    patchSubscription({
-      fetching: false,
-      lastUpdated: Date.now(),
-      lastError: null,
-      totalConfigs: report.total,
-      supportedConfigs: report.supported
-    })
-    log.info(SCOPE, 'auto-refresh completed')
-  } catch (err) {
-    const message = err instanceof SubscriptionError ? err.message : redact(err)
-    patchSubscription({ fetching: false, lastError: message })
-    log.warn(SCOPE, 'auto-refresh failed', message)
+  const subs = getVault().subscriptions
+  if (subs.length === 0) return
+  for (const sub of subs) {
+    setSubscriptionFetching(sub.id, true)
+    try {
+      await refreshSubscription(sub.url)
+      log.info(SCOPE, `auto-refresh completed (${sub.id})`)
+    } catch (err) {
+      const message = err instanceof SubscriptionError ? err.message : redact(err)
+      updateVault({
+        subscriptions: getVault().subscriptions.map((entry) =>
+          entry.id === sub.id ? { ...entry, lastError: message } : entry
+        )
+      })
+      log.warn(SCOPE, `auto-refresh failed (${sub.id})`, message)
+    } finally {
+      setSubscriptionFetching(sub.id, false)
+    }
   }
+  syncSubscriptions()
 }
 
 async function cleanup(): Promise<void> {

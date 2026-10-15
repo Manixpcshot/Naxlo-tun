@@ -47,10 +47,15 @@ const api: NaxloApi = {
 
   subscription: {
     save: (url) => invoke(IPC.subscriptionSave, url),
-    reveal: () => invoke<string | null>(IPC.subscriptionReveal),
-    refresh: () => invoke(IPC.subscriptionRefresh),
+    reveal: (id) => invoke<string | null>(IPC.subscriptionReveal, id),
+    refresh: (id?) => invoke(IPC.subscriptionRefresh, id),
+    remove: (id) => invoke(IPC.subscriptionRemove, id),
     clear: () => invoke(IPC.subscriptionClear),
     importFile: () => invoke(IPC.subscriptionImportFile)
+  },
+
+  speed: {
+    test: () => invoke(IPC.speedTest)
   },
 
   connection: {

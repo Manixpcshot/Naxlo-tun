@@ -86,9 +86,9 @@ export function Sidebar({ page, onNavigate }: Props): React.ReactElement {
               <Icon name={item.icon} size={17} />
             </span>
             <span>{t(item.label)}</span>
-            {item.id === 'servers' && state.subscription.totalConfigs > 0 ? (
+            {item.id === 'servers' && state.subscriptions.reduce((acc, sub) => acc + sub.totalConfigs, 0) > 0 ? (
               <span className="badge" style={{ marginInlineStart: 'auto' }}>
-                {fa(state.subscription.totalConfigs)}
+                {fa(state.subscriptions.reduce((acc, sub) => acc + sub.totalConfigs, 0))}
               </span>
             ) : null}
           </button>

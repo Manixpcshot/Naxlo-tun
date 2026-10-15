@@ -9,7 +9,10 @@ import { log } from './logger'
 import { maskUrl, registerSecret } from './redact'
 import { extractLinks, parseProxyLink, tryDecodeBase64 } from './parseConfig'
 import { getVault, replaceServers, updateVault } from './secretStore'
-import type { ServerConfig } from '../../shared/types'
+import { stableId } from './ids'
+import { parseProfileTitle, parseSubscriptionUserinfo } from './submeta'
+export { parseProfileTitle, parseSubscriptionUserinfo }
+import type { ServerConfig, StoredSubscription, SubUserinfo } from '../../shared/types'
 import { AppError, L, type LString } from '../../shared/i18n'
 
 const SCOPE = 'subscription'
@@ -23,6 +26,15 @@ export interface FetchReport {
   merged: number
   error: string | null
   warnings: string[]
+  subscriptionId?: string
+  /** Panel-reported title (`profile-title` header), when present. */
+  title?: string | null
+  userinfo?: SubUserinfo | null
+}
+
+/** Stable identifier for a subscription URL (the URL itself stays secret). */
+export function subscriptionIdFor(url: string): string {
+  return stableId(url)
 }
 
 export class SubscriptionError extends AppError {
@@ -39,12 +51,18 @@ export class SubscriptionError extends AppError {
  */
 export async function refreshSubscription(url: string, timeoutMs = 25000): Promise<FetchReport> {
   registerSecret(url, 'subscription')
+  const id = subscriptionIdFor(url)
   const warnings: string[] = []
   log.info(SCOPE, `refreshing subscription ${maskUrl(url)}`)
 
   let text: string
+  let userinfo: SubUserinfo | null = null
+  let title: string | null = null
   try {
-    text = await download(url, timeoutMs)
+    const fetched = await download(url, timeoutMs)
+    text = fetched.text
+    userinfo = fetched.userinfo
+    title = fetched.title
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     log.error(SCOPE, 'subscription download failed', message)
@@ -72,8 +90,12 @@ export async function refreshSubscription(url: string, timeoutMs = 25000): Promi
     servers.push(parsed.server)
   }
 
+  for (const server of servers) server.subscriptionId = id
+
   const vault = getVault()
-  const kept = vault.servers.filter((s) => s.source !== 'subscription')
+  // Replace only this subscription's servers; other subscriptions and
+  // manually imported configs stay untouched.
+  const kept = vault.servers.filter((s) => s.subscriptionId !== id)
   // Preserve latency measurements for servers that still exist.
   const previous = new Map(vault.servers.map((s) => [s.id, s]))
   for (const s of servers) {
@@ -86,8 +108,19 @@ export async function refreshSubscription(url: string, timeoutMs = 25000): Promi
   const merged = [...servers, ...kept]
   const supported = merged.filter((s) => s.supported).length
 
+  const existing = vault.subscriptions.find((sub) => sub.id === id)
+  const entry: StoredSubscription = {
+    id,
+    url,
+    name: title ?? existing?.name ?? null,
+    userinfo,
+    updatedAt: Date.now(),
+    lastError: null
+  }
+  const subscriptions = [...vault.subscriptions.filter((sub) => sub.id !== id), entry]
+
   updateVault({
-    subscriptionUrl: url,
+    subscriptions,
     lastUpdatedAt: Date.now(),
     selectedServerId:
       vault.selectedServerId && merged.some((s) => s.id === vault.selectedServerId)
@@ -97,11 +130,27 @@ export async function refreshSubscription(url: string, timeoutMs = 25000): Promi
   // `replaceServers` keeps the vault in sync and re-arms redaction.
   replaceServers(merged)
 
-  log.info(SCOPE, `subscription refreshed: ${merged.length} configs (${supported} supported)`)
-  return { ok: true, total: merged.length, supported, merged: servers.length, error: null, warnings }
+  log.info(SCOPE, `subscription refreshed: ${servers.length} configs (${supported} supported overall)`)
+  return {
+    ok: true,
+    total: merged.length,
+    supported,
+    merged: servers.length,
+    error: null,
+    warnings,
+    subscriptionId: id,
+    title,
+    userinfo
+  }
 }
 
-async function download(url: string, timeoutMs: number): Promise<string> {
+interface DownloadedPayload {
+  text: string
+  userinfo: SubUserinfo | null
+  title: string | null
+}
+
+async function download(url: string, timeoutMs: number): Promise<DownloadedPayload> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), timeoutMs)
   try {
@@ -120,17 +169,20 @@ async function download(url: string, timeoutMs: number): Promise<string> {
       throw new Error(`HTTP ${response.status} ${response.statusText || ''}`.trim())
     }
     const contentType = response.headers.get('content-type') ?? ''
+    const userinfo = parseSubscriptionUserinfo(response.headers.get('subscription-userinfo'))
+    const title = parseProfileTitle(response.headers.get('profile-title'))
     const buf = Buffer.from(await response.arrayBuffer())
     if (buf.length === 0) throw new AppError(L('پاسخ خالی بود', 'The response was empty'))
 
     // A TXT subscription is usually base64 of the link list. Some panels send
     // the links directly. Try both, preferring the readable interpretation.
     const asText = buf.toString('utf8')
-    if (/^(vless|vmess|trojan|ss|hy2|tuic):\/\//im.test(asText.trim())) return asText
+    const wrap = (text: string): DownloadedPayload => ({ text, userinfo, title })
+    if (/^(vless|vmess|trojan|ss|hy2|tuic):\/\//im.test(asText.trim())) return wrap(asText)
     const decoded = tryDecodeBase64(asText)
-    if (decoded && /^(vless|vmess|trojan|ss|hy2|tuic):\/\//im.test(decoded)) return decoded
-    if (contentType.includes('json')) return asText
-    return decoded ?? asText
+    if (decoded && /^(vless|vmess|trojan|ss|hy2|tuic):\/\//im.test(decoded)) return wrap(decoded)
+    if (contentType.includes('json')) return wrap(asText)
+    return wrap(decoded ?? asText)
   } finally {
     clearTimeout(timer)
   }
@@ -160,7 +212,7 @@ export function importPayload(text: string): FetchReport {
     const parsed = parseProxyLink(link)
     if (!parsed || seen.has(parsed.server.id)) continue
     seen.add(parsed.server.id)
-    servers.push({ ...parsed.server, source: 'import' })
+    servers.push({ ...parsed.server, source: 'import', subscriptionId: null })
   }
   const vault = getVault()
   const merged = [...vault.servers.filter((s) => s.id !== undefined && !seen.has(s.id)), ...servers]

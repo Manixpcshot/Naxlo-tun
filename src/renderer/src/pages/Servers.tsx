@@ -8,7 +8,7 @@ import { ServerCard } from '../components/ServerCard'
 import { Button, Modal, PageHeader, SkeletonRow } from '../components/ui'
 import { useStore } from '../lib/store'
 import { useI18n, type MsgKey } from '../lib/i18n'
-import { fa, normaliseForSearch } from '../lib/format'
+import { fa, formatBytes, normaliseForSearch, subUsed } from '../lib/format'
 import type { ServerView } from '@shared/bridge'
 
 type Filter = 'all' | 'vless' | 'reality' | 'ws' | 'grpc' | 'fast'
@@ -94,13 +94,53 @@ export function Servers(): React.ReactElement {
     pushToast({ kind: 'info', title: t('removedToast'), message: server.name })
   }
 
+  const groups = useMemo(() => {
+    const bySub = new Map<string, ServerView[]>()
+    const manual: ServerView[] = []
+    for (const server of filtered) {
+      if (server.subscriptionId) {
+        const list = bySub.get(server.subscriptionId)
+        if (list) list.push(server)
+        else bySub.set(server.subscriptionId, [server])
+      } else {
+        manual.push(server)
+      }
+    }
+    const subs = state.subscriptions
+      .map((sub) => ({ sub, servers: (bySub.get(sub.id) ?? []).slice(0, 300) }))
+      .filter((group) => group.servers.length > 0)
+    return { subs, manual }
+  }, [filtered, state.subscriptions])
+
+  const renderCard = (server: ServerView, index: number): React.ReactElement => (
+    <motion.div
+      key={server.id}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: Math.min(index * 0.016, 0.35), type: 'spring', stiffness: 380, damping: 32 }}
+    >
+      <ServerCard
+        server={server}
+        selected={state.selectedServerId === server.id}
+        active={state.connection === 'connected' && state.activeServerId === server.id}
+        testing={testingId === server.id}
+        onSelect={() => void run(() => window.naxlo.servers.select(server.id), t('errorTitle'))}
+        onConnect={() => void connect(server)}
+        onTest={() => void testOne(server)}
+        onCopy={() => void copyLink(server)}
+        onRemove={() => void remove(server)}
+        onReveal={() => run(() => window.naxlo.servers.reveal(server.id), t('errorTitle'))}
+      />
+    </motion.div>
+  )
+
   return (
     <div>
       <PageHeader
         title={t('serversTitle')}
         description={t('serversDesc', {
-          total: fa(state.subscription.totalConfigs),
-          supported: fa(state.subscription.supportedConfigs)
+          total: fa(servers.length),
+          supported: fa(servers.filter((server) => server.supported).length)
         })}
         actions={
           <>
@@ -110,7 +150,7 @@ export function Servers(): React.ReactElement {
             <Button
               icon="refresh"
               onClick={() => void run(() => window.naxlo.subscription.refresh(), t('errorTitle'))}
-              loading={state.subscription.fetching}
+              loading={state.subscriptions.some((sub) => sub.fetching)}
             >
               {t('refreshSubscription')}
             </Button>
@@ -175,33 +215,46 @@ export function Servers(): React.ReactElement {
         </motion.div>
       ) : (
         <div className="serverlist" role="listbox" aria-label="servers">
-          <AnimatePresence initial={false}>
-            {filtered.slice(0, 300).map((server, index) => (
-              <motion.div
-                key={server.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: Math.min(index * 0.016, 0.35), type: 'spring', stiffness: 380, damping: 32 }}
-              >
-                <ServerCard
-                  server={server}
-                  selected={state.selectedServerId === server.id}
-                  active={state.connection === 'connected' && state.activeServerId === server.id}
-                  testing={testingId === server.id}
-                  onSelect={() => void run(() => window.naxlo.servers.select(server.id), t('errorTitle'))}
-                  onConnect={() => void connect(server)}
-                  onTest={() => void testOne(server)}
-                  onCopy={() => void copyLink(server)}
-                  onRemove={() => void remove(server)}
-                  onReveal={() => run(() => window.naxlo.servers.reveal(server.id), t('errorTitle'))}
-                />
-              </motion.div>
-            ))}
-          </AnimatePresence>
-          {filtered.length > 300 ? (
-            <p className="field__hint" style={{ textAlign: 'center', padding: '12px 0' }}>
-              {t('hiddenMore', { n: fa(filtered.length - 300) })}
-            </p>
+          {groups.subs.map((group) => (
+            <section className="group" key={group.sub.id}>
+              <header className="group__head">
+                <span className="group__dot" aria-hidden="true" />
+                <span className="group__name" title={group.sub.name ?? group.sub.maskedUrl}>
+                  {group.sub.name ?? group.sub.maskedUrl.replace(/^https?:\/\//, '').split('/')[0]}
+                </span>
+                <span className="group__meta">
+                  {t('subConfigs', { total: fa(group.sub.totalConfigs), supported: fa(group.sub.supportedConfigs) })}
+                </span>
+                {group.sub.userinfo ? (
+                  <span className="group__meta mono">
+                    {formatBytes(subUsed(group.sub.userinfo))}
+                    {group.sub.userinfo.total ? ` / ${formatBytes(group.sub.userinfo.total)}` : ` · ${t('usageUnlimited')}`}
+                  </span>
+                ) : null}
+                <button
+                  type="button"
+                  className="btn btn--icon btn--sm group__refresh"
+                  title={t('subRefreshOne')}
+                  disabled={group.sub.fetching}
+                  onClick={() =>
+                    void run(() => window.naxlo.subscription.refresh(group.sub.id), t('errorTitle')).then(() => reloadServers())
+                  }
+                >
+                  <Icon name="refresh" size={13} />
+                </button>
+              </header>
+              <AnimatePresence initial={false}>{group.servers.map((server, index) => renderCard(server, index))}</AnimatePresence>
+            </section>
+          ))}
+          {groups.manual.length > 0 ? (
+            <section className="group">
+              <header className="group__head">
+                <span className="group__dot group__dot--manual" aria-hidden="true" />
+                <span className="group__name">{t('groupManual')}</span>
+                <span className="group__meta">{t('subConfigs', { total: fa(groups.manual.length), supported: fa(groups.manual.filter((server) => server.supported).length) })}</span>
+              </header>
+              <AnimatePresence initial={false}>{groups.manual.map((server, index) => renderCard(server, index))}</AnimatePresence>
+            </section>
           ) : null}
         </div>
       )}

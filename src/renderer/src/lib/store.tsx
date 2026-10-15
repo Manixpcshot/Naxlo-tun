@@ -22,6 +22,7 @@ const EMPTY_STATE: AppState = {
   serversRevision: 0,
   selectedServerId: null,
   activeServerId: null,
+  activeSubscriptionId: null,
   activeServerName: null,
   activeServerAddressMasked: null,
   socksPort: 10808,
@@ -50,16 +51,7 @@ const EMPTY_STATE: AppState = {
     progress: null,
     error: null
   },
-  subscription: {
-    hasUrl: false,
-    maskedUrl: '',
-    lastUpdated: null,
-    lastError: null,
-    totalConfigs: 0,
-    supportedConfigs: 0,
-    autoRefreshMinutes: 0,
-    fetching: false
-  }
+  subscriptions: []
 }
 
 interface StoreShape {
