@@ -63,13 +63,16 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          set -x
           cd android
           if [ -f build.log ]; then
-            tail -c 5500 build.log > /tmp/tail.txt
-            gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/comments"               -f body="android ci tail:
-          \`\`\`
-          $(cat /tmp/tail.txt)
-          \`\`\`"
+            tail -c 5000 build.log > tail.txt
+            cat tail.txt >> "$GITHUB_STEP_SUMMARY"
+            PR=$(gh pr view --json number -q .number || true)
+            if [ -n "$PR" ]; then
+              gh pr comment "$PR" --body-file tail.txt || true
+            fi
+            gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/comments" -f body=@"tail.txt" || true
           fi
 
       - uses: actions/upload-artifact@v4
