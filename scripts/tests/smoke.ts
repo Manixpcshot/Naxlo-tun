@@ -8,6 +8,8 @@
  * Run with: `npm test` (see scripts/run-tests.mjs).
  */
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { extractLinks, parseProxyLink, tryDecodeBase64 } from '../../src/main/lib/parseConfig'
 import { buildXrayConfig, validateConfig } from '../../src/main/lib/xray/config'
 import { DEFAULT_SETTINGS } from '../../src/shared/types'
@@ -196,6 +198,37 @@ test('masking helpers keep values unrecognisable but distinguishable', () => {
   assert.equal(maskIp('203.0.113.9'), '203.0.••.••')
   assert.equal(maskMiddle('abcdefghij', 2, 2).startsWith('ab'), true)
   assert.equal(maskUrl('https://panel.example.com/sub/abcdef123456').includes('abcdef123456'), false)
+})
+
+/* ------------------------------------------------------- renderer styling */
+/*
+ * v1.1.0 shipped with a missing semicolon after an `@import` in global.css.
+ * CSS parsed the two import lines as one broken at-rule and silently dropped
+ * components.css from the bundle — the whole layout vanished. These guards
+ * make that class of mistake fail the test suite instead of shipping.
+ */
+
+const stylePath = (file: string): string => resolve(process.cwd(), 'src/renderer/src/styles', file)
+
+test('every @import in global.css is terminated with a semicolon', () => {
+  const css = readFileSync(stylePath('global.css'), 'utf8')
+  const imports = css.split('\n').filter((line) => line.trim().startsWith('@import'))
+  assert.ok(imports.length >= 4, 'global.css should import the style layers')
+  for (const line of imports) {
+    assert.ok(line.trim().endsWith(';'), `unterminated import: ${line}`)
+  }
+  assert.ok(css.includes('components.css'), 'layout layer must stay imported')
+})
+
+test('flag stylesheet selectors match the Flag component contract', () => {
+  const css = readFileSync(stylePath('flags.css'), 'utf8')
+  const component = readFileSync(
+    resolve(process.cwd(), 'src/renderer/src/components/Flag.tsx'),
+    'utf8'
+  )
+  assert.ok(component.includes('data-flag='), 'Flag renders a data-flag attribute')
+  assert.ok(css.includes('[data-flag="'), 'flags.css must target [data-flag="xx"]')
+  assert.ok(!/^\.flag-[a-z]{2}\{/m.test(css), 'class-based flag selectors are dead code')
 })
 
 /* ------------------------------------------------------------------ report */
