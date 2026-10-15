@@ -24,6 +24,7 @@ import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import { log } from '../logger'
 import { PINNED_XRAY_VERSION } from '../../../shared/types'
+import { AppError, L } from '../../../shared/i18n'
 
 const execFileAsync = promisify(execFile)
 const SCOPE = 'xray:core'
@@ -172,10 +173,10 @@ export async function downloadCore(
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     log.error(SCOPE, 'core download failed', message)
-    throw new Error(
+    throw new AppError(
       /abort/i.test(message)
-        ? 'دانلود هستهٔ Xray به دلیل پایان مهلت لغو شد'
-        : `دانلود هستهٔ Xray ناموفق بود (${message})`
+        ? L('دانلود هستهٔ Xray به دلیل پایان مهلت لغو شد', 'Xray core download timed out')
+        : L(`دانلود هستهٔ Xray ناموفق بود (${message})`, `Xray core download failed (${message})`)
     )
   } finally {
     clearTimeout(timer)
@@ -188,7 +189,9 @@ export async function downloadCore(
     if (!ok) {
       rmSync(dest, { recursive: true, force: true })
       log.error(SCOPE, 'core checksum mismatch — refusing to run')
-      throw new Error('کنترل یکپارچگی فایل هسته ناموفق بود؛ دانلود دوباره انجام شود')
+      throw new AppError(
+        L('کنترل یکپارچگی فایل هسته ناموفق بود؛ دانلود دوباره انجام شود', 'Core checksum verification failed — please download again')
+      )
     }
     log.info(SCOPE, `core checksum verified (${digestInfo.alg})`)
   } else {
@@ -216,7 +219,7 @@ export async function downloadCore(
   } catch (err) {
     rmSync(dest, { recursive: true, force: true })
     log.error(SCOPE, 'core extraction failed', err)
-    throw new Error('استخراج فایل هسته ناموفق بود')
+    throw new AppError(L('استخراج فایل هسته ناموفق بود', 'Core extraction failed'))
   }
 
   if (!existsSync(exePath)) {
@@ -232,7 +235,7 @@ export async function downloadCore(
       }
     }
     rmSync(dest, { recursive: true, force: true })
-    throw new Error('فایل اجرایی هسته پس از استخراج پیدا نشد')
+    throw new AppError(L('فایل اجرایی هسته پس از استخراج پیدا نشد', 'Core executable not found after extraction'))
   }
 
   const version_ = await readVersion(exePath)

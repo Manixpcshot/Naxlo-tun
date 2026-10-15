@@ -61,7 +61,7 @@ jobs:
               --notes-file "$NOTES" \
               --draft=false --prerelease=false
           fi
-          gh release upload "$TAG" release/*.exe --clobber
+          gh release upload "$TAG" release/*.exe release/latest.yml --clobber
 
   checksums:
     name: Publish SHA-256 checksums

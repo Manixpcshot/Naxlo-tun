@@ -3,3 +3,4 @@
  */
 export * from './types'
 export * from './mask'
+export * from './i18n'

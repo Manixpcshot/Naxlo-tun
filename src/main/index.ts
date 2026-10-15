@@ -22,6 +22,7 @@ import { manager } from './lib/xray/manager'
 import { refreshSubscription, SubscriptionError } from './lib/subscription'
 import { redact } from './lib/redact'
 import { runtime } from './runtime'
+import { checkForUpdatesOnLaunch, initAutoUpdater } from './lib/updater'
 
 const SCOPE = 'main'
 
@@ -72,6 +73,9 @@ async function bootstrap(): Promise<void> {
     systemProxyEnabled: settings.applySystemProxy,
     selectedServerId: getVault().selectedServerId
   })
+
+  initAutoUpdater()
+  checkForUpdatesOnLaunch()
 
   if (runtime.autoStarted && settings.autoConnectLast && getVault().selectedServerId) {
     log.info(SCOPE, 'auto-connecting to the last used server')

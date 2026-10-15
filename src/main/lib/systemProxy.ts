@@ -12,6 +12,7 @@ import { spawn } from 'node:child_process'
 import { existsSync, readFileSync, writeFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { log } from './logger'
+import { AppError, L } from '../../shared/i18n'
 
 const SCOPE = 'system-proxy'
 const BACKUP_FILE = 'proxy-backup.json'
@@ -66,7 +67,7 @@ function encodeCommand(script: string): string {
 function runPowerShell(script: string, timeoutMs = 12000): Promise<{ code: number; out: string; err: string }> {
   return new Promise((resolve, reject) => {
     if (process.platform !== 'win32') {
-      reject(new Error('تنظیم پروکسی سیستم فقط روی ویندوز پشتیبانی می‌شود'))
+      reject(new AppError(L('تنظیم پروکسی سیستم فقط روی ویندوز پشتیبانی می‌شود', 'System proxy is only supported on Windows')))
       return
     }
     const args = [
@@ -82,7 +83,7 @@ function runPowerShell(script: string, timeoutMs = 12000): Promise<{ code: numbe
     let err = ''
     const timer = setTimeout(() => {
       child.kill('SIGKILL')
-      reject(new Error('پایان مهلت اجرای PowerShell'))
+      reject(new AppError(L('پایان مهلت اجرای PowerShell', 'PowerShell execution timed out')))
     }, timeoutMs)
     child.stdout.on('data', (d) => (out += d.toString('utf8')))
     child.stderr.on('data', (d) => (err += d.toString('utf8')))
@@ -150,7 +151,7 @@ ${REFRESH_SNIPPET}
   const { code, out, err } = await runPowerShell(script)
   if (code !== 0) {
     log.error(SCOPE, 'apply failed', err || out)
-    throw new Error('تنظیم پروکسی سیستم ناموفق بود')
+    throw new AppError(L('تنظیم پروکسی سیستم ناموفق بود', 'Applying the system proxy failed'))
   }
   if (!current) {
     try {

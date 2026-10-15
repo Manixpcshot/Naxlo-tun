@@ -113,5 +113,7 @@ export interface NaxloApi {
   app: {
     info(): Promise<AppInfo>
     checkUpdate(): Promise<AppUpdateInfo>
+    /** Quit and run the staged installer (relaunches the app). */
+    installUpdate(): Promise<boolean>
   }
 }

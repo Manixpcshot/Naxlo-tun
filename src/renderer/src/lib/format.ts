@@ -1,47 +1,67 @@
 /**
- * Persian formatting helpers used across the UI.
+ * Locale-aware formatting (Persian default, English optional).
+ *
+ * The active locale is set once by the i18n provider; every helper below reads
+ * it, so components stay free of locale plumbing.
  */
+import type { Lang } from '@shared/i18n'
 
-const numberFormat = new Intl.NumberFormat('fa-IR')
-const decimalFormat = new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 1 })
+let locale: 'fa-IR' | 'en-US' = 'fa-IR'
+let lang: Lang = 'fa'
+
+export function setFormatLocale(next: Lang): void {
+  lang = next
+  locale = next === 'fa' ? 'fa-IR' : 'en-US'
+}
+
+export function currentLocale(): string {
+  return locale
+}
+
+const numberFormat = {
+  fa: new Intl.NumberFormat('fa-IR'),
+  en: new Intl.NumberFormat('en-US')
+}
+
+const relativeFormat = {
+  fa: new Intl.RelativeTimeFormat('fa-IR', { numeric: 'auto' }),
+  en: new Intl.RelativeTimeFormat('en-US', { numeric: 'auto' })
+}
 
 export function fa(value: number | null | undefined): string {
   if (value === null || value === undefined || Number.isNaN(value)) return '—'
-  return numberFormat.format(value)
+  return numberFormat[lang].format(value)
 }
 
 export function faDecimal(value: number | null | undefined): string {
   if (value === null || value === undefined || Number.isNaN(value)) return '—'
-  return decimalFormat.format(value)
+  return new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(value)
 }
 
 export function faMs(value: number | null | undefined): string {
   if (value === null || value === undefined) return '—'
-  return `${fa(Math.round(value))} ms`
+  return lang === 'fa' ? `${numberFormat.fa.format(Math.round(value))} ms` : `${Math.round(value)} ms`
 }
 
 export function faClock(timestamp: number): string {
-  return new Intl.DateTimeFormat('fa-IR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(
+  return new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(
     new Date(timestamp)
   )
 }
 
 export function faDate(timestamp: number): string {
-  return new Intl.DateTimeFormat('fa-IR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(timestamp))
+  return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(timestamp))
 }
 
 export function faRelative(timestamp: number | null | undefined): string {
-  if (!timestamp) return 'هرگز'
-  const diff = Date.now() - timestamp
-  const abs = Math.abs(diff)
-  const suffix = diff >= 0 ? 'پیش' : 'بعد'
-  if (abs < 45_000) return diff >= 0 ? 'هم‌اکنون' : 'چند لحظه دیگر'
-  const minutes = Math.round(abs / 60_000)
-  if (minutes < 60) return `${fa(minutes)} دقیقه ${suffix}`
-  const hours = Math.round(minutes / 60)
-  if (hours < 24) return `${fa(hours)} ساعت ${suffix}`
-  const days = Math.round(hours / 24)
-  if (days < 30) return `${fa(days)} روز ${suffix}`
+  if (!timestamp) return lang === 'fa' ? 'هرگز' : 'never'
+  const diffMs = Date.now() - timestamp
+  const abs = Math.abs(diffMs)
+  const rtf = relativeFormat[lang]
+  if (abs < 45_000) return lang === 'fa' ? 'هم‌اکنون' : 'just now'
+  if (abs < 3_600_000) return rtf.format(Math.round(-diffMs / 60_000), 'minute')
+  if (abs < 86_400_000) return rtf.format(Math.round(-diffMs / 3_600_000), 'hour')
+  if (abs < 2_592_000_000) return rtf.format(Math.round(-diffMs / 86_400_000), 'day')
   return faDate(timestamp)
 }
 
@@ -51,18 +71,24 @@ export function faDuration(ms: number | null): string {
   const hours = Math.floor(totalSeconds / 3600)
   const minutes = Math.floor((totalSeconds % 3600) / 60)
   const seconds = totalSeconds % 60
-  if (hours > 0) return `${fa(hours)} ساعت و ${fa(minutes)} دقیقه`
-  if (minutes > 0) return `${fa(minutes)} دقیقه و ${fa(seconds)} ثانیه`
-  return `${fa(seconds)} ثانیه`
+  if (lang === 'en') {
+    if (hours > 0) return `${hours}h ${minutes}m`
+    if (minutes > 0) return `${minutes}m ${seconds}s`
+    return `${seconds}s`
+  }
+  if (hours > 0) return `${numberFormat.fa.format(hours)} ساعت و ${numberFormat.fa.format(minutes)} دقیقه`
+  if (minutes > 0) return `${numberFormat.fa.format(minutes)} دقیقه و ${numberFormat.fa.format(seconds)} ثانیه`
+  return `${numberFormat.fa.format(seconds)} ثانیه`
 }
 
 export function shortDuration(ms: number | null): string {
-  if (!ms || ms < 0) return '۰۰:۰۰'
+  if (!ms || ms < 0) return lang === 'fa' ? '۰۰:۰۰:۰۰' : '00:00:00'
   const total = Math.floor(ms / 1000)
   const h = String(Math.floor(total / 3600)).padStart(2, '0')
   const m = String(Math.floor((total % 3600) / 60)).padStart(2, '0')
   const s = String(total % 60).padStart(2, '0')
-  return `${fa(Number(h))}:${fa(Number(m))}:${fa(Number(s))}`
+  const raw = `${h}:${m}:${s}`
+  return lang === 'fa' ? raw.replace(/\d/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[Number(d)]) : raw
 }
 
 export function latencyClass(ms: number | null | undefined): string {
@@ -77,7 +103,7 @@ export function truncate(value: string, max = 42): string {
   return `${value.slice(0, max - 1)}…`
 }
 
-/** Normalise search text for Persian (ی/ک and zero-width non-joiner). */
+/** Normalise search text (Persian ی/ک variants, ZWNJ, case). */
 export function normaliseForSearch(value: string): string {
   return value
     .replace(/[\u200c\u200f\u200e]/g, ' ')
@@ -87,6 +113,26 @@ export function normaliseForSearch(value: string): string {
     .replace(/\u0640/g, '')
     .toLowerCase()
     .trim()
+}
+
+/* Flag helpers ------------------------------------------------------------- */
+
+const REGIONAL_PAIR = /\p{Regional_Indicator}{2}/gu
+
+/** Extract ISO country codes embedded as emoji flags in a server name. */
+export function extractFlagCodes(text: string): string[] {
+  const codes: string[] = []
+  for (const match of text.matchAll(REGIONAL_PAIR)) {
+    const pair = match[0]
+    const code = String.fromCharCode(pair.codePointAt(0)! - 0x1f1e6 + 65, pair.codePointAt(2)! - 0x1f1e6 + 65)
+    codes.push(code.toLowerCase())
+  }
+  return codes
+}
+
+/** Strip flag emoji (and stray regional indicators) from a display name. */
+export function stripFlags(text: string): string {
+  return text.replace(REGIONAL_PAIR, '').replace(/\s{2,}/g, ' ').trim()
 }
 
 /* Re-exported so renderer code has one import surface for masking. */

@@ -13,8 +13,8 @@ import React, {
   useRef,
   useState
 } from 'react'
-import type { AppState, LogEntry, ServerView, Settings, Toast } from '@shared/bridge'
-import { DEFAULT_SETTINGS } from '@shared/bridge'
+import type { AppState, LString, LogEntry, ServerView, Settings, Toast } from '@shared/bridge'
+import { DEFAULT_SETTINGS, isLString } from '@shared/bridge'
 import type { AppInfo } from '@shared/api'
 
 const EMPTY_STATE: AppState = {
@@ -32,6 +32,15 @@ const EMPTY_STATE: AppState = {
   lastError: null,
   latencyMs: null,
   identity: null,
+  update: {
+    checking: false,
+    downloading: false,
+    progress: null,
+    availableVersion: null,
+    downloadedVersion: null,
+    error: null,
+    ready: false
+  },
   core: {
     ready: false,
     path: null,
@@ -66,10 +75,12 @@ interface StoreShape {
   reloadSettings: () => Promise<void>
   saveSettings: (patch: Partial<Settings>) => Promise<void>
   pushToast: (toast: Omit<Toast, 'id'>) => void
+  /** Human-readable form of a bridge rejection (bilingual payload or plain). */
+  errorText: (error: unknown) => string | LString
   dismissToast: (id: string) => void
   clearLogs: () => Promise<void>
   /** Run a bridge call, surface failures as a toast, and return the value. */
-  run: <T>(task: () => Promise<T>, errorTitle?: string) => Promise<T | undefined>
+  run: <T>(task: () => Promise<T>, errorTitle?: string | LString) => Promise<T | undefined>
 }
 
 const StoreContext = createContext<StoreShape | null>(null)
@@ -122,20 +133,26 @@ export function StoreProvider({ children }: { children: React.ReactNode }): Reac
     setSettings(await window.naxlo.settings.set(patch))
   }, [])
 
+  const errorText = useCallback((error: unknown): string | LString => {
+    if (isLString(error)) return error
+    if (error instanceof Error) return error.message
+    if (typeof error === 'string') return error
+    return String(error)
+  }, [])
+
   const run = useCallback(
-    async <T,>(task: () => Promise<T>, errorTitle = 'خطا'): Promise<T | undefined> => {
+    async <T,>(task: () => Promise<T>, errorTitle: string | LString = 'خطا'): Promise<T | undefined> => {
       setBusy(true)
       try {
         return await task()
       } catch (err) {
-        const message = err instanceof Error ? err.message : String(err)
-        pushToast({ kind: 'error', title: errorTitle, message })
+        pushToast({ kind: 'error', title: errorTitle, message: errorText(err) })
         return undefined
       } finally {
         setBusy(false)
       }
     },
-    [pushToast]
+    [pushToast, errorText]
   )
 
   const clearLogs = useCallback(async () => {
@@ -219,9 +236,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }): Reac
       pushToast,
       dismissToast,
       clearLogs,
-      run
+      run,
+      errorText
     }),
-    [ready, state, settings, servers, info, logs, toasts, busy, reloadServers, reloadSettings, saveSettings, pushToast, dismissToast, clearLogs, run]
+    [ready, state, settings, servers, info, logs, toasts, busy, reloadServers, reloadSettings, saveSettings, pushToast, dismissToast, clearLogs, run, errorText]
   )
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>

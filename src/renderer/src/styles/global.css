@@ -1,4 +1,5 @@
 @import './tokens.css';
 @import './base.css';
+@import './flags.css'
 @import './components.css';
 @import './animations.css';

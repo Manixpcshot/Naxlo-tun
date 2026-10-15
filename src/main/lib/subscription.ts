@@ -10,6 +10,7 @@ import { maskUrl, registerSecret } from './redact'
 import { extractLinks, parseProxyLink, tryDecodeBase64 } from './parseConfig'
 import { getVault, replaceServers, updateVault } from './secretStore'
 import type { ServerConfig } from '../../shared/types'
+import { AppError, L, type LString } from '../../shared/i18n'
 
 const SCOPE = 'subscription'
 const USER_AGENT =
@@ -24,9 +25,9 @@ export interface FetchReport {
   warnings: string[]
 }
 
-export class SubscriptionError extends Error {
-  constructor(message: string, readonly detail?: string) {
-    super(message)
+export class SubscriptionError extends AppError {
+  constructor(localized: LString, readonly detail?: string) {
+    super(localized)
     this.name = 'SubscriptionError'
   }
 }
@@ -53,8 +54,8 @@ export async function refreshSubscription(url: string, timeoutMs = 25000): Promi
   const links = extractLinks(text)
   if (links.length === 0) {
     const hint = text.trim().startsWith('{')
-      ? 'پاسخ سرور JSON بود؛ احتمالاً لینک اشتراک اشتباه است'
-      : 'هیچ کانفیگی در پاسخ پیدا نشد'
+      ? L('پاسخ سرور JSON بود؛ احتمالاً لینک اشتراک اشتباه است', 'The server answered with JSON — the subscription link is probably wrong')
+      : L('هیچ کانفیگی در پاسخ پیدا نشد', 'No configs were found in the response')
     throw new SubscriptionError(hint)
   }
 
@@ -120,7 +121,7 @@ async function download(url: string, timeoutMs: number): Promise<string> {
     }
     const contentType = response.headers.get('content-type') ?? ''
     const buf = Buffer.from(await response.arrayBuffer())
-    if (buf.length === 0) throw new Error('پاسخ خالی بود')
+    if (buf.length === 0) throw new AppError(L('پاسخ خالی بود', 'The response was empty'))
 
     // A TXT subscription is usually base64 of the link list. Some panels send
     // the links directly. Try both, preferring the readable interpretation.
@@ -135,22 +136,24 @@ async function download(url: string, timeoutMs: number): Promise<string> {
   }
 }
 
-function friendlyFetchError(message: string): string {
-  if (/abort/i.test(message)) return 'دریافت اشتراک به دلیل پایان مهلت لغو شد'
-  if (/ENOTFOUND|getaddrinfo/i.test(message)) return 'آدرس اشتراک پیدا نشد (DNS)'
-  if (/ECONNREFUSED/i.test(message)) return 'اتصال به سرور اشتراک رد شد'
-  if (/HTTP 401|HTTP 403/i.test(message)) return 'سرور اشتراک دسترسی را رد کرد (۴۰۱/۴۰۳)'
-  if (/HTTP 404/i.test(message)) return 'لینک اشتراک یافت نشد (۴۰۴)'
-  if (/HTTP 429/i.test(message)) return 'درخواست‌های بیش از حد؛ کمی بعد دوباره تلاش کنید'
-  if (/HTTP 5\d\d/.test(message)) return 'خطای سمت سرور اشتراک'
-  if (/certificate|SSL|TLS/i.test(message)) return 'خطای گواهی/رمزنگاری در اتصال به سرور اشتراک'
-  return `دریافت اشتراک ناموفق بود: ${message}`
+function friendlyFetchError(message: string): LString {
+  if (/abort/i.test(message)) return L('دریافت اشتراک به دلیل پایان مهلت لغو شد', 'Subscription fetch timed out')
+  if (/ENOTFOUND|getaddrinfo/i.test(message)) return L('آدرس اشتراک پیدا نشد (DNS)', 'Subscription host not found (DNS)')
+  if (/ECONNREFUSED/i.test(message)) return L('اتصال به سرور اشتراک رد شد', 'Connection to the subscription server was refused')
+  if (/HTTP 401|HTTP 403/i.test(message)) return L('سرور اشتراک دسترسی را رد کرد (۴۰۱/۴۰۳)', 'The subscription server denied access (401/403)')
+  if (/HTTP 404/i.test(message)) return L('لینک اشتراک یافت نشد (۴۰۴)', 'Subscription link not found (404)')
+  if (/HTTP 429/i.test(message)) return L('درخواست‌های بیش از حد؛ کمی بعد دوباره تلاش کنید', 'Too many requests — try again in a moment')
+  if (/HTTP 5\d\d/.test(message)) return L('خطای سمت سرور اشتراک', 'Subscription server error (5xx)')
+  if (/certificate|SSL|TLS/i.test(message)) return L('خطای گواهی/رمزنگاری در اتصال به سرور اشتراک', 'Certificate/TLS error while contacting the subscription server')
+  return L(`دریافت اشتراک ناموفق بود: ${message}`, `Subscription fetch failed: ${message}`)
 }
 
 /** Parse a locally supplied payload (file import / paste). */
 export function importPayload(text: string): FetchReport {
   const links = extractLinks(text)
-  if (!links.length) throw new SubscriptionError('هیچ کانفیگ معتبری در متن پیدا نشد')
+  if (!links.length) {
+    throw new SubscriptionError(L('هیچ کانفیگ معتبری در متن پیدا نشد', 'No valid config was found in the payload'))
+  }
   const servers: ServerConfig[] = []
   const seen = new Set<string>()
   for (const link of links) {

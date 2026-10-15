@@ -19,6 +19,7 @@ import { fetchIdentityThroughProxy, requestThroughProxy, tcpPing, waitForPort } 
 import { applySystemProxy, readSystemProxy, restoreSystemProxy } from '../systemProxy'
 import { getState, patchCore, patchState, setConnection, toast } from '../../state'
 import { maskAddress, PINNED_XRAY_VERSION, type ServerConfig } from '../../../shared/bridge'
+import { AppError, L, toLString } from '../../../shared/i18n'
 
 const SCOPE = 'xray'
 
@@ -29,6 +30,7 @@ class XrayManager {
   private activeServerId: string | null = null
   private core: CoreLocation | null = null
   private refreshTimer: NodeJS.Timeout | null = null
+  private latencyTimer: NodeJS.Timeout | null = null
   /** Injected by the bootstrap layer to avoid an import cycle. */
   autoRefreshHandler: (() => Promise<void>) | null = null
 
@@ -73,7 +75,11 @@ class XrayManager {
     if (existing) return existing
 
     patchCore({ downloading: true, progress: 0, error: null })
-    toast('info', 'در حال دریافت هستهٔ Xray', 'برای نخستین اجرا هستهٔ رسمی Xray دانلود و اعتبارسنجی می‌شود.')
+    toast(
+      'info',
+      L('در حال دریافت هستهٔ Xray', 'Downloading the Xray core'),
+      L('برای نخستین اجرا هستهٔ رسمی Xray دانلود و اعتبارسنجی می‌شود.', 'On first run the official Xray core is downloaded and verified.')
+    )
     try {
       const path = await downloadCore((progress) => {
         const total = progress.total ?? 0
@@ -91,13 +97,19 @@ class XrayManager {
         error: null
       })
       if (getState().connection === 'core-missing') setConnection('idle')
-      toast('success', 'هستهٔ Xray آماده است', `نسخهٔ ${version ?? PINNED_XRAY_VERSION}`)
+      toast(
+        'success',
+        L('هستهٔ Xray آماده است', 'Xray core is ready'),
+        L(`نسخهٔ ${version ?? PINNED_XRAY_VERSION}`, `Version ${version ?? PINNED_XRAY_VERSION}`)
+      )
       return this.core
     } catch (err) {
-      const message = redact(err)
-      patchCore({ downloading: false, progress: null, ready: false, error: message })
-      toast('error', 'دریافت هسته ناموفق بود', message)
-      throw err instanceof Error ? err : new Error(message)
+      const localized = toLString(err)
+      localized.fa = redact(localized.fa)
+      localized.en = redact(localized.en)
+      patchCore({ downloading: false, progress: null, ready: false, error: localized })
+      toast('error', L('دریافت هسته ناموفق بود', 'Core download failed'), localized)
+      throw err instanceof Error ? err : new AppError(localized)
     }
   }
 
@@ -110,7 +122,9 @@ class XrayManager {
 
   async setCustomCore(path: string): Promise<CoreLocation> {
     const version = await readVersion(path)
-    if (!version) throw new Error('فایل انتخاب‌شده یک هستهٔ Xray معتبر نیست')
+    if (!version) {
+      throw new AppError(L('فایل انتخاب‌شده یک هستهٔ Xray معتبر نیست', 'The selected file is not a valid Xray core'))
+    }
     this.core = { path, version, source: 'custom' }
     patchCore({ ready: true, path, version, source: 'custom', error: null })
     if (getState().connection === 'core-missing') setConnection('idle')
@@ -122,15 +136,19 @@ class XrayManager {
 
   async connect(serverId?: string): Promise<void> {
     if (this.busy) {
-      toast('warning', 'عملیات در جریان است', 'لطفاً تا پایان کار فعلی صبر کنید.')
+      toast('warning', L('عملیات در جریان است', 'Operation in progress'), L('لطفاً تا پایان کار فعلی صبر کنید.', 'Please wait for the current task to finish.'))
       return
     }
     const vault = getVault()
     const id = serverId ?? vault.selectedServerId
     const server = vault.servers.find((s) => s.id === id)
     if (!server) {
-      setConnection('error', 'سروری برای اتصال انتخاب نشده است')
-      toast('error', 'سروری انتخاب نشده', 'ابتدا یک کانفیگ را از فهرست سرورها انتخاب کنید.')
+      setConnection('error', L('سروری برای اتصال انتخاب نشده است', 'No server is selected'))
+      toast(
+        'error',
+        L('سروری انتخاب نشده', 'No server selected'),
+        L('ابتدا یک کانفیگ را از فهرست سرورها انتخاب کنید.', 'Pick a config from the server list first.')
+      )
       return
     }
     const invalid = validateConfig(server)
@@ -165,10 +183,20 @@ class XrayManager {
       const settings = getSettings()
 
       if (await portInUse(settings.listenAddress, settings.socksPort)) {
-        throw new Error(`پورت ${settings.socksPort} توسط برنامهٔ دیگری اشغال شده است`)
+        throw new AppError(
+          L(
+            `پورت ${settings.socksPort} توسط برنامهٔ دیگری اشغال شده است`,
+            `Port ${settings.socksPort} is already used by another application`
+          )
+        )
       }
       if (await portInUse(settings.listenAddress, settings.httpPort)) {
-        throw new Error(`پورت ${settings.httpPort} توسط برنامهٔ دیگری اشغال شده است`)
+        throw new AppError(
+          L(
+            `پورت ${settings.httpPort} توسط برنامهٔ دیگری اشغال شده است`,
+            `Port ${settings.httpPort} is already used by another application`
+          )
+        )
       }
 
       setConnection('starting')
@@ -189,12 +217,19 @@ class XrayManager {
         this.handle = null
         log.error(SCOPE, `core exited unexpectedly (code=${code}, signal=${signal})`)
         await this.cleanupAfterFailure(
-          `هستهٔ Xray به شکل غیرمنتظره بسته شد (کد ${code ?? signal ?? 'نامشخص'})`
+          L(
+            `هستهٔ Xray به شکل غیرمنتظره بسته شد (کد ${code ?? signal ?? 'نامشخص'})`,
+            `The Xray core exited unexpectedly (code ${code ?? signal ?? 'unknown'})`
+          )
         )
       })
 
       const ready = await waitForPort(settings.listenAddress, settings.httpPort, 9000)
-      if (!ready) throw new Error('ایجاد پروکسی محلی ناموفق بود؛ پورت داخلی پاسخ نمی‌دهد')
+      if (!ready) {
+        throw new AppError(
+          L('ایجاد پروکسی محلی ناموفق بود؛ پورت داخلی پاسخ نمی‌دهد', 'Local proxy failed to start — the inbound port is not responding')
+        )
+      }
 
       if (settings.applySystemProxy) {
         try {
@@ -204,22 +239,27 @@ class XrayManager {
           log.warn(SCOPE, 'system proxy could not be applied — staying in manual mode', err)
           toast(
             'warning',
-            'پروکسی سیستم تنظیم نشد',
-            'پروکسی محلی فعال است؛ می‌توانید دستی روی پورت HTTP تنظیم کنید.'
+            L('پروکسی سیستم تنظیم نشد', 'System proxy could not be applied'),
+            L('پروکسی محلی فعال است؛ می‌توانید دستی روی پورت HTTP تنظیم کنید.', 'The local proxy is running — you can point apps at the HTTP port manually.')
           )
         }
       }
 
       const probe = await requestThroughProxy(settings.listenAddress, settings.httpPort, settings.testUrl, 15000)
       if (!probe.ok) {
-        throw new Error(probe.error ? `تست اتصال ناموفق: ${probe.error}` : `تست اتصال ناموفق (کد ${probe.status})`)
+        throw new AppError(
+          probe.error
+            ? L(`تست اتصال ناموفق: ${probe.error}`, `Connection test failed: ${probe.error}`)
+            : L(`تست اتصال ناموفق (کد ${probe.status})`, `Connection test failed (status ${probe.status})`)
+        )
       }
 
       patchState({ startedAt: Date.now(), latencyMs: probe.ms })
       setConnection('connected')
       updateVault({ lastConnectedAt: Date.now() })
+      this.startLatencyProbe()
       log.info(SCOPE, `connected to ${server.name} in ${probe.ms}ms`)
-      toast('success', 'اتصال برقرار شد', `${server.name} • ${probe.ms}ms`)
+      toast('success', L('اتصال برقرار شد', 'Connected'), L(`${server.name} • ${probe.ms}ms`, `${server.name} • ${probe.ms}ms`))
 
       void this.refreshIdentity()
     } catch (err) {
@@ -234,6 +274,7 @@ class XrayManager {
 
   async disconnect(reason = 'user'): Promise<void> {
     this.stopping = true
+    this.stopLatencyProbe()
     const handle = this.handle
     this.handle = null
     if (handle) setConnection('stopping')
@@ -271,12 +312,13 @@ class XrayManager {
     this.busy = false
     setConnection('idle')
     log.info(SCOPE, `disconnected (${reason})`)
-    if (reason === 'user') toast('info', 'اتصال قطع شد')
+    if (reason === 'user') toast('info', L('اتصال قطع شد', 'Disconnected'))
   }
 
   /** Emergency teardown used on app quit. */
   async shutdown(): Promise<void> {
     this.stopping = true
+    this.stopLatencyProbe()
     try {
       if (this.handle) {
         await this.handle.stop('shutdown')
@@ -292,7 +334,7 @@ class XrayManager {
     }
   }
 
-  private async cleanupAfterFailure(message: string): Promise<void> {
+  private async cleanupAfterFailure(message: string | import('../../../shared/i18n').LString): Promise<void> {
     this.stopping = true
     const handle = this.handle
     this.handle = null
@@ -315,6 +357,28 @@ class XrayManager {
     patchState({ systemProxyApplied: false, startedAt: null, latencyMs: null, identity: null })
     this.stopping = false
     setConnection('error', message)
+  }
+
+  /** Re-measure latency through the proxy so the UI sparkline stays alive. */
+  private startLatencyProbe(): void {
+    this.stopLatencyProbe()
+    this.latencyTimer = setInterval(() => {
+      if (!this.handle) {
+        this.stopLatencyProbe()
+        return
+      }
+      const settings = getSettings()
+      void requestThroughProxy(settings.listenAddress, settings.httpPort, settings.testUrl, 8000).then((probe) => {
+        if (probe.ok && this.handle) patchState({ latencyMs: probe.ms })
+      })
+    }, 25_000)
+  }
+
+  private stopLatencyProbe(): void {
+    if (this.latencyTimer) {
+      clearInterval(this.latencyTimer)
+      this.latencyTimer = null
+    }
   }
 
   async refreshIdentity(): Promise<void> {
@@ -350,7 +414,11 @@ class XrayManager {
       }
     }
     await Promise.all(Array.from({ length: Math.min(concurrency, Math.max(1, servers.length)) }, worker))
-    toast('success', 'تست تأخیر انجام شد', `${servers.length} سرور بررسی شد`)
+    toast(
+      'success',
+      L('تست تأخیر انجام شد', 'Latency test finished'),
+      L(`${servers.length} سرور بررسی شد`, `${servers.length} servers tested`)
+    )
     return servers.length
   }
 

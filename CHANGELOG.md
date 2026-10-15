@@ -6,6 +6,37 @@ All notable changes to Naxlo are documented here. Releases are cut per tag
 The format follows [Keep a Changelog](https://keepachangelog.com/) and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] — 2026-10-15
+
+### Added
+
+- **Bilingual interface** — full Persian/English UI with a language switcher in
+  the titlebar and Settings; layout flips RTL/LTR and all numbers, dates and
+  relative times follow the active locale. Main-process messages (toasts and
+  errors) travel as bilingual payloads.
+- **Country flags** — flag chips rendered from ISO codes (identity lookup) and
+  parsed out of subscription remarks (🇩🇪-style emoji are detected, displayed as
+  crisp SVG flags and stripped from the text). 257 countries bundled.
+- **Automatic updates** — on launch Naxlo checks the GitHub releases feed,
+  downloads the new installer silently (sha512-verified via `latest.yml`),
+  then closes once and relaunches on the new version. A Settings toggle
+  controls it and an "Install now" action appears when an update is staged.
+- **Latency sparkline** — the connected session re-probes every 25 seconds and
+  draws an animated history on the Home page.
+- GitHub releases now publish `latest.yml` alongside the installers so the
+  updater feed exists for every tag.
+
+### Changed
+
+- Window controls (minimize / maximize / close) are pinned to the **right**
+  edge of the titlebar in both languages, matching the Windows convention.
+- Design polish: noise overlay, refined stat tiles with icon chips, cleaner
+  server rows, segmented controls, toast and sidebar refinements.
+
+### Fixed
+
+- Segmented-control indicator now tracks items correctly in RTL and LTR.
+
 ## [1.0.0] — 2026-10-15
 
 ### Added

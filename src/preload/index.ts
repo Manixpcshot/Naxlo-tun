@@ -9,11 +9,15 @@ import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
 import { IPC, type AppState, type LogEntry, type Toast } from '../shared/bridge'
 import type { NaxloApi } from '../shared/api'
 
-type Envelope<T> = { ok: true; data: T } | { ok: false; error: string }
+type Envelope<T> = { ok: true; data: T } | { ok: false; error: { fa: string; en: string } }
 
 async function invoke<T>(channel: string, ...args: unknown[]): Promise<T> {
   const result = (await ipcRenderer.invoke(channel, ...args)) as Envelope<T>
-  if (result && result.ok === false) throw new Error(result.error)
+  if (result && result.ok === false) {
+    // Thrown as a plain { fa, en } object so the renderer can render the
+    // message in the active language.
+    throw result.error
+  }
   return (result as { data: T }).data
 }
 
@@ -87,7 +91,8 @@ const api: NaxloApi = {
 
   app: {
     info: () => invoke(IPC.appInfo),
-    checkUpdate: () => invoke(IPC.appUpdate)
+    checkUpdate: () => invoke(IPC.appUpdate),
+    installUpdate: () => invoke(IPC.appInstallUpdate)
   }
 }
 
