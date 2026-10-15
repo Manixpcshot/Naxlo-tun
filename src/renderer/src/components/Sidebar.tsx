@@ -1,23 +1,23 @@
 /**
- * Right-hand navigation rail (RTL) with a sliding indicator.
+ * Navigation rail with a sliding indicator (right side in RTL, left in LTR).
  */
 import React from 'react'
 import { motion } from 'motion/react'
-import { Icon } from './Icon'
+import { Icon, type IconName } from './Icon'
 import { Logo } from './Logo'
 import { useStore } from '../lib/store'
-import { CONNECTION_LABEL } from '../lib/labels'
+import { useI18n, type MsgKey } from '../lib/i18n'
 import { fa } from '../lib/format'
 
 export type PageId = 'home' | 'servers' | 'subscription' | 'settings' | 'logs' | 'about'
 
-export const PAGES: Array<{ id: PageId; label: string; icon: Parameters<typeof Icon>[0]['name'] }> = [
-  { id: 'home', label: 'اتصال', icon: 'bolt' },
-  { id: 'servers', label: 'سرورها', icon: 'servers' },
-  { id: 'subscription', label: 'اشتراک', icon: 'subscription' },
-  { id: 'settings', label: 'تنظیمات', icon: 'settings' },
-  { id: 'logs', label: 'گزارش‌ها', icon: 'logs' },
-  { id: 'about', label: 'درباره', icon: 'info' }
+export const PAGES: Array<{ id: PageId; label: MsgKey; icon: IconName }> = [
+  { id: 'home', label: 'navHome', icon: 'bolt' },
+  { id: 'servers', label: 'navServers', icon: 'servers' },
+  { id: 'subscription', label: 'navSubscription', icon: 'subscription' },
+  { id: 'settings', label: 'navSettings', icon: 'settings' },
+  { id: 'logs', label: 'navLogs', icon: 'logs' },
+  { id: 'about', label: 'navAbout', icon: 'info' }
 ]
 
 interface Props {
@@ -27,19 +27,43 @@ interface Props {
 
 export function Sidebar({ page, onNavigate }: Props): React.ReactElement {
   const { state } = useStore()
-  const label = CONNECTION_LABEL[state.connection]
+  const { t } = useI18n()
+
+  const statusKey =
+    state.connection === 'connected'
+      ? 'stateConnected'
+      : state.connection === 'idle'
+        ? 'stateIdle'
+        : state.connection === 'error'
+          ? 'stateError'
+          : state.connection === 'core-missing'
+            ? 'stateCoreMissing'
+            : state.connection === 'stopping'
+              ? 'stateStopping'
+              : state.connection === 'preparing'
+                ? 'statePreparing'
+                : 'stateStarting'
+
+  const tone =
+    state.connection === 'connected'
+      ? 'var(--success)'
+      : state.connection === 'error' || state.connection === 'core-missing'
+        ? 'var(--danger)'
+        : state.connection === 'idle'
+          ? 'var(--text-mute)'
+          : 'var(--warning)'
 
   return (
-    <nav className="sidebar" aria-label="ناوبری اصلی">
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '2px 8px 12px' }}>
+    <nav className="sidebar" aria-label="main navigation">
+      <div className="sidebar__brand">
         <Logo size={30} animated />
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <strong style={{ fontSize: 15, letterSpacing: '0.01em' }}>naxlo</strong>
-          <span style={{ fontSize: 10.5, color: 'var(--text-mute)' }}>پروکسی محلی VLESS</span>
+        <div className="sidebar__brand-text">
+          <strong>naxlo</strong>
+          <span>{t('appTagline')}</span>
         </div>
       </div>
 
-      <span className="sidebar__label">منو</span>
+      <span className="sidebar__label">{t('menu')}</span>
 
       {PAGES.map((item) => {
         const active = item.id === page
@@ -61,7 +85,7 @@ export function Sidebar({ page, onNavigate }: Props): React.ReactElement {
             <span className="navitem__icon">
               <Icon name={item.icon} size={17} />
             </span>
-            <span>{item.label}</span>
+            <span>{t(item.label)}</span>
             {item.id === 'servers' && state.subscription.totalConfigs > 0 ? (
               <span className="badge" style={{ marginInlineStart: 'auto' }}>
                 {fa(state.subscription.totalConfigs)}
@@ -72,23 +96,11 @@ export function Sidebar({ page, onNavigate }: Props): React.ReactElement {
       })}
 
       <div className="sidebar__footer">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span
-            className={`pill__dot`}
-            style={{
-              background:
-                label.tone === 'connected'
-                  ? 'var(--success)'
-                  : label.tone === 'error'
-                    ? 'var(--danger)'
-                    : label.tone === 'busy'
-                      ? 'var(--warning)'
-                      : 'var(--text-mute)'
-            }}
-          />
-          <span>{label.text}</span>
+        <div className="sidebar__status">
+          <span className="sidebar__dot" style={{ background: tone }} />
+          <span>{t(statusKey)}</span>
         </div>
-        <span className="mono" style={{ fontSize: 10.5, color: 'var(--text-mute)' }}>
+        <span className="mono sidebar__ports">
           SOCKS5 {state.socksPort} • HTTP {state.httpPort}
         </span>
       </div>

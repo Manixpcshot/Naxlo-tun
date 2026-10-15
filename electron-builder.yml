@@ -29,6 +29,9 @@ extraResources:
 
 win:
   icon: build/icon.ico
+  # Installers are published without Authenticode signing; electron-updater
+  # still verifies the sha512 checksum published in latest.yml.
+  verifyUpdateCodeSignature: false
   target:
     - target: nsis
       arch:

@@ -1,15 +1,13 @@
 /**
- * One row in the server list.
- *
- * Shows only masked data by default; the eye icon pulls the real value from the
- * main process on demand (and that request is itself logged, without content).
+ * One row in the server list, with country flags parsed out of the remark
+ * (subscriptions commonly embed 🇩🇪-style emoji) and masked secrets.
  */
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { motion } from 'motion/react'
-
 import { Button, Reveal } from './ui'
-import { latencyClass, fa } from '../lib/format'
-import { NETWORK_LABEL, PROTOCOL_LABEL, SECURITY_LABEL } from '../lib/labels'
+import { Flag } from './Flag'
+import { latencyClass, fa, extractFlagCodes, stripFlags } from '../lib/format'
+import { useI18n } from '../lib/i18n'
 import type { ServerView } from '@shared/bridge'
 
 interface Props {
@@ -38,7 +36,12 @@ export function ServerCard({
   onReveal
 }: Props): React.ReactElement {
   const [revealed, setRevealed] = useState<ServerView | null>(null)
+  const { t, pick } = useI18n()
   const disabled = !server.supported
+
+  const flags = useMemo(() => extractFlagCodes(server.name), [server.name])
+  const cleanName = useMemo(() => stripFlags(server.name) || server.name, [server.name])
+  const flagCode = flags[0] ?? null
 
   const reveal = async (): Promise<void> => {
     if (revealed) return
@@ -76,50 +79,41 @@ export function ServerCard({
         ) : null}
       </span>
 
-      <span style={{ minWidth: 0 }}>
+      <span className="server__body">
         <span className="server__name">
-          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{server.name}</span>
-          <span className={`badge ${server.security === 'reality' ? 'badge--accent' : ''}`}>
-            {PROTOCOL_LABEL[server.protocol]}
-          </span>
-          {server.security !== 'none' ? (
-            <span className="badge">{SECURITY_LABEL[server.security]}</span>
-          ) : null}
-          <span className="badge">{NETWORK_LABEL[server.network]}</span>
-          {server.flow ? <span className="badge badge--warning">{server.flow}</span> : null}
-          {server.allowInsecure ? <span className="badge badge--danger">Insecure</span> : null}
-          {active ? <span className="badge badge--success">در حال استفاده</span> : null}
+          {flagCode ? <Flag code={flagCode} /> : null}
+          <span className="server__title">{cleanName}</span>
+          <span className={`badge ${server.security === 'reality' ? 'badge--accent' : ''}`}>{server.protocol.toUpperCase()}</span>
+          {server.security !== 'none' ? <span className="badge">{server.security.toUpperCase()}</span> : null}
+          <span className="badge badge--muted">{server.network.toUpperCase()}</span>
+          {server.flow ? <span className="badge badge--warning">vision</span> : null}
+          {server.allowInsecure ? <span className="badge badge--danger">{t('insecure')}</span> : null}
+          {active ? <span className="badge badge--success">{t('inUse')}</span> : null}
         </span>
 
         <span className="server__meta">
           <span className="mono">
-            <Reveal
-              masked={server.addressMasked}
-              revealed={revealed?.address}
-              onReveal={() => void reveal()}
-            />
-            :{fa(server.port)}
+            <Reveal masked={server.addressMasked} revealed={revealed?.address} onReveal={() => void reveal()} />
+            :{server.port}
           </span>
           <span className="mono">
-            <Reveal
-              masked={server.credentialMasked}
-              revealed={revealed?.credential}
-              onReveal={() => void reveal()}
-            />
+            <Reveal masked={server.credentialMasked} revealed={revealed?.credential} onReveal={() => void reveal()} />
           </span>
-          {server.unsupportedReason ? <span style={{ color: 'var(--danger)' }}>{server.unsupportedReason}</span> : null}
+          {server.unsupportedReason ? (
+            <span className="server__reason">{pick(server.unsupportedReason)}</span>
+          ) : null}
         </span>
       </span>
 
       <span className="server__actions" onClick={(event) => event.stopPropagation()}>
         <span className={`latency ${latencyClass(server.latencyMs)}`}>
-          {testing ? '…' : server.latencyMs === null ? 'تست نشده' : `${fa(server.latencyMs)} ms`}
+          {testing ? '…' : server.latencyMs === null ? t('untested') : `${fa(server.latencyMs)} ms`}
         </span>
-        <Button size="sm" variant="ghost" icon="gauge" onClick={onTest} disabled={disabled || testing} title="تست تأخیر" />
-        <Button size="sm" variant="ghost" icon="copy" onClick={onCopy} disabled={disabled} title="کپی لینک" />
-        <Button size="sm" variant="ghost" icon="trash" onClick={onRemove} title="حذف" />
+        <Button size="sm" variant="ghost" icon="gauge" onClick={onTest} disabled={disabled || testing} title={t('testLatency')} />
+        <Button size="sm" variant="ghost" icon="copy" onClick={onCopy} disabled={disabled} title={t('copyLink')} />
+        <Button size="sm" variant="ghost" icon="trash" onClick={onRemove} title={t('remove')} />
         <Button size="sm" variant="primary" icon="bolt" onClick={onConnect} disabled={disabled}>
-          اتصال
+          {t('connect')}
         </Button>
       </span>
     </motion.div>

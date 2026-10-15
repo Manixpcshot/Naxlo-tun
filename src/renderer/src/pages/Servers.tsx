@@ -1,5 +1,5 @@
 /**
- * Servers — searchable list of every parsed config from the subscription.
+ * Servers — searchable list with flags, filters and latency testing.
  */
 import React, { useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
@@ -7,22 +7,24 @@ import { Icon } from '../components/Icon'
 import { ServerCard } from '../components/ServerCard'
 import { Button, Modal, PageHeader, SkeletonRow } from '../components/ui'
 import { useStore } from '../lib/store'
+import { useI18n, type MsgKey } from '../lib/i18n'
 import { fa, normaliseForSearch } from '../lib/format'
 import type { ServerView } from '@shared/bridge'
 
 type Filter = 'all' | 'vless' | 'reality' | 'ws' | 'grpc' | 'fast'
 
-const FILTERS: Array<{ id: Filter; label: string }> = [
-  { id: 'all', label: 'همه' },
-  { id: 'vless', label: 'VLESS' },
-  { id: 'reality', label: 'REALITY' },
-  { id: 'ws', label: 'WebSocket' },
-  { id: 'grpc', label: 'gRPC' },
-  { id: 'fast', label: 'سریع‌ترین‌ها' }
+const FILTERS: Array<{ id: Filter; key?: MsgKey; text?: string }> = [
+  { id: 'all', key: 'filterAll' },
+  { id: 'vless', text: 'VLESS' },
+  { id: 'reality', text: 'REALITY' },
+  { id: 'ws', text: 'WebSocket' },
+  { id: 'grpc', text: 'gRPC' },
+  { id: 'fast', key: 'filterFast' }
 ]
 
 export function Servers(): React.ReactElement {
   const { servers, state, ready, run, pushToast, reloadServers } = useStore()
+  const { t } = useI18n()
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<Filter>('all')
   const [sortFast, setSortFast] = useState(false)
@@ -54,9 +56,7 @@ export function Servers(): React.ReactElement {
           return true
       }
     })
-    if (sortFast) {
-      list = [...list].sort((a, b) => (a.latencyMs ?? 1e9) - (b.latencyMs ?? 1e9))
-    } else if (filter === 'fast') {
+    if (sortFast || filter === 'fast') {
       list = [...list].sort((a, b) => (a.latencyMs ?? 1e9) - (b.latencyMs ?? 1e9))
     }
     return list
@@ -64,7 +64,7 @@ export function Servers(): React.ReactElement {
 
   const testOne = async (server: ServerView): Promise<void> => {
     setTestingId(server.id)
-    await run(() => window.naxlo.servers.test(server.id), 'تست تأخیر ناموفق بود')
+    await run(() => window.naxlo.servers.test(server.id), t('errorTitle'))
     await reloadServers()
     setTestingId(null)
   }
@@ -72,69 +72,61 @@ export function Servers(): React.ReactElement {
   const testAll = async (): Promise<void> => {
     setTestingAll(true)
     const poll = setInterval(() => void reloadServers(), 1500)
-    await run(() => window.naxlo.servers.testAll(), 'تست گروهی ناموفق بود')
+    await run(() => window.naxlo.servers.testAll(), t('errorTitle'))
     await reloadServers()
     clearInterval(poll)
     setTestingAll(false)
   }
 
   const connect = async (server: ServerView): Promise<void> => {
-    if (state.connection === 'connected') {
-      await run(() => window.naxlo.connection.disconnect(), 'قطع اتصال ناموفق بود')
-    }
-    await run(() => window.naxlo.servers.select(server.id), 'انتخاب سرور ناموفق بود')
-    await run(() => window.naxlo.connection.connect(server.id), 'اتصال ناموفق بود')
+    if (state.connection === 'connected') await run(() => window.naxlo.connection.disconnect(), t('errorTitle'))
+    await run(() => window.naxlo.servers.select(server.id), t('errorTitle'))
+    await run(() => window.naxlo.connection.connect(server.id), t('errorTitle'))
   }
 
   const copyLink = async (server: ServerView): Promise<void> => {
-    const done = await run(() => window.naxlo.servers.copyLink(server.id), 'کپی لینک ناموفق بود')
-    if (done) {
-      pushToast({
-        kind: 'warning',
-        title: 'لینک کانفیگ کپی شد',
-        message: 'این لینک حاوی کلید است؛ آن را در جای امن نگه دارید.'
-      })
-    }
+    const done = await run(() => window.naxlo.servers.copyLink(server.id), t('errorTitle'))
+    if (done) pushToast({ kind: 'warning', title: t('copiedLinkTitle'), message: t('copiedLinkBody') })
   }
 
   const remove = async (server: ServerView): Promise<void> => {
-    await run(() => window.naxlo.servers.remove(server.id), 'حذف ناموفق بود')
-    pushToast({ kind: 'info', title: 'سرور حذف شد', message: server.name })
+    await run(() => window.naxlo.servers.remove(server.id), t('errorTitle'))
+    pushToast({ kind: 'info', title: t('removedToast'), message: server.name })
   }
 
   return (
     <div>
       <PageHeader
-        title="سرورها"
-        description={`${fa(state.subscription.totalConfigs)} کانفیگ در خزانهٔ رمزنگاری‌شده • ${fa(
-          state.subscription.supportedConfigs
-        )} مورد قابل استفاده`}
+        title={t('serversTitle')}
+        description={t('serversDesc', {
+          total: fa(state.subscription.totalConfigs),
+          supported: fa(state.subscription.supportedConfigs)
+        })}
         actions={
           <>
             <Button icon="gauge" onClick={() => void testAll()} loading={testingAll} disabled={!servers.length}>
-              تست تأخیر همه
+              {t('testAll')}
             </Button>
-            <Button icon="refresh" onClick={() => void run(() => window.naxlo.subscription.refresh(), 'به‌روزرسانی ناموفق بود')} loading={state.subscription.fetching}>
-              به‌روزرسانی اشتراک
+            <Button
+              icon="refresh"
+              onClick={() => void run(() => window.naxlo.subscription.refresh(), t('errorTitle'))}
+              loading={state.subscription.fetching}
+            >
+              {t('refreshSubscription')}
             </Button>
             <Button variant="danger" icon="trash" onClick={() => setConfirmClear(true)} disabled={!servers.length}>
-              پاک کردن فهرست
+              {t('clearList')}
             </Button>
           </>
         }
       />
 
       <div className="serverbar">
-        <div className="search" style={{ flex: '1 1 280px' }}>
+        <div className="search" style={{ flex: '1 1 260px' }}>
           <span className="search__icon">
             <Icon name="search" size={15} />
           </span>
-          <input
-            className="input"
-            placeholder="جست‌وجوی نام سرور، پروتکل یا لایهٔ امنیتی…"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-          />
+          <input className="input" placeholder={t('searchPlaceholder')} value={query} onChange={(event) => setQuery(event.target.value)} />
         </div>
 
         <div className="chips">
@@ -145,19 +137,13 @@ export function Servers(): React.ReactElement {
               className={`chip ${filter === item.id ? 'chip--active' : ''}`}
               onClick={() => setFilter(item.id)}
             >
-              {item.label}
+              {item.key ? t(item.key) : item.text}
             </button>
           ))}
         </div>
 
-        <Button
-          size="sm"
-          variant={sortFast ? 'primary' : 'ghost'}
-          icon="filter"
-          onClick={() => setSortFast((v) => !v)}
-          title="مرتب‌سازی بر اساس تأخیر"
-        >
-          مرتب‌سازی بر اساس سرعت
+        <Button size="sm" variant={sortFast ? 'primary' : 'ghost'} icon="filter" onClick={() => setSortFast((v) => !v)} title={t('sortBySpeed')}>
+          {t('sortBySpeed')}
         </Button>
       </div>
 
@@ -175,53 +161,46 @@ export function Servers(): React.ReactElement {
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <motion.div
-          className="empty"
-          initial={{ opacity: 0, scale: 0.98 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.3 }}
-        >
+        <motion.div className="empty" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.3 }}>
           <span className="empty__icon">
             <Icon name="servers" size={24} />
           </span>
-          <span className="empty__title">
-            {servers.length === 0 ? 'هنوز سروری اضافه نشده است' : 'نتیجه‌ای برای این جست‌وجو پیدا نشد'}
-          </span>
-          <span className="empty__desc">
-            {servers.length === 0
-              ? 'لینک اشتراک خود را در بخش «اشتراک» وارد کنید تا کانفیگ‌های VLESS دریافت و به این فهرست اضافه شوند.'
-              : 'عبارت جست‌وجو یا فیلتر انتخابی را تغییر دهید.'}
-          </span>
-          {servers.length === 0 ? <Button variant="primary" icon="subscription" onClick={() => window.dispatchEvent(new CustomEvent('naxlo:goto-subscription'))}>رفتن به بخش اشتراک</Button> : null}
+          <span className="empty__title">{servers.length === 0 ? t('emptyServersTitle') : t('emptySearchTitle')}</span>
+          <span className="empty__desc">{servers.length === 0 ? t('emptyServersDesc') : t('emptySearchDesc')}</span>
+          {servers.length === 0 ? (
+            <Button variant="primary" icon="subscription" onClick={() => window.dispatchEvent(new CustomEvent('naxlo:goto-subscription'))}>
+              {t('gotoSubscription')}
+            </Button>
+          ) : null}
         </motion.div>
       ) : (
-        <div className="serverlist" role="listbox" aria-label="فهرست سرورها">
+        <div className="serverlist" role="listbox" aria-label="servers">
           <AnimatePresence initial={false}>
             {filtered.slice(0, 300).map((server, index) => (
               <motion.div
                 key={server.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: Math.min(index * 0.018, 0.4), type: 'spring', stiffness: 380, damping: 32 }}
+                transition={{ delay: Math.min(index * 0.016, 0.35), type: 'spring', stiffness: 380, damping: 32 }}
               >
                 <ServerCard
                   server={server}
                   selected={state.selectedServerId === server.id}
                   active={state.connection === 'connected' && state.activeServerId === server.id}
                   testing={testingId === server.id}
-                  onSelect={() => void run(() => window.naxlo.servers.select(server.id), 'انتخاب ناموفق بود')}
+                  onSelect={() => void run(() => window.naxlo.servers.select(server.id), t('errorTitle'))}
                   onConnect={() => void connect(server)}
                   onTest={() => void testOne(server)}
                   onCopy={() => void copyLink(server)}
                   onRemove={() => void remove(server)}
-                  onReveal={() => run(() => window.naxlo.servers.reveal(server.id), 'نمایش جزئیات ناموفق بود')}
+                  onReveal={() => run(() => window.naxlo.servers.reveal(server.id), t('errorTitle'))}
                 />
               </motion.div>
             ))}
           </AnimatePresence>
           {filtered.length > 300 ? (
             <p className="field__hint" style={{ textAlign: 'center', padding: '12px 0' }}>
-              {fa(filtered.length - 300)} مورد دیگر برای روان‌ماندن فهرست پنهان شده‌اند — از جست‌وجو استفاده کنید.
+              {t('hiddenMore', { n: fa(filtered.length - 300) })}
             </p>
           ) : null}
         </div>
@@ -229,7 +208,7 @@ export function Servers(): React.ReactElement {
 
       <Modal
         open={confirmClear}
-        title="پاک کردن فهرست سرورها؟"
+        title={t('clearConfirmTitle')}
         onClose={() => setConfirmClear(false)}
         actions={
           <>
@@ -237,22 +216,21 @@ export function Servers(): React.ReactElement {
               variant="danger"
               icon="trash"
               onClick={() => {
-                void run(() => window.naxlo.servers.clear(), 'پاک‌سازی ناموفق بود').then(() => {
+                void run(() => window.naxlo.servers.clear(), t('errorTitle')).then(() => {
                   setConfirmClear(false)
-                  pushToast({ kind: 'info', title: 'فهرست سرورها پاک شد' })
+                  pushToast({ kind: 'info', title: t('clearedToast') })
                 })
               }}
             >
-              پاک کن
+              {t('clearAction')}
             </Button>
             <Button variant="ghost" onClick={() => setConfirmClear(false)}>
-              انصراف
+              {t('cancel')}
             </Button>
           </>
         }
       >
-        همهٔ کانفیگ‌های دریافت‌شده از اشتراک حذف می‌شوند. لینک اشتراک شما دست‌نخورده باقی می‌ماند و می‌توانید دوباره
-        آن را به‌روزرسانی کنید.
+        {t('clearConfirmBody')}
       </Modal>
     </div>
   )

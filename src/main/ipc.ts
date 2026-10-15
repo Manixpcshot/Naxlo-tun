@@ -8,7 +8,8 @@
  */
 import { BrowserWindow, app, clipboard, dialog, ipcMain, shell } from 'electron'
 import { existsSync, readFileSync } from 'node:fs'
-import { IPC, maskUrl, type LogEntry, type ServerView, type Settings } from '../shared/bridge'
+import { IPC, maskUrl, type LogEntry, type LString, type ServerView, type Settings } from '../shared/bridge'
+import { AppError, L, toLString } from '../shared/i18n'
 import { getState, patchState, patchSubscription, toServerView } from './state'
 import { getSettings, loadSettings, updateSettings } from './lib/settings'
 import { getVault, persistNow, updateVault, vaultEncryptionKind, wipeVault } from './lib/secretStore'
@@ -21,13 +22,17 @@ import { runtime } from './runtime'
 import { isAllowedExternalUrl } from './window'
 import { purgeDownloadedCores } from './lib/xray/core'
 import { checkAppUpdate } from './lib/update'
+import { installNow } from './lib/updater'
 
 const SCOPE = 'ipc'
 
-type Envelope<T> = { ok: true; data: T } | { ok: false; error: string }
+type Envelope<T> = { ok: true; data: T } | { ok: false; error: LString }
 
 const ok = <T>(data: T): Envelope<T> => ({ ok: true, data })
-const fail = (error: unknown): Envelope<never> => ({ ok: false, error: redact(error) })
+const fail = (error: unknown): Envelope<never> => {
+  const localized = toLString(error)
+  return { ok: false, error: { fa: redact(localized.fa), en: redact(localized.en) } }
+}
 
 function handle<T>(channel: string, fn: (...args: any[]) => Promise<T> | T): void {
   ipcMain.handle(channel, async (_event, ...args: any[]) => {
@@ -56,18 +61,22 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
   }))
 
   handle(IPC.appUpdate, () => checkAppUpdate())
+  handle(IPC.appInstallUpdate, () => {
+    installNow()
+    return true
+  })
 
   /* ----------------------------------------------------------- servers */
   handle(IPC.serversList, () => listServers(false))
   handle(IPC.serversReveal, (id: string) => {
     const server = getVault().servers.find((s) => s.id === id)
-    if (!server) throw new Error('سرور پیدا نشد')
+    if (!server) throw new AppError(L('سرور پیدا نشد', 'Server not found'))
     log.info(SCOPE, 'user revealed sensitive fields for one server')
     return toServerView(server, true)
   })
   handle(IPC.serversSelect, (id: string) => {
     const server = getVault().servers.find((s) => s.id === id)
-    if (!server) throw new Error('سرور پیدا نشد')
+    if (!server) throw new AppError(L('سرور پیدا نشد', 'Server not found'))
     updateVault({ selectedServerId: id })
     patchState({ selectedServerId: id })
     return id
@@ -95,15 +104,17 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
   /* ------------------------------------------------------ subscription */
   handle(IPC.subscriptionSave, async (url: string) => {
     const trimmed = (url ?? '').trim()
-    if (!trimmed) throw new Error('لینک اشتراک خالی است')
+    if (!trimmed) throw new AppError(L('لینک اشتراک خالی است', 'Subscription URL is empty'))
     let parsed: URL
     try {
       parsed = new URL(trimmed)
     } catch {
-      throw new Error('لینک اشتراک معتبر نیست (باید با http:// یا https:// شروع شود)')
+      throw new AppError(
+        L('لینک اشتراک معتبر نیست (باید با http:// یا https:// شروع شود)', 'Invalid subscription URL (must start with http:// or https://)')
+      )
     }
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-      throw new Error('فقط لینک‌های http و https پشتیبانی می‌شوند')
+      throw new AppError(L('فقط لینک‌های http و https پشتیبانی می‌شوند', 'Only http and https links are supported'))
     }
     registerSecret(trimmed, 'subscription')
     patchSubscription({ fetching: true, lastError: null })
@@ -145,7 +156,7 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
       })
       return report
     } catch (err) {
-      const message = err instanceof SubscriptionError ? err.message : redact(err)
+      const message = toLString(err)
       patchSubscription({ fetching: false, lastError: message })
       throw err
     }
@@ -182,7 +193,7 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
     })
     if (result.canceled || !result.filePaths[0]) return { imported: 0 }
     const path = result.filePaths[0]
-    if (!existsSync(path)) throw new Error('فایل پیدا نشد')
+    if (!existsSync(path)) throw new AppError(L('فایل پیدا نشد', 'File not found'))
     const text = readFileSync(path, 'utf8')
     registerSecret(text, 'import')
     const report = importPayload(text)
@@ -273,7 +284,7 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
   handle(IPC.shellOpen, async (url: string) => {
     if (!isAllowedExternalUrl(url)) {
       log.warn(SCOPE, 'blocked external link request')
-      throw new Error('باز کردن این آدرس مجاز نیست')
+      throw new AppError(L('باز کردن این آدرس مجاز نیست', 'Opening this address is not allowed'))
     }
     await shell.openExternal(url)
     return true
@@ -282,7 +293,7 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
   handle(IPC.clipboardWrite, async (payload: { kind: 'link' | 'text'; serverId?: string }) => {
     if (payload.kind === 'link') {
       const server = getVault().servers.find((s) => s.id === payload.serverId)
-      if (!server?.raw) throw new Error('لینک این کانفیگ در دسترس نیست')
+      if (!server?.raw) throw new AppError(L('لینک این کانفیگ در دسترس نیست', 'The link for this config is unavailable'))
       clipboard.writeText(server.raw)
       log.info(SCOPE, 'a config link was copied to the clipboard (contents not logged)')
       return true

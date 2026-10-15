@@ -20,6 +20,7 @@ import {
   type Toast
 } from '../shared/bridge'
 import { log } from './lib/logger'
+import type { LString } from '../shared/i18n'
 
 const SCOPE = 'state'
 
@@ -38,6 +39,15 @@ let state: AppState = {
   lastError: null,
   latencyMs: null,
   identity: null,
+  update: {
+    checking: false,
+    downloading: false,
+    progress: null,
+    availableVersion: null,
+    downloadedVersion: null,
+    error: null,
+    ready: false
+  },
   core: {
     ready: false,
     path: null,
@@ -72,6 +82,12 @@ export function patchState(patch: Partial<AppState>): AppState {
   return state
 }
 
+export function patchUpdate(patch: Partial<AppState['update']>): AppState {
+  state = { ...state, update: { ...state.update, ...patch } }
+  broadcast()
+  return state
+}
+
 export function patchCore(patch: Partial<AppState['core']>): AppState {
   state = { ...state, core: { ...state.core, ...patch } }
   broadcast()
@@ -84,7 +100,7 @@ export function patchSubscription(patch: Partial<SubscriptionInfo>): AppState {
   return state
 }
 
-export function setConnection(connection: ConnectionState, lastError: string | null = null): AppState {
+export function setConnection(connection: ConnectionState, lastError: string | LString | null = null): AppState {
   state = { ...state, connection, lastError: lastError ?? (connection === 'error' ? state.lastError : null) }
   broadcast()
   return state
@@ -124,7 +140,7 @@ function broadcast(): void {
   }
 }
 
-export function toast(kind: Toast['kind'], title: string, message?: string): void {
+export function toast(kind: Toast['kind'], title: Toast['title'], message?: Toast['message']): void {
   const payload: Toast = { id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, kind, title, message }
   for (const win of BrowserWindow.getAllWindows()) {
     if (win.isDestroyed()) continue

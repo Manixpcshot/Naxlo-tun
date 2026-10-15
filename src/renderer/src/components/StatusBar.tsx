@@ -1,16 +1,17 @@
 /**
- * Bottom status strip: connection, ports, core, uptime and proxy state.
+ * Bottom status strip.
  */
 import React, { useEffect, useState } from 'react'
 import { motion } from 'motion/react'
 import { Icon } from './Icon'
+import { Flag } from './Flag'
 import { useStore } from '../lib/store'
-import { CONNECTION_LABEL } from '../lib/labels'
+import { useI18n } from '../lib/i18n'
 import { faMs, shortDuration } from '../lib/format'
 
 export function StatusBar(): React.ReactElement {
   const { state } = useStore()
-  const label = CONNECTION_LABEL[state.connection]
+  const { t } = useI18n()
   const [now, setNow] = useState(Date.now())
 
   useEffect(() => {
@@ -18,26 +19,40 @@ export function StatusBar(): React.ReactElement {
     return () => clearInterval(timer)
   }, [])
 
+  const connected = state.connection === 'connected'
   const uptime = state.startedAt ? now - state.startedAt : null
+
+  const tone = connected
+    ? 'var(--success)'
+    : state.connection === 'error' || state.connection === 'core-missing'
+      ? 'var(--danger)'
+      : state.connection === 'idle'
+        ? 'rgba(255,255,255,0.25)'
+        : 'var(--warning)'
 
   return (
     <footer className="statusbar">
       <span className="statusbar__item">
         <motion.span
-          animate={{
-            backgroundColor:
-              label.tone === 'connected'
-                ? 'var(--success)'
-                : label.tone === 'error'
-                  ? 'var(--danger)'
-                  : label.tone === 'busy'
-                    ? 'var(--warning)'
-                    : 'rgba(255,255,255,0.25)'
-          }}
+          animate={{ backgroundColor: tone }}
           transition={{ duration: 0.4 }}
-          style={{ width: 7, height: 7, borderRadius: '50%', display: 'inline-block' }}
+          className="statusbar__dot"
         />
-        {label.text}
+        {t(
+          connected
+            ? 'stateConnected'
+            : state.connection === 'idle'
+              ? 'stateIdle'
+              : state.connection === 'error'
+                ? 'stateError'
+                : state.connection === 'core-missing'
+                  ? 'stateCoreMissing'
+                  : state.connection === 'stopping'
+                    ? 'stateStopping'
+                    : state.connection === 'preparing'
+                      ? 'statePreparing'
+                      : 'stateStarting'
+        )}
       </span>
 
       <span className="statusbar__sep" />
@@ -55,10 +70,10 @@ export function StatusBar(): React.ReactElement {
 
       <span className="statusbar__item">
         <Icon name="cpu" size={13} />
-        هسته: {state.core.version ? `${state.core.version}` : 'نصب نشده'}
+        {t('statusCore')} {state.core.version ?? t('statusCoreMissing')}
       </span>
 
-      {state.connection === 'connected' ? (
+      {connected ? (
         <>
           <span className="statusbar__sep" />
           <span className="statusbar__item">
@@ -69,6 +84,12 @@ export function StatusBar(): React.ReactElement {
             <Icon name="gauge" size={13} />
             {faMs(state.latencyMs)}
           </span>
+          {state.identity?.countryCode ? (
+            <span className="statusbar__item">
+              <Flag code={state.identity.countryCode} />
+              {state.identity.country ?? state.identity.countryCode.toUpperCase()}
+            </span>
+          ) : null}
         </>
       ) : null}
 
@@ -76,7 +97,7 @@ export function StatusBar(): React.ReactElement {
 
       <span className="statusbar__item">
         <Icon name={state.systemProxyApplied ? 'shield' : 'alert'} size={13} />
-        {state.systemProxyApplied ? 'پروکسی سیستم فعال است' : 'پروکسی سیستم اعمال نشده'}
+        {state.systemProxyApplied ? t('statusProxyOn') : t('statusProxyOff')}
       </span>
     </footer>
   )

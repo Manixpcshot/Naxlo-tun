@@ -1,6 +1,6 @@
 /**
- * App shell: animated background, titlebar, RTL navigation rail, page router
- * (animated with AnimatePresence), status bar and toasts.
+ * App shell: animated background, titlebar, navigation rail, animated pages,
+ * status bar and toasts.
  */
 import React, { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
@@ -15,13 +15,14 @@ import { Settings } from './pages/Settings'
 import { Logs } from './pages/Logs'
 import { About } from './pages/About'
 import { useStore } from './lib/store'
+import { useI18n } from './lib/i18n'
 import { Spinner } from './components/Icon'
 
 export default function App(): React.ReactElement {
   const { ready, settings } = useStore()
+  const { t } = useI18n()
   const [page, setPage] = useState<PageId>('home')
 
-  // Keyboard shortcuts (Persian-friendly: works regardless of layout).
   useEffect(() => {
     const onKey = (event: KeyboardEvent): void => {
       if (!event.ctrlKey) return
@@ -37,7 +38,6 @@ export default function App(): React.ReactElement {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  // Let the servers page deep-link into the subscription view.
   useEffect(() => {
     const handler = (): void => setPage('subscription')
     window.addEventListener('naxlo:goto-subscription', handler)
@@ -58,7 +58,7 @@ export default function App(): React.ReactElement {
           {!ready ? (
             <div className="boot">
               <Spinner size={26} className="spinner--lg" />
-              <span>در حال آماده‌سازی ناکسلو…</span>
+              <span>{t('boot')}</span>
             </div>
           ) : (
             <AnimatePresence mode="wait" initial={false}>
@@ -94,6 +94,7 @@ function Aurora({ disabled }: { disabled: boolean }): React.ReactElement {
       <div className="aurora__blob aurora__blob--b" style={disabled ? { animation: 'none' } : undefined} />
       <div className="aurora__grid" />
       {!disabled ? <div className="aurora__scan" /> : null}
+      <div className="aurora__noise" />
       <div className="aurora__vignette" />
     </div>
   )

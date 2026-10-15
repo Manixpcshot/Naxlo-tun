@@ -1440,3 +1440,251 @@
 .about-list li::marker {
   color: var(--accent);
 }
+
+/* ============================================================
+   v1.1 — design polish + bilingual layout
+   ============================================================ */
+
+/* Titlebar: physical LTR so window controls stay on the RIGHT edge */
+.titlebar {
+  direction: ltr;
+}
+
+.titlebar__tag {
+  font-size: 10.5px;
+  color: var(--text-mute);
+  padding-inline-start: 10px;
+  border-inline-start: 1px solid var(--border);
+  margin-inline-start: 4px;
+  white-space: nowrap;
+}
+
+.titlebar__sep {
+  width: 1px;
+  height: 16px;
+  background: var(--border);
+  margin: 0 4px;
+}
+
+.winbtn--lang {
+  width: auto;
+  padding: 0 9px;
+}
+
+.winbtn__lang {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Sidebar refinements */
+.sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 8px 14px;
+}
+
+.sidebar__brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.4;
+}
+
+.sidebar__brand-text strong {
+  font-size: 15px;
+  letter-spacing: 0.01em;
+}
+
+.sidebar__brand-text span {
+  font-size: 10.5px;
+  color: var(--text-mute);
+}
+
+.sidebar__status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sidebar__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  box-shadow: 0 0 10px currentColor;
+}
+
+.sidebar__ports {
+  font-size: 10.5px;
+  color: var(--text-mute);
+}
+
+/* Status bar dot */
+.statusbar__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* Server card body */
+.server__body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.server__title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 34ch;
+}
+
+.server__reason {
+  color: var(--danger);
+}
+
+.badge--muted {
+  opacity: 0.75;
+}
+
+/* Stat tiles v1.1 */
+.stat__icon {
+  position: absolute;
+  top: 13px;
+  inset-inline-end: 13px;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 26%, transparent);
+}
+
+/* Home hero sparkline */
+.home-hero__spark {
+  margin-top: 18px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.3);
+  width: fit-content;
+}
+
+/* Stacks */
+.toggle-stack,
+.setting-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.setting-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.btn-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+/* Logs bar */
+.logsbar {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.logsbar__auto {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+.checkbox {
+  accent-color: var(--accent);
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+
+.loglist__empty {
+  color: var(--text-mute);
+  text-align: center;
+  padding: 28px 0;
+}
+
+/* Range input */
+.range {
+  width: 100%;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+/* Toasts as buttons */
+.toast {
+  text-align: start;
+  cursor: pointer;
+  border-width: 1px;
+}
+
+.toast__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* About hero */
+.about-hero__name {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.about-hero__version {
+  color: var(--text-mute);
+  font-size: 12px;
+}
+
+/* Endpoints head */
+.endpoints__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Noise overlay for depth */
+.aurora__noise {
+  position: absolute;
+  inset: 0;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+/* LTR adjustments when English is active */
+html[dir='ltr'] .server__title {
+  max-width: 30ch;
+}
+
+html[dir='ltr'] .logline {
+  direction: ltr;
+}

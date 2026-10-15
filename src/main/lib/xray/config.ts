@@ -7,6 +7,7 @@
  * use.
  */
 import type { RouteMode, ServerConfig, Settings } from '../../../shared/types'
+import { L, type LString } from '../../../shared/i18n'
 
 export interface BuildOptions {
   server: ServerConfig
@@ -347,12 +348,14 @@ function buildRouting(mode: RouteMode, blockAds: boolean): Json {
  * Validate the built object before handing it to Xray: a config with a missing
  * REALITY key or an empty address would otherwise fail with an opaque error.
  */
-export function validateConfig(server: ServerConfig): string | null {
-  if (!server.supported) return server.unsupportedReason ?? 'این کانفیگ پشتیبانی نمی‌شود'
-  if (!server.address) return 'آدرس سرور خالی است'
-  if (!server.port) return 'پورت سرور معتبر نیست'
-  if (!server.credential) return 'کلید/رمز کانفیگ خالی است'
-  if (server.security === 'reality' && !server.pbk) return 'کلید عمومی REALITY موجود نیست'
-  if (server.network === 'grpc' && !server.serviceName) return 'serviceName برای gRPC موجود نیست'
+export function validateConfig(server: ServerConfig): LString | null {
+  if (!server.supported) {
+    return L(server.unsupportedReason ?? 'این کانفیگ پشتیبانی نمی‌شود', server.unsupportedReason ?? 'This config is not supported')
+  }
+  if (!server.address) return L('آدرس سرور خالی است', 'Server address is empty')
+  if (!server.port) return L('پورت سرور معتبر نیست', 'Server port is invalid')
+  if (!server.credential) return L('کلید/رمز کانفیگ خالی است', 'Config credential is empty')
+  if (server.security === 'reality' && !server.pbk) return L('کلید عمومی REALITY موجود نیست', 'REALITY public key is missing')
+  if (server.network === 'grpc' && !server.serviceName) return L('serviceName برای gRPC موجود نیست', 'serviceName is missing for gRPC')
   return null
 }

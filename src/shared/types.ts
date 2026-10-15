@@ -9,6 +9,8 @@
  * encrypted store in the main process (see `src/main/lib/secretStore.ts`).
  */
 
+import type { LString, Lang } from './i18n'
+
 export const APP_NAME = 'naxlo'
 
 export type Protocol = 'vless' | 'vmess' | 'trojan' | 'shadowsocks' | 'unknown'
@@ -106,7 +108,7 @@ export interface CoreStatus {
   source: 'bundled' | 'downloaded' | 'custom' | 'dev' | null
   downloading: boolean
   progress: number | null
-  error: string | null
+  error: string | LString | null
 }
 
 export interface SubscriptionInfo {
@@ -114,7 +116,7 @@ export interface SubscriptionInfo {
   /** e.g. `https://exa••••••••••.com/sub/ab••••••` */
   maskedUrl: string
   lastUpdated: number | null
-  lastError: string | null
+  lastError: string | LString | null
   totalConfigs: number
   supportedConfigs: number
   autoRefreshMinutes: number
@@ -144,11 +146,23 @@ export interface AppState {
   systemProxyEnabled: boolean
   systemProxyApplied: boolean
   startedAt: number | null
-  lastError: string | null
+  lastError: string | LString | null
   latencyMs: number | null
   identity: PublicIdentity | null
+  update: UpdateState
   core: CoreStatus
   subscription: SubscriptionInfo
+}
+
+export interface UpdateState {
+  checking: boolean
+  downloading: boolean
+  progress: number | null
+  availableVersion: string | null
+  downloadedVersion: string | null
+  error: string | LString | null
+  /** True once an update is staged and will install on next launch. */
+  ready: boolean
 }
 
 export interface Settings {
@@ -163,6 +177,7 @@ export interface Settings {
   allowInsecure: boolean
   testUrl: string
   autoStart: boolean
+  autoUpdate: boolean
   autoRefreshMinutes: number
   autoConnectLast: boolean
   minimizeToTray: boolean
@@ -171,6 +186,7 @@ export interface Settings {
   reduceMotion: boolean
   corePath: string | null
   xrayLogLevel: 'none' | 'error' | 'warning'
+  language: Lang
 }
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'core'
@@ -186,8 +202,8 @@ export interface LogEntry {
 export interface Toast {
   id: string
   kind: 'success' | 'error' | 'info' | 'warning'
-  title: string
-  message?: string
+  title: string | LString
+  message?: string | LString
 }
 
 /** IPC channel names — kept in one place so main/preload/renderer stay in sync. */
@@ -224,7 +240,8 @@ export const IPC = {
   shellOpen: 'naxlo:shell:open',
   clipboardWrite: 'naxlo:clipboard:write',
   appInfo: 'naxlo:app:info',
-  appUpdate: 'naxlo:app:update'
+  appUpdate: 'naxlo:app:update',
+  appInstallUpdate: 'naxlo:app:install-update'
 } as const
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -239,6 +256,7 @@ export const DEFAULT_SETTINGS: Settings = {
   allowInsecure: false,
   testUrl: 'https://www.gstatic.com/generate_204',
   autoStart: false,
+  autoUpdate: true,
   autoRefreshMinutes: 0,
   autoConnectLast: false,
   minimizeToTray: true,
@@ -246,7 +264,8 @@ export const DEFAULT_SETTINGS: Settings = {
   accent: 'cyan',
   reduceMotion: false,
   corePath: null,
-  xrayLogLevel: 'warning'
+  xrayLogLevel: 'warning',
+  language: 'fa'
 }
 
 export const PINNED_XRAY_VERSION = 'v26.3.27'

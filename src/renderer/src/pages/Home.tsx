@@ -1,13 +1,15 @@
 /**
- * Home — connection control, live status and the local proxy endpoints.
+ * Home — connection control, live status, latency sparkline and endpoints.
  */
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import { Icon } from '../components/Icon'
+import { Icon, type IconName } from '../components/Icon'
 import { PowerButton } from '../components/PowerButton'
+import { Sparkline } from '../components/Sparkline'
+import { Flag } from '../components/Flag'
 import { Button, Card, Notice, Progress } from '../components/ui'
 import { useStore } from '../lib/store'
-import { CONNECTION_LABEL } from '../lib/labels'
+import { useI18n, type MsgKey } from '../lib/i18n'
 import { fa, faDuration, faMs, maskIpLocal, shortDuration } from '../lib/format'
 import type { PageId } from '../components/Sidebar'
 
@@ -17,25 +19,60 @@ interface Props {
 
 export function Home({ onNavigate }: Props): React.ReactElement {
   const { state, run, pushToast, settings } = useStore()
-  const label = CONNECTION_LABEL[state.connection]
+  const { t, pick } = useI18n()
   const [now, setNow] = useState(Date.now())
   const [ipVisible, setIpVisible] = useState(false)
+  const history = useRef<Array<number | null>>([])
 
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(timer)
   }, [])
 
+  useEffect(() => {
+    if (state.connection === 'connected' && state.latencyMs !== null) {
+      history.current = [...history.current.slice(-39), state.latencyMs]
+    }
+    if (state.connection !== 'connected' && history.current.length) {
+      history.current = []
+    }
+  }, [state.latencyMs, state.connection])
+
   const connected = state.connection === 'connected'
   const busy = state.connection === 'preparing' || state.connection === 'starting' || state.connection === 'stopping'
 
+  const statusKey: MsgKey = connected
+    ? 'stateConnected'
+    : state.connection === 'idle'
+      ? 'stateIdle'
+      : state.connection === 'error'
+        ? 'stateError'
+        : state.connection === 'core-missing'
+          ? 'stateCoreMissing'
+          : state.connection === 'stopping'
+            ? 'stateStopping'
+            : state.connection === 'preparing'
+              ? 'statePreparing'
+              : 'stateStarting'
+
+  const hintKey: MsgKey = connected
+    ? 'stateConnectedHint'
+    : state.connection === 'idle'
+      ? 'stateIdleHint'
+      : state.connection === 'error'
+        ? 'stateErrorHint'
+        : state.connection === 'core-missing'
+          ? 'stateCoreMissingHint'
+          : state.connection === 'stopping'
+            ? 'stateStoppingHint'
+            : state.connection === 'preparing'
+              ? 'statePreparingHint'
+              : 'stateStartingHint'
+
   const toggle = async (): Promise<void> => {
     if (busy) return
-    if (connected) {
-      await run(() => window.naxlo.connection.disconnect(), 'قطع اتصال ناموفق بود')
-    } else {
-      await run(() => window.naxlo.connection.connect(), 'اتصال ناموفق بود')
-    }
+    if (connected) await run(() => window.naxlo.connection.disconnect(), t('errorTitle'))
+    else await run(() => window.naxlo.connection.connect(), t('errorTitle'))
   }
 
   const refresh = async (): Promise<void> => {
@@ -43,12 +80,12 @@ export function Home({ onNavigate }: Props): React.ReactElement {
       onNavigate('subscription')
       return
     }
-    const report = await run(() => window.naxlo.subscription.refresh(), 'به‌روزرسانی اشتراک ناموفق بود')
+    const report = await run(() => window.naxlo.subscription.refresh(), t('errorTitle'))
     if (report) {
       pushToast({
         kind: 'success',
-        title: 'اشتراک به‌روزرسانی شد',
-        message: `${fa(report.total)} کانفیگ دریافت شد (${fa(report.supported)} مورد پشتیبانی)`
+        title: t('refreshedToast'),
+        message: t('fetchedBody', { total: fa(report.total), supported: fa(report.supported) })
       })
     }
   }
@@ -63,70 +100,57 @@ export function Home({ onNavigate }: Props): React.ReactElement {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
       >
-        <div className="home-hero__glow" aria-hidden="true" data-tone={label.tone} />
+        <div className="home-hero__glow" aria-hidden="true" data-tone={connected ? 'connected' : state.connection === 'error' ? 'error' : 'idle'} />
 
         <div className="home-hero__inner">
           <div className="home-hero__power">
-            <PowerButton
-              connection={state.connection}
-              onClick={() => void toggle()}
-              disabled={busy}
-              label={connected ? 'قطع اتصال' : 'اتصال'}
-            />
+            <PowerButton connection={state.connection} onClick={() => void toggle()} disabled={busy} label={connected ? t('disconnect') : t('connect')} />
           </div>
 
           <div className="home-hero__text">
             <AnimatePresence mode="wait" initial={false}>
               <motion.h2
-                key={label.text}
+                key={statusKey}
                 className="home-hero__title"
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.24 }}
               >
-                {label.text}
+                {t(statusKey)}
               </motion.h2>
             </AnimatePresence>
 
             <p className="home-hero__hint">
-              {state.activeServerName && connected
-                ? `ترافیک شما از طریق «${state.activeServerName}» عبور می‌کند.`
-                : label.hint}
+              {connected && state.activeServerName
+                ? t('homeTrafficVia', { name: state.activeServerName })
+                : t(hintKey)}
             </p>
 
             <div className="home-hero__actions">
               <Button variant="primary" icon={connected ? 'disconnect' : 'bolt'} onClick={() => void toggle()} loading={busy}>
-                {connected ? 'قطع اتصال' : 'اتصال'}
+                {connected ? t('disconnect') : t('connect')}
               </Button>
-              <Button
-                icon="refresh"
-                onClick={() => void refresh()}
-                loading={state.subscription.fetching}
-                disabled={busy}
-              >
-                به‌روزرسانی اشتراک
+              <Button icon="refresh" onClick={() => void refresh()} loading={state.subscription.fetching} disabled={busy}>
+                {t('refreshSubscription')}
               </Button>
               <Button variant="ghost" icon="servers" onClick={() => onNavigate('servers')}>
-                انتخاب سرور
+                {t('chooseServer')}
               </Button>
             </div>
+
+            {connected ? (
+              <motion.div className="home-hero__spark" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
+                <Sparkline values={history.current} />
+              </motion.div>
+            ) : null}
           </div>
         </div>
 
         <AnimatePresence>
           {state.core.downloading ? (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              style={{ marginTop: 18 }}
-            >
-              <Progress
-                value={state.core.progress}
-                indeterminate={state.core.progress === null}
-                label="در حال دریافت هستهٔ Xray از مخزن رسمی…"
-              />
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} style={{ marginTop: 18 }}>
+              <Progress value={state.core.progress} indeterminate={state.core.progress === null} label={t('downloadingCore')} />
             </motion.div>
           ) : null}
         </AnimatePresence>
@@ -134,14 +158,9 @@ export function Home({ onNavigate }: Props): React.ReactElement {
 
       <AnimatePresence>
         {state.lastError ? (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            style={{ marginTop: 16 }}
-          >
-            <Notice kind="danger" icon="error" title="خطا">
-              {state.lastError}
+          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} style={{ marginTop: 16 }}>
+            <Notice kind="danger" icon="error" title={t('errorTitle')}>
+              {pick(state.lastError)}
             </Notice>
           </motion.div>
         ) : null}
@@ -149,15 +168,14 @@ export function Home({ onNavigate }: Props): React.ReactElement {
 
       {state.connection === 'core-missing' ? (
         <div style={{ marginTop: 16 }}>
-          <Notice kind="warning" icon="cpu" title="هستهٔ Xray آماده نیست">
-            ناکسلو برای ساخت پروکسی محلی به هستهٔ رسمی Xray نیاز دارد. می‌توانید آن را همین‌جا دانلود کنید یا فایل
-            اجرایی را از تنظیمات انتخاب نمایید.
+          <Notice kind="warning" icon="cpu" title={t('coreMissingTitle')}>
+            {t('coreMissingBody')}
             <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <Button size="sm" variant="primary" icon="download" onClick={() => void run(() => window.naxlo.core.ensure(), 'دریافت هسته ناموفق بود')}>
-                دانلود هسته
+              <Button size="sm" variant="primary" icon="download" onClick={() => void run(() => window.naxlo.core.ensure(), t('errorTitle'))}>
+                {t('downloadCore')}
               </Button>
-              <Button size="sm" icon="folder" onClick={() => void run(() => window.naxlo.core.pick(), 'انتخاب فایل ناموفق بود')}>
-                انتخاب فایل xray.exe
+              <Button size="sm" icon="folder" onClick={() => void run(() => window.naxlo.core.pick(), t('errorTitle'))}>
+                {t('pickCoreFile')}
               </Button>
             </div>
           </Notice>
@@ -167,14 +185,11 @@ export function Home({ onNavigate }: Props): React.ReactElement {
       <div className="grid grid--4" style={{ marginTop: 18 }}>
         <Stat
           icon="globe"
-          label="آی‌پی شما"
+          label={t('statIp')}
           value={
             state.identity ? (
-              <span
-                className="reveal mono"
-                onClick={() => setIpVisible((v) => !v)}
-                title={ipVisible ? 'پنهان کردن' : 'نمایش آی‌پی'}
-              >
+              <span className="reveal mono" onClick={() => setIpVisible((v) => !v)} title={ipVisible ? t('hideIp') : t('showIp')}>
+                {state.identity.countryCode ? <Flag code={state.identity.countryCode} /> : null}
                 {ipVisible ? state.identity.ip : maskIpLocal(state.identity.ip)}
                 <span className="reveal__eye">
                   <Icon name={ipVisible ? 'eyeOff' : 'eye'} size={13} />
@@ -184,43 +199,37 @@ export function Home({ onNavigate }: Props): React.ReactElement {
               '—'
             )
           }
-          foot={state.identity?.country ? `${state.identity.country}${state.identity.city ? ` • ${state.identity.city}` : ''}` : connected ? 'در حال بررسی…' : 'پس از اتصال مشخص می‌شود'}
+          foot={
+            state.identity?.country
+              ? state.identity.country
+              : connected
+                ? t('statIpFootConnected')
+                : t('statIpFootIdle')
+          }
         />
-        <Stat
-          icon="gauge"
-          label="تأخیر"
-          value={faMs(state.latencyMs)}
-          foot={connected ? 'زمان پاسخ از طریق پروکسی' : '—'}
-        />
-        <Stat
-          icon="clock"
-          label="مدت اتصال"
-          value={shortDuration(uptime)}
-          foot={uptime ? faDuration(uptime) : '—'}
-        />
+        <Stat icon="gauge" label={t('statLatency')} value={faMs(state.latencyMs)} foot={connected ? t('statLatencyFoot') : '—'} />
+        <Stat icon="clock" label={t('statUptime')} value={shortDuration(uptime)} foot={uptime ? faDuration(uptime) : '—'} />
         <Stat
           icon="shield"
-          label="حالت پروکسی"
-          value={state.systemProxyApplied ? 'سیستمی' : 'دستی'}
+          label={t('statProxyMode')}
+          value={state.systemProxyApplied ? t('proxyModeSystem') : t('proxyModeManual')}
           foot={
             settings.applySystemProxy
               ? state.systemProxyApplied
-                ? 'ویندوز روی پروکسی ناکسلو تنظیم شد'
-                : 'در انتظار اعمال'
-              : 'فقط پروکسی محلی فعال است'
+                ? t('proxyModeApplied')
+                : t('proxyModePending')
+              : t('proxyModeOff')
           }
         />
       </div>
 
-      <Card className="endpoints" hover={false}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+      <Card className="endpoints">
+        <div className="endpoints__head">
           <div>
             <div className="card__title">
-              <Icon name="link" size={15} /> آدرس پروکسی محلی
+              <Icon name="link" size={15} /> {t('endpointsTitle')}
             </div>
-            <div className="card__subtitle">
-              بدون TUN و بدون درایور شبکه — هر برنامه‌ای را می‌توانید دستی روی این آدرس‌ها تنظیم کنید.
-            </div>
+            <div className="card__subtitle">{t('endpointsSubtitle')}</div>
           </div>
           <Button
             size="sm"
@@ -229,53 +238,36 @@ export function Home({ onNavigate }: Props): React.ReactElement {
             onClick={() => {
               void navigator.clipboard
                 ?.writeText(`socks5://127.0.0.1:${state.socksPort}`)
-                .then(() => pushToast({ kind: 'success', title: 'آدرس SOCKS5 کپی شد' }))
-                .catch(() => pushToast({ kind: 'error', title: 'کپی ناموفق بود' }))
+                .then(() => pushToast({ kind: 'success', title: t('copiedSocks') }))
+                .catch(() => pushToast({ kind: 'error', title: t('copyFailed') }))
             }}
           >
-            کپی SOCKS5
+            {t('copySocks')}
           </Button>
         </div>
 
         <div className="grid grid--2" style={{ marginTop: 14 }}>
-          <EndpointRow
-            title="SOCKS5"
-            value={`127.0.0.1:${state.socksPort}`}
-            hint="مناسب برای مرورگرها، ترمینال و بیشتر کلاینت‌ها (پشتیبانی از UDP)"
-          />
-          <EndpointRow
-            title="HTTP"
-            value={`127.0.0.1:${state.httpPort}`}
-            hint="برای تنظیم پروکسی سیستم ویندوز و برنامه‌هایی که فقط HTTP پروکسی دارند"
-          />
+          <EndpointRow title="SOCKS5" value={`127.0.0.1:${state.socksPort}`} hint={t('socksHint')} />
+          <EndpointRow title="HTTP" value={`127.0.0.1:${state.httpPort}`} hint={t('httpHint')} />
         </div>
       </Card>
     </div>
   )
 }
 
-function Stat({
-  icon,
-  label,
-  value,
-  foot
-}: {
-  icon: Parameters<typeof Icon>[0]['name']
-  label: string
-  value: React.ReactNode
-  foot?: string
-}): React.ReactElement {
+function Stat({ icon, label, value, foot }: { icon: IconName; label: string; value: React.ReactNode; foot?: string }): React.ReactElement {
   return (
     <motion.div
       className="stat"
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.36, ease: [0.22, 1, 0.36, 1] }}
-      whileHover={{ y: -2, borderColor: 'var(--border-strong)' }}
+      whileHover={{ y: -2 }}
     >
-      <span className="stat__label">
-        <Icon name={icon} size={13} /> {label}
+      <span className="stat__icon">
+        <Icon name={icon} size={14} />
       </span>
+      <span className="stat__label">{label}</span>
       <span className="stat__value">{value}</span>
       {foot ? <span className="stat__foot">{foot}</span> : null}
     </motion.div>
