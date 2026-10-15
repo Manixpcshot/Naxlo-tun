@@ -1,38 +1,29 @@
-# Naxlo v1.1.0 🌐
+# Naxlo v1.1.1 🩹
 
-## چه چیزهای جدیدی آمد؟
+## چه چیزی درست شد؟
 
-- 🌐 **دوزبانه:** رابط کاربری کامل فارسی/انگلیسی با کلید تغییر زبان در نوار عنوان و تنظیمات؛ چیدمان RTL/LTR می‌شود و
-  اعداد، تاریخ‌ها و زمان‌های نسبی با زبان فعال هماهنگ می‌شوند. پیام‌ها و خطاهای هسته هم دوزبانه نمایش داده می‌شوند.
-- 🚩 **پرچم کشورها:** پرچم‌های SVG برای کشور آی‌پی خروجی و همچنین پرچم‌های داخل نام سرورها (ایموجی‌ها تشخیص داده شده و
-  به پرچم واقعی تبدیل می‌شوند). ۲۵۷ کشور همراه برنامه است.
-- 🔄 **به‌روزرسانی خودکار:** هنگام اجرای برنامه، گیت‌هاب بررسی می‌شود؛ نسخهٔ جدید بی‌صدا دانلود (با کنترل sha512) و پس از
-  یک‌بار بسته‌شدن، برنامه با نسخهٔ جدید اجرا می‌شود. کلید فعال/غیرفعال در تنظیمات و دکمهٔ «هم‌اکنون نصب کن» وقتی update
-  آماده است.
-- 📈 **نمودار تأخیر:** در حالت اتصال، هر ۲۵ ثانیه تأخیر واقعی اندازه‌گیری و به‌صورت اسپارک‌لاین انیمیشنی در صفحهٔ اصلی
-  رسم می‌شود.
-- 🪟 **دکمه‌های پنجره در سمت راست:** کمینه/بیشینه/بستن در هر دو زبان لبهٔ راست نوار عنوان ثابت شدند.
-- ✨ **صیقل طراحی:** بافت نویز ظریف، کاشی‌های آماری با آیکن، ردیف‌های تمیزتر سرورها و بهبود توست‌ها و نوار کناری.
+- 🎨 **بازگشت کامل استایل‌ها:** در v1.1.0 یک سمیکالن جاافتاده بعد از `@import` پرچم‌ها باعث شد کل لایهٔ layout/کامپوننت‌ها
+  از باندل CSS حذف شود و برنامه بدون استایل اجرا شود. import ترمیم شد و خروجی build حالا بررسی می‌شود که قوانین layout
+  واقعاً داخل باندل باشند.
+- 🚩 **پرچم‌ها نمایش داده می‌شوند:** سلکتورهای `flags.css` با قرارداد کامپوننت `Flag` (`[data-flag="xx"]`) هم‌خوان شدند.
+- 🧪 **تست regression جدید:** هر `@import` در `global.css` باید سمیکالن داشته باشد و contract پرچم‌ها تست می‌شود — دیگر
+  یک کاراکتر جاافتاده کل UI را از کار نمی‌اندازد.
+
+اگر v1.1.0 را نصب کرده‌اید، برنامه به‌صورت خودکار به 1.1.1 به‌روزرسانی می‌شود (یک‌بار بسته و باز می‌شود).
 
 ## فایل‌های این ریلیز
 
 | فایل | توضیح |
 | --- | --- |
-| `Naxlo-Setup-1.1.0.exe` | نصب‌کنندهٔ NSIS (پیشنهادی) |
-| `Naxlo-Portable-1.1.0.exe` | نسخهٔ پرتابل |
-| `latest.yml` | خوراک به‌روزرسانی خودکار (electron-updater) |
+| `Naxlo-Setup-1.1.1.exe` | نصب‌کنندهٔ NSIS (پیشنهادی) |
+| `Naxlo-Portable-1.1.1.exe` | نسخهٔ پرتابل |
+| `latest.yml` | خوراک به‌روزرسانی خودکار |
 | `SHA256SUMS.txt` | کنترل یکپارچگی |
-
-> نکته: نسخه‌های ≥ 1.1.0 به‌صورت خودکار به‌روزرسانی می‌شوند؛ نسخهٔ 1.0.0 فاقد موتور update است و باید دستی نصب شود.
-
-## حداقل نیازمندی
-
-ویندوز ۱۰/۱۱ (x64) — بدون دسترسی مدیر، بدون TUN/Wintun.
 
 ---
 
-**English:** Naxlo 1.1.0 adds a fully bilingual Persian/English UI (RTL/LTR with a titlebar language switch),
-country flags for the exit IP and for flags embedded in server names, **automatic updates** (GitHub feed checked
-on launch, silent sha512-verified download, one restart to install), a live latency sparkline, window controls
-pinned to the right edge in both languages, and a visual polish pass. Releases now include `latest.yml` for the
-auto-update feed plus `SHA256SUMS.txt`.
+**English:** v1.1.1 is a hotfix for v1.1.0: a missing semicolon after the flags `@import` in `global.css` made the
+CSS parser drop the entire component/layout layer from the shipped bundle (the app rendered unstyled). The import is
+fixed, flag selectors now match the `Flag` component (`[data-flag="xx"]`) so country flags render, and new regression
+tests assert both the import hygiene and the flag selector contract. Existing 1.1.0 installs auto-update to 1.1.1
+(silent download, one restart).

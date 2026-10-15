@@ -6,6 +6,25 @@ All notable changes to Naxlo are documented here. Releases are cut per tag
 The format follows [Keep a Changelog](https://keepachangelog.com/) and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.1.1] — 2026-10-15
+
+### Fixed
+
+- **Stylesheet bundle restored.** v1.1.0 shipped `global.css` with a missing
+  semicolon after the flags `@import`; CSS parsed the two import lines as one
+  broken at-rule and dropped the whole component/layout layer from the bundle,
+  so the app rendered unstyled. The import is terminated again and the built
+  CSS is verified to contain the layout rules.
+- **Country flags now render.** `flags.css` targeted `.flag-xx` classes while
+  the `Flag` component emits `data-flag="xx"`; selectors regenerated to match.
+
+### Added
+
+- Regression tests: every `@import` in `global.css` must be semicolon-terminated
+  (with `components.css` present), and the flag stylesheet/component selector
+  contract is asserted, so this class of breakage fails `npm test` instead of
+  shipping.
+
 ## [1.1.0] — 2026-10-15
 
 ### Added
