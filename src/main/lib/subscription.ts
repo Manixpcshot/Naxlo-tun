@@ -1,0 +1,174 @@
+/**
+ * Subscription fetching.
+ *
+ * The URL and the payload are treated as secrets from the moment they enter
+ * this module: they are registered with the redactor, kept in the encrypted
+ * vault, and only ever surfaced to the UI in masked form.
+ */
+import { log } from './logger'
+import { maskUrl, registerSecret } from './redact'
+import { extractLinks, parseProxyLink, tryDecodeBase64 } from './parseConfig'
+import { getVault, replaceServers, updateVault } from './secretStore'
+import type { ServerConfig } from '../../shared/types'
+
+const SCOPE = 'subscription'
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36 naxlo/1.0'
+
+export interface FetchReport {
+  ok: boolean
+  total: number
+  supported: number
+  merged: number
+  error: string | null
+  warnings: string[]
+}
+
+export class SubscriptionError extends Error {
+  constructor(message: string, readonly detail?: string) {
+    super(message)
+    this.name = 'SubscriptionError'
+  }
+}
+
+/**
+ * Fetch + decode a subscription and refresh the server list.
+ * Existing manually-added servers are preserved; subscription entries are
+ * replaced wholesale so removed configs disappear.
+ */
+export async function refreshSubscription(url: string, timeoutMs = 25000): Promise<FetchReport> {
+  registerSecret(url, 'subscription')
+  const warnings: string[] = []
+  log.info(SCOPE, `refreshing subscription ${maskUrl(url)}`)
+
+  let text: string
+  try {
+    text = await download(url, timeoutMs)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    log.error(SCOPE, 'subscription download failed', message)
+    throw new SubscriptionError(friendlyFetchError(message), message)
+  }
+
+  const links = extractLinks(text)
+  if (links.length === 0) {
+    const hint = text.trim().startsWith('{')
+      ? 'پاسخ سرور JSON بود؛ احتمالاً لینک اشتراک اشتباه است'
+      : 'هیچ کانفیگی در پاسخ پیدا نشد'
+    throw new SubscriptionError(hint)
+  }
+
+  const servers: ServerConfig[] = []
+  const seen = new Set<string>()
+  for (const link of links) {
+    const parsed = parseProxyLink(link)
+    if (!parsed) {
+      warnings.push('یک لینک قابل تجزیه نبود و نادیده گرفته شد')
+      continue
+    }
+    if (seen.has(parsed.server.id)) continue
+    seen.add(parsed.server.id)
+    servers.push(parsed.server)
+  }
+
+  const vault = getVault()
+  const kept = vault.servers.filter((s) => s.source !== 'subscription')
+  // Preserve latency measurements for servers that still exist.
+  const previous = new Map(vault.servers.map((s) => [s.id, s]))
+  for (const s of servers) {
+    const old = previous.get(s.id)
+    if (old) {
+      s.latencyMs = old.latencyMs
+      s.latencyAt = old.latencyAt
+    }
+  }
+  const merged = [...servers, ...kept]
+  const supported = merged.filter((s) => s.supported).length
+
+  updateVault({
+    subscriptionUrl: url,
+    lastUpdatedAt: Date.now(),
+    selectedServerId:
+      vault.selectedServerId && merged.some((s) => s.id === vault.selectedServerId)
+        ? vault.selectedServerId
+        : (merged.find((s) => s.supported)?.id ?? null)
+  })
+  // `replaceServers` keeps the vault in sync and re-arms redaction.
+  replaceServers(merged)
+
+  log.info(SCOPE, `subscription refreshed: ${merged.length} configs (${supported} supported)`)
+  return { ok: true, total: merged.length, supported, merged: servers.length, error: null, warnings }
+}
+
+async function download(url: string, timeoutMs: number): Promise<string> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    const response = await fetch(url, {
+      redirect: 'follow',
+      signal: controller.signal,
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'text/plain, application/octet-stream, */*',
+        'Accept-Language': 'fa-IR,fa;q=0.9,en;q=0.5',
+        // Many subscription panels switch output format on this header.
+        'profile-update-interval': '0'
+      }
+    })
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} ${response.statusText || ''}`.trim())
+    }
+    const contentType = response.headers.get('content-type') ?? ''
+    const buf = Buffer.from(await response.arrayBuffer())
+    if (buf.length === 0) throw new Error('پاسخ خالی بود')
+
+    // A TXT subscription is usually base64 of the link list. Some panels send
+    // the links directly. Try both, preferring the readable interpretation.
+    const asText = buf.toString('utf8')
+    if (/^(vless|vmess|trojan|ss|hy2|tuic):\/\//im.test(asText.trim())) return asText
+    const decoded = tryDecodeBase64(asText)
+    if (decoded && /^(vless|vmess|trojan|ss|hy2|tuic):\/\//im.test(decoded)) return decoded
+    if (contentType.includes('json')) return asText
+    return decoded ?? asText
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+function friendlyFetchError(message: string): string {
+  if (/abort/i.test(message)) return 'دریافت اشتراک به دلیل پایان مهلت لغو شد'
+  if (/ENOTFOUND|getaddrinfo/i.test(message)) return 'آدرس اشتراک پیدا نشد (DNS)'
+  if (/ECONNREFUSED/i.test(message)) return 'اتصال به سرور اشتراک رد شد'
+  if (/HTTP 401|HTTP 403/i.test(message)) return 'سرور اشتراک دسترسی را رد کرد (۴۰۱/۴۰۳)'
+  if (/HTTP 404/i.test(message)) return 'لینک اشتراک یافت نشد (۴۰۴)'
+  if (/HTTP 429/i.test(message)) return 'درخواست‌های بیش از حد؛ کمی بعد دوباره تلاش کنید'
+  if (/HTTP 5\d\d/.test(message)) return 'خطای سمت سرور اشتراک'
+  if (/certificate|SSL|TLS/i.test(message)) return 'خطای گواهی/رمزنگاری در اتصال به سرور اشتراک'
+  return `دریافت اشتراک ناموفق بود: ${message}`
+}
+
+/** Parse a locally supplied payload (file import / paste). */
+export function importPayload(text: string): FetchReport {
+  const links = extractLinks(text)
+  if (!links.length) throw new SubscriptionError('هیچ کانفیگ معتبری در متن پیدا نشد')
+  const servers: ServerConfig[] = []
+  const seen = new Set<string>()
+  for (const link of links) {
+    const parsed = parseProxyLink(link)
+    if (!parsed || seen.has(parsed.server.id)) continue
+    seen.add(parsed.server.id)
+    servers.push({ ...parsed.server, source: 'import' })
+  }
+  const vault = getVault()
+  const merged = [...vault.servers.filter((s) => s.id !== undefined && !seen.has(s.id)), ...servers]
+  replaceServers(merged)
+  log.info(SCOPE, `imported ${servers.length} configs from payload`)
+  return {
+    ok: true,
+    total: merged.length,
+    supported: merged.filter((s) => s.supported).length,
+    merged: servers.length,
+    error: null,
+    warnings: []
+  }
+}

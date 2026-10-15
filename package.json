@@ -1,0 +1,69 @@
+{
+  "name": "naxlo",
+  "productName": "Naxlo",
+  "version": "1.0.0",
+  "description": "Naxlo — کلاینت فارسی‌زبان VLESS برای ویندوز بر پایهٔ Electron و Xray-core در حالت پروکسی محلی (بدون TUN/Wintun)",
+  "author": {
+    "name": "Naxlo Contributors",
+    "email": "naxlo.app@users.noreply.github.com"
+  },
+  "license": "MIT",
+  "private": false,
+  "homepage": "https://github.com/Manixpcshot/Naxlo-tun#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Manixpcshot/Naxlo-tun.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Manixpcshot/Naxlo-tun/issues"
+  },
+  "keywords": [
+    "vless",
+    "xray",
+    "proxy",
+    "electron",
+    "react",
+    "windows",
+    "persian",
+    "rtl",
+    "subscription",
+    "socks5",
+    "vpn-client"
+  ],
+  "main": "out/main/index.js",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "build:unpack": "npm run build && electron-builder --dir",
+    "start": "electron-vite preview",
+    "typecheck:node": "tsc --noEmit -p tsconfig.node.json",
+    "typecheck:web": "tsc --noEmit -p tsconfig.web.json",
+    "typecheck": "npm run typecheck:node && npm run typecheck:web",
+    "lint": "eslint . --ext .ts,.tsx",
+    "xray:fetch": "node scripts/fetch-xray.mjs",
+    "dist:win": "npm run build && electron-builder --win --x64",
+    "pack:win": "npm run build && electron-builder --win --x64 --dir",
+    "postinstall": "node scripts/postinstall.mjs",
+    "test": "node scripts/run-tests.mjs"
+  },
+  "dependencies": {
+    "fflate": "^0.8.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "electron": "^44.7.2",
+    "electron-builder": "^26.15.3",
+    "electron-vite": "^6.0.0",
+    "motion": "^14.2.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.4"
+  }
+}

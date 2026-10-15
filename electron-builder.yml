@@ -1,0 +1,61 @@
+appId: com.naxlo.desktop
+productName: Naxlo
+copyright: Copyright © 2026 Naxlo Contributors — MIT License
+
+directories:
+  output: release
+  buildResources: build
+
+# Only the bundled app is packed; the Xray core ships as an extra resource so
+# Windows can execute it directly from disk (it must not live inside asar).
+files:
+  - out/**
+  - package.json
+  - '!**/*.map'
+  - '!**/*.ts'
+
+asar: true
+npmRebuild: false
+
+extraResources:
+  - from: resources/xray
+    to: xray
+    filter:
+      - '**/*'
+      - '!*.zip'
+      - '!*.dgst'
+  - from: build/tray.ico
+    to: tray.ico
+
+win:
+  icon: build/icon.ico
+  target:
+    - target: nsis
+      arch:
+        - x64
+    - target: portable
+      arch:
+        - x64
+  # Naxlo never needs administrator rights: local inbounds + HKCU proxy keys.
+  requestedExecutionLevel: asInvoker
+  artifactName: ${productName}-${version}-${arch}.${ext}
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  allowElevation: false
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Naxlo
+  uninstallDisplayName: Naxlo
+  deleteAppDataOnUninstall: false
+  artifactName: ${productName}-Setup-${version}.${ext}
+
+portable:
+  artifactName: ${productName}-Portable-${version}.${ext}
+
+publish:
+  provider: github
+  owner: Manixpcshot
+  repo: Naxlo-tun
