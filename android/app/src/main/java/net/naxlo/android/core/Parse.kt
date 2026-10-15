@@ -1,6 +1,5 @@
 package net.naxlo.android.core
 
-import android.util.Base64
 import java.net.URLDecoder
 import java.security.MessageDigest
 
@@ -20,7 +19,7 @@ object Parse {
         val clean = text.trim().replace("\n", "").replace("\r", "")
         if (clean.isEmpty() || !Regex("^[A-Za-z0-9+/_=\\-]+$").matches(clean)) return null
         return try {
-            String(Base64.decode(clean, Base64.DEFAULT), Charsets.UTF_8)
+            String(java.util.Base64.getMimeDecoder().decode(clean), Charsets.UTF_8)
         } catch (_: Exception) {
             null
         }
@@ -53,7 +52,7 @@ object Parse {
         try {
             value = when {
                 value.startsWith("base64:", true) ->
-                    String(Base64.decode(value.substring(7), Base64.DEFAULT), Charsets.UTF_8).trim()
+                    String(java.util.Base64.getMimeDecoder().decode(value.substring(7)), Charsets.UTF_8).trim()
                 value.startsWith("text:", true) -> value.substring(5)
                 else -> value
             }
