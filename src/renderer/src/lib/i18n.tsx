@@ -8,6 +8,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo } fro
 import type { LString, Lang } from '@shared/i18n'
 import { isLString } from '@shared/i18n'
 import { setFormatLocale } from './format'
+import { TR } from './i18n-tr'
 import { useStore } from './store'
 
 export type MsgKey = keyof typeof MESSAGES
@@ -172,6 +173,46 @@ export const MESSAGES = {
   clearedSubToast: { fa: 'اشتراک و سرورها حذف شدند', en: 'Subscription and servers removed' },
   never: { fa: 'هرگز', en: 'never' },
 
+  /* --------- smart connect, pins, panic (v1.3) --------- */
+  autoServerName: { fa: 'خودکار — بهترین سرور', en: 'Auto — best server' },
+  autoServerDesc: {
+    fa: 'ناکسلو خودش سریع‌ترین سرور سالم را انتخاب می‌کند و در صورت قطعی، خودکار عوض می‌کند.',
+    en: 'Naxlo picks the fastest healthy server itself and switches automatically if it fails.'
+  },
+  autoFailover: { fa: 'سوییچ خودکار در قطعی', en: 'Auto-switch on failure' },
+  autoFailoverHint: {
+    fa: 'اگر سرور فعال چند بار پیاپی پاسخ نداد، به بهترین سرور بعدی می‌رود.',
+    en: 'If the active server fails several times in a row, Naxlo moves to the next best one.'
+  },
+  autoSwitchedToast: {
+    fa: 'سرور قبلی پاسخ نداد؛ به «{name}» سوییچ شد',
+    en: 'Previous server stopped answering — switched to “{name}”'
+  },
+  autoNoCandidates: {
+    fa: 'سرور پشتیبانی‌شده‌ای برای انتخاب خودکار وجود ندارد',
+    en: 'No supported server is available for auto selection'
+  },
+  autoPicked: { fa: 'انتخاب خودکار: {name}', en: 'Auto-picked: {name}' },
+
+  pinServer: { fa: 'پین کردن سرور', en: 'Pin server' },
+  unpinServer: { fa: 'برداشتن پین', en: 'Unpin server' },
+  filterPinned: { fa: 'پین‌شده‌ها', en: 'Pinned' },
+  filterCountryTitle: { fa: 'فیلتر بر اساس کشور', en: 'Filter by country' },
+
+  panicTitle: { fa: 'قطع اضطراری', en: 'Panic disconnect' },
+  panicHint: {
+    fa: 'قطع فوری، بستن پروکسی سیستم و پاک‌کردن ردپا — بدون پرسش.',
+    en: 'Instant disconnect, system proxy restored and traces cleared — no questions.'
+  },
+  panicDone: { fa: 'قطع اضطراری انجام شد', en: 'Panic disconnect completed' },
+  panicHotkey: { fa: 'کلید اضطراری سراسری: Ctrl+Alt+Q', en: 'Global panic hotkey: Ctrl+Alt+Q' },
+
+  logsHint: {
+    fa: 'متن گزارش‌ها فنی و به زبان انگلیسی است؛ قالب و برچسب‌ها ترجمه شده‌اند.',
+    en: 'Log payloads stay technical English; chrome and labels are translated.'
+  },
+  switchToLang: { fa: 'تغییر زبان به {name}', en: 'Switch language to {name}' },
+
   /* --------- multi-subscription, quota & speed --------- */
   subsList: { fa: 'اشتراک‌های شما', en: 'Your subscriptions' },
   subsListDesc: {
@@ -297,6 +338,7 @@ export const MESSAGES = {
   languageField: { fa: 'زبان برنامه', en: 'App language' },
   languageFa: { fa: 'فارسی', en: 'Persian' },
   languageEn: { fa: 'انگلیسی', en: 'English' },
+  languageTr: { fa: 'ترکی', en: 'Turkish' },
   accentField: { fa: 'رنگ تأکیدی', en: 'Accent colour' },
   logLevelField: { fa: 'سطح گزارش‌ها', en: 'Log level' },
   logError: { fa: 'فقط خطا', en: 'Errors' },
@@ -412,7 +454,7 @@ const I18nContext = createContext<I18nShape | null>(null)
 
 export function I18nProvider({ children }: { children: React.ReactNode }): React.ReactElement {
   const { settings, saveSettings } = useStore()
-  const lang: Lang = settings.language === 'en' ? 'en' : 'fa'
+  const lang: Lang = settings.language === 'en' || settings.language === 'tr' ? settings.language : 'fa'
 
   useEffect(() => {
     setFormatLocale(lang)
@@ -422,7 +464,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }): React
 
   const t = useCallback(
     (key: MsgKey, vars?: Record<string, string | number>): string => {
-      let text: string = MESSAGES[key][lang]
+      let text: string = lang === 'tr' ? (TR[key] ?? MESSAGES[key].en) : MESSAGES[key][lang]
       if (vars) {
         for (const [name, value] of Object.entries(vars)) {
           text = text.split(`{${name}}`).join(String(value))
@@ -435,7 +477,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }): React
 
   const pick = useCallback((value: string | LString | null | undefined): string => {
     if (value === null || value === undefined) return ''
-    if (isLString(value)) return value[lang]
+    if (isLString(value)) return lang === 'tr' ? value.en : value[lang]
     return value
   }, [lang])
 

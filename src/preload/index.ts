@@ -40,6 +40,7 @@ const api: NaxloApi = {
     remove: (id) => invoke(IPC.serversRemove, id),
     clear: () => invoke(IPC.serversClear),
     test: (id) => invoke(IPC.serversTest, id),
+    pin: (id) => invoke(IPC.serversPin, id),
     testAll: () => invoke(IPC.serversTestAll),
     latency: () => invoke(IPC.serversLatency),
     copyLink: (id) => invoke(IPC.clipboardWrite, { kind: 'link', serverId: id })
@@ -60,7 +61,8 @@ const api: NaxloApi = {
 
   connection: {
     connect: (serverId) => invoke(IPC.connect, serverId),
-    disconnect: () => invoke(IPC.disconnect)
+    disconnect: () => invoke(IPC.disconnect),
+    panic: () => invoke(IPC.panic)
   },
 
   settings: {

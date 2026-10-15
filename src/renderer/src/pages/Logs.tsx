@@ -20,7 +20,7 @@ const LEVELS: Array<{ value: LogLevel | 'all'; key: MsgKey }> = [
 
 export function Logs(): React.ReactElement {
   const { logs, clearLogs, pushToast } = useStore()
-  const { t, lang } = useI18n()
+  const { t, dir } = useI18n()
   const [level, setLevel] = useState<LogLevel | 'all'>('all')
   const [autoScroll, setAutoScroll] = useState(true)
   const listRef = useRef<HTMLDivElement>(null)
@@ -89,8 +89,8 @@ export function Logs(): React.ReactElement {
           ))
         )}
       </div>
-      <p className="field__hint" style={{ marginTop: 8, textAlign: lang === 'fa' ? 'right' : 'left' }}>
-        {lang === 'fa' ? 'متن گزارش‌ها فنی و به زبان انگلیسی است؛ قالب و برچسب‌ها ترجمه شده‌اند.' : 'Log payloads stay technical English; chrome and labels are translated.'}
+      <p className="field__hint" style={{ marginTop: 8, textAlign: dir === 'rtl' ? 'right' : 'left' }}>
+        {t('logsHint')}
       </p>
     </div>
   )

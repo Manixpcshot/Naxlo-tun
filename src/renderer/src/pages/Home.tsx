@@ -157,6 +157,16 @@ export function Home({ onNavigate }: Props): React.ReactElement {
               <Button variant="ghost" icon="servers" onClick={() => onNavigate('servers')}>
                 {t('chooseServer')}
               </Button>
+              {connected || state.systemProxyApplied ? (
+                <Button
+                  variant="danger"
+                  icon="power"
+                  title={t('panicHint')}
+                  onClick={() => void run(() => window.naxlo.connection.panic(), t('errorTitle'))}
+                >
+                  {t('panicTitle')}
+                </Button>
+              ) : null}
             </div>
 
             {connected ? (

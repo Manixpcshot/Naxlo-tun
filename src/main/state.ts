@@ -165,9 +165,10 @@ export function toast(kind: Toast['kind'], title: Toast['title'], message?: Toas
 }
 
 /** Masked projection of a server config for the renderer. */
-export function toServerView(server: ServerConfig, reveal = false): ServerView {
+export function toServerView(server: ServerConfig, reveal = false, pinned = false): ServerView {
   const { credential: _c, pbk: _p, sid: _s, raw: _r, address: _a, ...safe } = server
   const view: ServerView = {
+    pinned,
     ...safe,
     addressMasked: maskAddress(server.address),
     credentialMasked: maskMiddle(server.credential, 4, 4),

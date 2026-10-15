@@ -1,30 +1,38 @@
-# Naxlo v1.2.0 📊
+# Naxlo v1.3.0 🧠
 
 ## چه چیزهای جدیدی آمد؟
 
-- 📚 **چند اشتراک:** چند لینک اشتراک را کنار هم نگه دارید؛ سرورهای هر اشتراک جدا گروه‌بندی می‌شوند، هر اشتراک دکمهٔ
-  به‌روزرسانی و حذف مستقل دارد و حذف یکی به بقیه دست نمی‌زند. والت‌های نسخه‌های قبل خودکار مهاجرت می‌کنند.
-- 📊 **حجم و انقضا (مثل Happ):** هدر استاندارد `subscription-userinfo` خوانده می‌شود و نوار مصرف با «مصرف‌شده /
-  باقی‌مانده / کل حجم» به‌همراه روزهای مانده تا انقضا نمایش داده می‌شود — هم در صفحهٔ اشتراک و هم در صفحهٔ اصلی برای
-  اشتراک فعال.
-- 🏷️ **نام اشتراک از خود سرویس:** هدر `profile-title` (ساده، url-encoded یا base64) به‌عنوان نام اشتراک استفاده می‌شود.
-- ⚡ **تست سرعت:** اندازه‌گیری دانلود واقعی (مگابیت بر ثانیه) از طریق پروکسی فعال، در کارت حجم صفحهٔ اصلی.
-- 🗂️ **صفحهٔ سرورها گروه‌بندی شد:** سرورها زیر سربرگ اشتراک خودشان فهرست می‌شوند (با شمارنده، حجم و دکمهٔ به‌روزرسانی).
+- 🇹🇷 **زبان ترکی** — زبان سوم اضافه شد (فارسی → انگلیسی → ترکی). دکمهٔ نوار عنوان بین هر سه می‌چرخد و در تنظیمات هم
+  هر سه گزینه هست؛ اعداد و تاریخ‌ها با locale ترکی نمایش داده می‌شوند.
+- 🧠 **اتصال هوشمند:**
+  - «خودکار — بهترین سرور»: بالای لیست سرورها؛ هنگام اتصال، سریع‌ترین سرور سالم انتخاب می‌شود.
+  - «سوییچ خودکار در قطعی»: اگر سرور فعال ۳ بار پیاپی در تست تأخیر بیفتد، به بهترین سرور بعدی می‌رود و توست می‌زند
+    (کلیدش در تنظیمات ⇦ رفتار).
+- 📌 **پین سرورها** — سرورهای پرکاربرد را پین کنید تا بالای گروه بمانند + چیپ فیلتر «پین‌شده‌ها».
+- 🗺️ **چیپ‌های کشور** — فیلتر لیست سرورها با پرچم کشورها (به‌همراه تعداد).
+- 🚨 **قطع اضطراری** — دکمه در صفحهٔ اصلی یا هات‌کی سراسری `Ctrl+Alt+Q`: قطع فوری + بازگرداندن پروکسی سیستم.
+- 🧰 **سینی سیستم دوزبانه/سه‌زبانه** — منو و tooltip ترای با زبان برنامه هماهنگ می‌شوند.
+
+## رفع اشکال
+
+- 🔢 **نشت زبان اعداد:** در حالت انگلیسی/ترکی، مدت‌ها، زمان‌های نسبی و تأخیرها دیگر با اعداد یا قالب فارسی نمایش داده
+  نمی‌شوند؛ کل لایهٔ قالب‌بندی بر اساس جدول locale هر زبان بازنویسی شد.
 
 ## فایل‌های این ریلیز
 
 | فایل | توضیح |
 | --- | --- |
-| `Naxlo-Setup-1.2.0.exe` | نصب‌کنندهٔ NSIS (پیشنهادی) |
-| `Naxlo-Portable-1.2.0.exe` | نسخهٔ پرتابل |
+| `Naxlo-Setup-1.3.0.exe` | نصب‌کنندهٔ NSIS (پیشنهادی) |
+| `Naxlo-Portable-1.3.0.exe` | نسخهٔ پرتابل |
 | `latest.yml` | خوراک به‌روزرسانی خودکار |
 | `SHA256SUMS.txt` | کنترل یکپارچگی |
 
-نسخه‌های ۱.۱.۱ و جدیدتر به‌صورت خودکار (یک‌بار restart) به این نسخه به‌روزرسانی می‌شوند.
+نسخه‌های ≥1.1.1 به‌صورت خودکار (یک‌بار restart) به 1.3.0 می‌رسند.
 
 ---
 
-**English:** Naxlo 1.2.0 adds **multiple subscriptions** (separate server groups, per-subscription refresh/remove,
-automatic vault migration), a **Happ-style quota panel** (used/remaining/total traffic + expiry countdown parsed from
-`subscription-userinfo`), **subscription names from `profile-title`**, a **real speed test** through the active proxy
-(Mbps) and a grouped Servers page. Installs on 1.1.1+ auto-update with a single restart.
+**English:** Naxlo 1.3.0 adds the **Turkish interface** (fa → en → tr cycle), **smart connect** (“Auto — best server”
+plus auto-switch after three failed probes), **pinned servers**, **country filter chips**, a **panic disconnect**
+(button + global `Ctrl+Alt+Q` hotkey) and a **localized tray**. It also fixes locale leakage: durations, relative
+times and latency no longer render with Persian digits/text in English or Turkish. Installs on 1.1.1+ auto-update
+with a single restart.

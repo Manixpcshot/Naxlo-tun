@@ -60,6 +60,7 @@ export interface NaxloApi {
     remove(id: string): Promise<number>
     clear(): Promise<boolean>
     test(id: string): Promise<number | null>
+    pin(id: string): Promise<string[]>
     testAll(): Promise<number>
     latency(): Promise<Record<string, number | null>>
     copyLink(id: string): Promise<boolean>
@@ -85,6 +86,7 @@ export interface NaxloApi {
   connection: {
     connect(serverId?: string): Promise<AppState['connection']>
     disconnect(): Promise<AppState['connection']>
+    panic(): Promise<boolean>
   }
 
   settings: {

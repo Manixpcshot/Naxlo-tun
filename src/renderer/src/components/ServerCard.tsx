@@ -21,6 +21,7 @@ interface Props {
   onCopy: () => void
   onRemove: () => void
   onReveal: () => Promise<ServerView | undefined>
+  onPin: () => void
 }
 
 export function ServerCard({
@@ -33,7 +34,8 @@ export function ServerCard({
   onTest,
   onCopy,
   onRemove,
-  onReveal
+  onReveal,
+  onPin
 }: Props): React.ReactElement {
   const [revealed, setRevealed] = useState<ServerView | null>(null)
   const { t, pick } = useI18n()
@@ -109,6 +111,14 @@ export function ServerCard({
         <span className={`latency ${latencyClass(server.latencyMs)}`}>
           {testing ? '…' : server.latencyMs === null ? t('untested') : `${fa(server.latencyMs)} ms`}
         </span>
+        <Button
+          size="sm"
+          variant="ghost"
+          icon="pin"
+          className={server.pinned ? 'btn--pinned' : ''}
+          onClick={onPin}
+          title={server.pinned ? t('unpinServer') : t('pinServer')}
+        />
         <Button size="sm" variant="ghost" icon="gauge" onClick={onTest} disabled={disabled || testing} title={t('testLatency')} />
         <Button size="sm" variant="ghost" icon="copy" onClick={onCopy} disabled={disabled} title={t('copyLink')} />
         <Button size="sm" variant="ghost" icon="trash" onClick={onRemove} title={t('remove')} />

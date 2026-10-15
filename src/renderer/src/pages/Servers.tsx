@@ -4,14 +4,16 @@
 import React, { useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Icon } from '../components/Icon'
+import { Flag } from '../components/Flag'
 import { ServerCard } from '../components/ServerCard'
 import { Button, Modal, PageHeader, SkeletonRow } from '../components/ui'
 import { useStore } from '../lib/store'
 import { useI18n, type MsgKey } from '../lib/i18n'
-import { fa, formatBytes, normaliseForSearch, subUsed } from '../lib/format'
+import { extractFlagCodes, fa, formatBytes, normaliseForSearch, subUsed } from '../lib/format'
+import { AUTO_SERVER_ID } from '@shared/bridge'
 import type { ServerView } from '@shared/bridge'
 
-type Filter = 'all' | 'vless' | 'reality' | 'ws' | 'grpc' | 'fast'
+type Filter = 'all' | 'vless' | 'reality' | 'ws' | 'grpc' | 'fast' | 'pinned'
 
 const FILTERS: Array<{ id: Filter; key?: MsgKey; text?: string }> = [
   { id: 'all', key: 'filterAll' },
@@ -19,7 +21,8 @@ const FILTERS: Array<{ id: Filter; key?: MsgKey; text?: string }> = [
   { id: 'reality', text: 'REALITY' },
   { id: 'ws', text: 'WebSocket' },
   { id: 'grpc', text: 'gRPC' },
-  { id: 'fast', key: 'filterFast' }
+  { id: 'fast', key: 'filterFast' },
+  { id: 'pinned', key: 'filterPinned' }
 ]
 
 export function Servers(): React.ReactElement {
@@ -31,10 +34,12 @@ export function Servers(): React.ReactElement {
   const [testingId, setTestingId] = useState<string | null>(null)
   const [testingAll, setTestingAll] = useState(false)
   const [confirmClear, setConfirmClear] = useState(false)
+  const [country, setCountry] = useState<string | null>(null)
 
   const filtered = useMemo(() => {
     const q = normaliseForSearch(query)
     let list = servers.filter((server) => {
+      if (country && extractFlagCodes(server.name)[0] !== country) return false
       if (q) {
         const haystack = normaliseForSearch(
           `${server.name} ${server.addressMasked} ${server.protocol} ${server.network} ${server.security}`
@@ -52,6 +57,8 @@ export function Servers(): React.ReactElement {
           return server.network === 'grpc'
         case 'fast':
           return server.supported && server.latencyMs !== null && server.latencyMs < 400
+        case 'pinned':
+          return server.pinned
         default:
           return true
       }
@@ -94,6 +101,21 @@ export function Servers(): React.ReactElement {
     pushToast({ kind: 'info', title: t('removedToast'), message: server.name })
   }
 
+  const countries = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const server of servers) {
+      const code = extractFlagCodes(server.name)[0]
+      if (code) counts.set(code, (counts.get(code) ?? 0) + 1)
+    }
+    return [...counts.entries()]
+      .map(([code, count]) => ({ code, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 12)
+  }, [servers])
+
+  const hasSupported = servers.some((server) => server.supported)
+  const autoResolvedId = state.selectedServerId === AUTO_SERVER_ID ? state.activeServerId : null
+
   const groups = useMemo(() => {
     const bySub = new Map<string, ServerView[]>()
     const manual: ServerView[] = []
@@ -106,10 +128,12 @@ export function Servers(): React.ReactElement {
         manual.push(server)
       }
     }
+    const order = (list: ServerView[]): ServerView[] =>
+      [...list].sort((a, b) => Number(b.pinned) - Number(a.pinned))
     const subs = state.subscriptions
-      .map((sub) => ({ sub, servers: (bySub.get(sub.id) ?? []).slice(0, 300) }))
+      .map((sub) => ({ sub, servers: order(bySub.get(sub.id) ?? []).slice(0, 300) }))
       .filter((group) => group.servers.length > 0)
-    return { subs, manual }
+    return { subs, manual: order(manual) }
   }, [filtered, state.subscriptions])
 
   const renderCard = (server: ServerView, index: number): React.ReactElement => (
@@ -130,6 +154,9 @@ export function Servers(): React.ReactElement {
         onCopy={() => void copyLink(server)}
         onRemove={() => void remove(server)}
         onReveal={() => run(() => window.naxlo.servers.reveal(server.id), t('errorTitle'))}
+        onPin={() =>
+          void run(() => window.naxlo.servers.pin(server.id), t('errorTitle')).then(() => reloadServers())
+        }
       />
     </motion.div>
   )
@@ -186,6 +213,56 @@ export function Servers(): React.ReactElement {
           {t('sortBySpeed')}
         </Button>
       </div>
+
+      {countries.length > 1 ? (
+        <div className="chips chips--countries" title={t('filterCountryTitle')}>
+          <button type="button" className={`chip ${country === null ? 'chip--active' : ''}`} onClick={() => setCountry(null)}>
+            {t('filterAll')}
+          </button>
+          {countries.map((entry) => (
+            <button
+              key={entry.code}
+              type="button"
+              className={`chip ${country === entry.code ? 'chip--active' : ''}`}
+              onClick={() => setCountry(country === entry.code ? null : entry.code)}
+            >
+              <Flag code={entry.code} /> {entry.code.toUpperCase()} · {fa(entry.count)}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      {hasSupported ? (
+        <div
+          className={`server autocard ${state.selectedServerId === AUTO_SERVER_ID ? 'server--selected' : ''} ${
+            state.connection === 'connected' && state.activeServerId === autoResolvedId ? 'server--active' : ''
+          }`}
+          role="option"
+          aria-selected={state.selectedServerId === AUTO_SERVER_ID}
+        >
+          <span className="autocard__icon" aria-hidden="true">
+            <Icon name="bolt" size={18} />
+          </span>
+          <span className="server__body">
+            <span className="server__title">{t('autoServerName')}</span>
+            <span className="field__hint">{t('autoServerDesc')}</span>
+          </span>
+          <span className="server__actions">
+            <Button
+              size="sm"
+              variant="primary"
+              icon="bolt"
+              onClick={() =>
+                void run(() => window.naxlo.servers.select(AUTO_SERVER_ID), t('errorTitle')).then(() =>
+                  run(() => window.naxlo.connection.connect(AUTO_SERVER_ID), t('errorTitle'))
+                )
+              }
+            >
+              {t('connect')}
+            </Button>
+          </span>
+        </div>
+      ) : null}
 
       {!ready ? (
         <div className="serverlist">

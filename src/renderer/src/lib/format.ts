@@ -7,26 +7,30 @@
 import type { Lang } from '@shared/i18n'
 import type { SubUserinfo } from '@shared/bridge'
 
-let locale: 'fa-IR' | 'en-US' = 'fa-IR'
+const LOCALES: Record<Lang, string> = { fa: 'fa-IR', en: 'en-US', tr: 'tr-TR' }
+
+let locale: string = LOCALES.fa
 let lang: Lang = 'fa'
 
 export function setFormatLocale(next: Lang): void {
   lang = next
-  locale = next === 'fa' ? 'fa-IR' : 'en-US'
+  locale = LOCALES[next] ?? LOCALES.en
 }
 
 export function currentLocale(): string {
   return locale
 }
 
-const numberFormat = {
+const numberFormat: Record<Lang, Intl.NumberFormat> = {
   fa: new Intl.NumberFormat('fa-IR'),
-  en: new Intl.NumberFormat('en-US')
+  en: new Intl.NumberFormat('en-US'),
+  tr: new Intl.NumberFormat('tr-TR')
 }
 
-const relativeFormat = {
+const relativeFormat: Record<Lang, Intl.RelativeTimeFormat> = {
   fa: new Intl.RelativeTimeFormat('fa-IR', { numeric: 'auto' }),
-  en: new Intl.RelativeTimeFormat('en-US', { numeric: 'auto' })
+  en: new Intl.RelativeTimeFormat('en-US', { numeric: 'auto' }),
+  tr: new Intl.RelativeTimeFormat('tr-TR', { numeric: 'auto' })
 }
 
 export function fa(value: number | null | undefined): string {
@@ -41,7 +45,7 @@ export function faDecimal(value: number | null | undefined): string {
 
 export function faMs(value: number | null | undefined): string {
   if (value === null || value === undefined) return '—'
-  return lang === 'fa' ? `${numberFormat.fa.format(Math.round(value))} ms` : `${Math.round(value)} ms`
+  return `${numberFormat[lang].format(Math.round(value))} ms`
 }
 
 export function faClock(timestamp: number): string {
@@ -55,11 +59,11 @@ export function faDate(timestamp: number): string {
 }
 
 export function faRelative(timestamp: number | null | undefined): string {
-  if (!timestamp) return lang === 'fa' ? 'هرگز' : 'never'
+  if (!timestamp) return lang === 'fa' ? 'هرگز' : lang === 'tr' ? 'asla' : 'never'
   const diffMs = Date.now() - timestamp
   const abs = Math.abs(diffMs)
   const rtf = relativeFormat[lang]
-  if (abs < 45_000) return lang === 'fa' ? 'هم‌اکنون' : 'just now'
+  if (abs < 45_000) return lang === 'fa' ? 'هم‌اکنون' : lang === 'tr' ? 'şimdi' : 'just now'
   if (abs < 3_600_000) return rtf.format(Math.round(-diffMs / 60_000), 'minute')
   if (abs < 86_400_000) return rtf.format(Math.round(-diffMs / 3_600_000), 'hour')
   if (abs < 2_592_000_000) return rtf.format(Math.round(-diffMs / 86_400_000), 'day')
@@ -72,14 +76,20 @@ export function faDuration(ms: number | null): string {
   const hours = Math.floor(totalSeconds / 3600)
   const minutes = Math.floor((totalSeconds % 3600) / 60)
   const seconds = totalSeconds % 60
+  const n = numberFormat[lang].format
   if (lang === 'en') {
-    if (hours > 0) return `${hours}h ${minutes}m`
-    if (minutes > 0) return `${minutes}m ${seconds}s`
-    return `${seconds}s`
+    if (hours > 0) return `${n(hours)}h ${n(minutes)}m`
+    if (minutes > 0) return `${n(minutes)}m ${n(seconds)}s`
+    return `${n(seconds)}s`
   }
-  if (hours > 0) return `${numberFormat.fa.format(hours)} ساعت و ${numberFormat.fa.format(minutes)} دقیقه`
-  if (minutes > 0) return `${numberFormat.fa.format(minutes)} دقیقه و ${numberFormat.fa.format(seconds)} ثانیه`
-  return `${numberFormat.fa.format(seconds)} ثانیه`
+  if (lang === 'tr') {
+    if (hours > 0) return `${n(hours)} sa ${n(minutes)} dk`
+    if (minutes > 0) return `${n(minutes)} dk ${n(seconds)} sn`
+    return `${n(seconds)} sn`
+  }
+  if (hours > 0) return `${n(hours)} ساعت و ${n(minutes)} دقیقه`
+  if (minutes > 0) return `${n(minutes)} دقیقه و ${n(seconds)} ثانیه`
+  return `${n(seconds)} ثانیه`
 }
 
 export function shortDuration(ms: number | null): string {

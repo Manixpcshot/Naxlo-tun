@@ -6,7 +6,7 @@
  * must survive IPC use `AppError`, whose payload travels inside the envelope.
  */
 
-export type Lang = 'fa' | 'en'
+export type Lang = 'fa' | 'en' | 'tr'
 
 export interface LString {
   fa: string
@@ -27,7 +27,8 @@ export function isLString(value: unknown): value is LString {
 export function pickL(value: string | LString | null | undefined, lang: Lang): string {
   if (value === null || value === undefined) return ''
   if (typeof value === 'string') return value
-  return value[lang]
+  // Main-process payloads are fa/en; Turkish falls back to English.
+  return lang === 'tr' ? value.en : value[lang]
 }
 
 /** Error with a bilingual message; `message` stays Persian for legacy paths. */
