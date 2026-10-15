@@ -1,0 +1,102 @@
+/* ============================================================
+   Naxlo — design tokens
+   A near-black surface with one restrained accent. No gradients
+   for the sake of gradients: light is used only to communicate
+   state (idle / connecting / connected / error).
+   ============================================================ */
+
+:root {
+  /* Base */
+  --bg: #05060a;
+  --bg-deep: #020305;
+  --bg-elevated: #0a0c12;
+  --surface: rgba(255, 255, 255, 0.035);
+  --surface-hover: rgba(255, 255, 255, 0.06);
+  --surface-active: rgba(255, 255, 255, 0.09);
+  --border: rgba(255, 255, 255, 0.075);
+  --border-strong: rgba(255, 255, 255, 0.14);
+
+  /* Type */
+  --text: #e9edf3;
+  --text-dim: #9aa5b4;
+  --text-mute: #6c7686;
+
+  /* Accent (overridden per theme) */
+  --accent: #22d3ee;
+  --accent-strong: #67e8f9;
+  --accent-dim: #0e7490;
+  --accent-soft: rgba(34, 211, 238, 0.13);
+  --accent-glow: rgba(34, 211, 238, 0.45);
+
+  /* Semantic */
+  --success: #34d399;
+  --success-soft: rgba(52, 211, 153, 0.14);
+  --warning: #f5b544;
+  --warning-soft: rgba(245, 181, 68, 0.14);
+  --danger: #f27272;
+  --danger-soft: rgba(242, 114, 114, 0.14);
+
+  /* Geometry */
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius: 16px;
+  --radius-lg: 22px;
+  --radius-pill: 999px;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Elevation */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --shadow-3: 0 24px 64px rgba(0, 0, 0, 0.55);
+
+  --titlebar-h: 46px;
+  --sidebar-w: 236px;
+  --statusbar-h: 38px;
+
+  --font: 'Vazirmatn', 'Segoe UI', Tahoma, system-ui, -apple-system, sans-serif;
+  --font-mono: 'Cascadia Code', 'SF Mono', 'JetBrains Mono', Consolas, monospace;
+}
+
+[data-accent='cyan'] {
+  --accent: #22d3ee;
+  --accent-strong: #7deaf7;
+  --accent-dim: #0e7490;
+  --accent-soft: rgba(34, 211, 238, 0.13);
+  --accent-glow: rgba(34, 211, 238, 0.42);
+}
+
+[data-accent='violet'] {
+  --accent: #9b8cfb;
+  --accent-strong: #c0b4ff;
+  --accent-dim: #4c3f9e;
+  --accent-soft: rgba(155, 140, 251, 0.14);
+  --accent-glow: rgba(155, 140, 251, 0.4);
+}
+
+[data-accent='emerald'] {
+  --accent: #3fd6a4;
+  --accent-strong: #7df0c6;
+  --accent-dim: #14795a;
+  --accent-soft: rgba(63, 214, 164, 0.13);
+  --accent-glow: rgba(63, 214, 164, 0.38);
+}
+
+[data-accent='amber'] {
+  --accent: #e8b268;
+  --accent-strong: #f6d19a;
+  --accent-dim: #8a5f22;
+  --accent-soft: rgba(232, 178, 104, 0.13);
+  --accent-glow: rgba(232, 178, 104, 0.35);
+}
+
+[data-accent='rose'] {
+  --accent: #f08a9b;
+  --accent-strong: #f9bcc7;
+  --accent-dim: #8f3a4c;
+  --accent-soft: rgba(240, 138, 155, 0.13);
+  --accent-glow: rgba(240, 138, 155, 0.35);
+}

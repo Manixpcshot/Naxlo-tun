@@ -1,0 +1,345 @@
+/* ============================================================
+   Motion: keyframes + the animated background layer
+   ============================================================ */
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+    transform: translateX(-100%);
+  }
+  100% {
+    background-position: -200% 0;
+    transform: translateX(100%);
+  }
+}
+
+@keyframes shine {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+@keyframes indeterminate {
+  0% {
+    transform: translateX(-110%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}
+
+@keyframes pulse-dot {
+  0% {
+    box-shadow: 0 0 0 0 currentColor;
+    opacity: 1;
+  }
+  70% {
+    box-shadow: 0 0 0 7px transparent;
+    opacity: 0.85;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+    opacity: 1;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  50% {
+    transform: scale(1.06);
+    opacity: 0.9;
+  }
+}
+
+@keyframes drift {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  33% {
+    transform: translate3d(4%, -3%, 0) scale(1.08);
+  }
+  66% {
+    transform: translate3d(-3%, 4%, 0) scale(0.96);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes scan {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.5;
+  }
+  88% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateY(1200%);
+    opacity: 0;
+  }
+}
+
+@keyframes dash-spin {
+  to {
+    stroke-dashoffset: -260;
+  }
+}
+
+/* Aurora background -------------------------------------------- */
+.aurora {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.aurora__blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.5;
+  will-change: transform;
+}
+
+.aurora__blob--a {
+  width: 46vw;
+  height: 46vw;
+  top: -18vw;
+  inset-inline-end: -10vw;
+  background: radial-gradient(circle at 30% 30%, var(--accent-glow), transparent 65%);
+  animation: drift 26s var(--ease-in-out) infinite;
+}
+
+.aurora__blob--b {
+  width: 38vw;
+  height: 38vw;
+  bottom: -16vw;
+  inset-inline-start: -8vw;
+  background: radial-gradient(circle at 60% 40%, rgba(155, 140, 251, 0.28), transparent 66%);
+  animation: drift 34s var(--ease-in-out) infinite reverse;
+}
+
+.aurora__grid {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.028) 1px, transparent 1px);
+  background-size: 46px 46px;
+  mask-image: radial-gradient(circle at 50% 0%, rgba(0, 0, 0, 0.85), transparent 72%);
+  -webkit-mask-image: radial-gradient(circle at 50% 0%, rgba(0, 0, 0, 0.85), transparent 72%);
+}
+
+.aurora__vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 45%, transparent 40%, rgba(2, 3, 5, 0.72) 100%);
+}
+
+.aurora__scan {
+  position: absolute;
+  inset-inline: 0;
+  height: 120px;
+  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--accent) 9%, transparent), transparent);
+  animation: scan 11s linear infinite;
+  opacity: 0.35;
+}
+
+/* Power button ---------------------------------------------------- */
+.power {
+  position: relative;
+  width: 190px;
+  height: 190px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  isolation: isolate;
+}
+
+.power__halo {
+  position: absolute;
+  inset: -22px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent-glow), transparent 62%);
+  opacity: 0;
+  filter: blur(16px);
+  transition: opacity 500ms var(--ease-out);
+}
+
+.power--on .power__halo {
+  opacity: 0.55;
+  animation: breathe 4.2s var(--ease-in-out) infinite;
+}
+
+.power--busy .power__halo {
+  opacity: 0.3;
+  animation: breathe 1.5s var(--ease-in-out) infinite;
+}
+
+.power__ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+}
+
+.power__ring svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.power__disc {
+  position: relative;
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 50% 22%, #161a22, #080a0e 68%);
+  border: 1px solid var(--border-strong);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09), inset 0 -14px 30px rgba(0, 0, 0, 0.6),
+    var(--shadow-3);
+  transition: transform 240ms var(--spring), box-shadow 300ms var(--ease-out), border-color 300ms var(--ease-out);
+  z-index: 2;
+}
+
+.power:hover .power__disc {
+  transform: scale(1.025);
+}
+
+.power:active .power__disc {
+  transform: scale(0.975);
+}
+
+.power--on .power__disc {
+  border-color: color-mix(in srgb, var(--success) 45%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 44px -12px var(--success), var(--shadow-3);
+}
+
+.power--error .power__disc {
+  border-color: color-mix(in srgb, var(--danger) 45%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 0 40px -14px var(--danger), var(--shadow-3);
+}
+
+.power__ripple {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid var(--accent);
+  opacity: 0;
+  z-index: 1;
+}
+
+.power__label {
+  position: absolute;
+  bottom: -34px;
+  font-size: 12px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.dash-ring {
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-dasharray: 6 10;
+  animation: dash-spin 14s linear infinite;
+}
+
+/* Spinner ---------------------------------------------------------- */
+.spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  border-top-color: var(--accent);
+  animation: spin 760ms linear infinite;
+}
+
+.spinner--lg {
+  width: 26px;
+  height: 26px;
+  border-width: 2.5px;
+}
+
+/* Equaliser bars used while traffic flows --------------------------- */
+.eq {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 13px;
+}
+
+.eq span {
+  width: 2.5px;
+  background: var(--success);
+  border-radius: 2px;
+  animation: eq 1.1s var(--ease-in-out) infinite;
+}
+
+.eq span:nth-child(1) {
+  height: 40%;
+  animation-delay: -0.35s;
+}
+.eq span:nth-child(2) {
+  height: 80%;
+  animation-delay: -0.15s;
+}
+.eq span:nth-child(3) {
+  height: 55%;
+  animation-delay: -0.55s;
+}
+.eq span:nth-child(4) {
+  height: 90%;
+  animation-delay: 0s;
+}
+
+@keyframes eq {
+  0%,
+  100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aurora__blob,
+  .aurora__scan,
+  .power__halo,
+  .dash-ring,
+  .eq span,
+  .progress__bar::after {
+    animation: none !important;
+  }
+}
+
+.spin-slow {
+  animation: spin 1.1s linear infinite;
+}
+
+.logo-orbit {
+  transform-origin: 32px 32px;
+  animation: spin 18s linear infinite;
+}

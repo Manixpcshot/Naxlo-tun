@@ -1,0 +1,20 @@
+node_modules
+out
+dist
+release
+*.log
+.DS_Store
+Thumbs.db
+
+# Xray core binaries are fetched by scripts/fetch-xray.mjs (CI or local dev) and
+# must never be committed to Git.
+resources/xray
+resources/xray-*
+!resources/.gitkeep
+
+# Runtime artefacts
+*.enc
+secrets.*
+.tmp-tests
+tsconfig.*.tsbuildinfo
+.tmp-tests
