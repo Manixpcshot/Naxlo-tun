@@ -42,15 +42,21 @@ jobs:
           gradle-version: "8.9"
 
       - name: Unit tests
-        run: cd android && gradle testDebugUnitTest --no-daemon --console=plain 2>&1 | tee build.log
+        run: |
+          set -o pipefail
+          cd android && gradle testDebugUnitTest --no-daemon --console=plain 2>&1 | tee build.log
 
       - name: Assemble debug APK
         if: always()
-        run: cd android && gradle assembleDebug --no-daemon --console=plain 2>&1 | tee -a build.log
+        run: |
+          set -o pipefail
+          cd android && gradle assembleDebug --no-daemon --console=plain 2>&1 | tee -a build.log
 
       - name: Assemble release APK
         if: startsWith(github.ref, 'refs/tags/')
-        run: cd android && gradle assembleRelease --no-daemon --console=plain 2>&1 | tee -a build.log
+        run: |
+          set -o pipefail
+          cd android && gradle assembleRelease --no-daemon --console=plain 2>&1 | tee -a build.log
 
       - name: Post build log tail
         if: always()
