@@ -276,6 +276,7 @@ export const TR: Record<MsgKey, string> = {
   checkAppUpdate: 'Uygulama güncellemelerini denetle',
   appUpdateAvailable: 'Yeni bir Naxlo sürümü var',
   appUpdateAvailableBody: '{v} sürümü kullanılabilir',
+  appUpdateAutoBody: '{v} sürümü otomatik indiriliyor; hazır olduğunda Naxlo bir kez yeniden başlatılır.',
   appUpToDate: 'Naxlo güncel',
   appUpToDateBody: 'Kurulu sürüm: {v}',
   updateCheckFailed: 'Güncelleme denetimi başarısız',

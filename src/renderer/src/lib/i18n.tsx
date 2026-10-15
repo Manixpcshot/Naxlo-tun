@@ -376,6 +376,10 @@ export const MESSAGES = {
   checkAppUpdate: { fa: 'بررسی نسخهٔ جدید برنامه', en: 'Check for app updates' },
   appUpdateAvailable: { fa: 'نسخهٔ جدید ناکسلو منتشر شد', en: 'A new Naxlo release is out' },
   appUpdateAvailableBody: { fa: 'نسخهٔ {v} در دسترس است', en: 'Version {v} is available' },
+  appUpdateAutoBody: {
+    fa: 'نسخهٔ {v} به‌صورت خودکار دانلود می‌شود؛ پس از آماده‌شدن، برنامه یک‌بار بسته و با نسخهٔ جدید اجرا می‌شود.',
+    en: 'Version {v} is downloading automatically; Naxlo will restart once to install it.'
+  },
   appUpToDate: { fa: 'ناکسلو به‌روز است', en: 'Naxlo is up to date' },
   appUpToDateBody: { fa: 'نسخهٔ نصب‌شده: {v}', en: 'Installed version: {v}' },
   updateCheckFailed: { fa: 'بررسی به‌روزرسانی ناموفق بود', en: 'Update check failed' },

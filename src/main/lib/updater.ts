@@ -6,6 +6,9 @@
  * the package is verified (sha512 from `latest.yml`), restarts itself exactly
  * once to install — the installer then launches the new version.
  *
+ * The browser is never opened (web installer disabled): the only update path
+ * is download → verify → silent install → single restart.
+ *
  * In development (`app.isPackaged === false`) everything is a no-op so hot
  * reload keeps working.
  */
@@ -20,6 +23,7 @@ const SCOPE = 'updater'
 
 let initialised = false
 let installTimer: NodeJS.Timeout | null = null
+let retryScheduled = false
 
 export function initAutoUpdater(): void {
   if (initialised) return
@@ -34,7 +38,7 @@ export function initAutoUpdater(): void {
     autoUpdater.autoDownload = true
     autoUpdater.autoInstallOnAppQuit = true
     autoUpdater.allowDowngrade = false
-    autoUpdater.disableWebInstaller = false
+    autoUpdater.disableWebInstaller = true
     // Installers are published unsigned; integrity comes from the sha512
     // checksums inside latest.yml, which electron-updater always verifies.
     autoUpdater.on('checking-for-update', () => {
@@ -92,6 +96,15 @@ export function initAutoUpdater(): void {
         progress: null,
         error: L('بررسی به‌روزرسانی ناموفق بود', 'Update check failed')
       })
+      // Transient network hiccups are common; retry once after a short delay
+      // so self-update needs no user action.
+      if (!retryScheduled) {
+        retryScheduled = true
+        setTimeout(() => {
+          retryScheduled = false
+          void checkForUpdates()
+        }, 45_000)
+      }
     })
   } catch (err) {
     log.error(SCOPE, 'could not initialise auto-updater', err)
@@ -132,7 +145,7 @@ export function installNow(): void {
   if (!app.isPackaged) return
   log.info(SCOPE, 'quitting to install update')
   try {
-    autoUpdater.quitAndInstall(false, true)
+    autoUpdater.quitAndInstall(true, true)
   } catch (err) {
     log.error(SCOPE, 'quitAndInstall failed', err)
     patchUpdate({ error: L('نصب به‌روزرسانی ناموفق بود', 'Update installation failed') })

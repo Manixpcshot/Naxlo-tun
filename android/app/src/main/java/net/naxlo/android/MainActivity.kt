@@ -10,7 +10,11 @@ import net.naxlo.android.ui.AppShell
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(Repo.state.language))
+        try {
+            AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(Repo.state.language))
+        } catch (_: Exception) {
+            // Locale application is best-effort; never block the UI.
+        }
         setContentView(androidx.compose.ui.platform.ComposeView(this).apply {
             setContent { AppShell() }
         })
