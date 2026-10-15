@@ -30,6 +30,12 @@ android {
         isCoreLibraryDesugaringEnabled = true
     }
     kotlinOptions { jvmTarget = "17" }
+    sourceSets {
+        getByName("main") {
+            // geoip.dat / geosite.dat are fetched into app/assets by CI at build time.
+            assets.srcDirs("src/main/assets", "assets")
+        }
+    }
     buildFeatures { compose = true }
     packaging { resources.excludes += "META-INF/{AL2.0,LGPL2.1}" }
 }

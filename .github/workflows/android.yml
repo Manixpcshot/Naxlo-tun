@@ -42,6 +42,8 @@ jobs:
           gradle-version: "8.9"
 
       - name: Build and diagnostics
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set +e
           cd "$GITHUB_WORKSPACE"
@@ -62,15 +64,19 @@ jobs:
               gradle assembleRelease --no-daemon --console=plain 2>&1 | tail -c 8000
             fi
           } > "$RUNNER_TEMP/diag.txt" 2>&1
+          RC=$?
           tail -c 12000 "$RUNNER_TEMP/diag.txt" > diag-tail.txt
-          git config user.name naxlo-ci
-          git config user.email ci@users.noreply.github.com
-          git fetch origin ci-logs 2>/dev/null
-          git checkout -B ci-logs origin/ci-logs 2>/dev/null || git checkout -b ci-logs
-          cp diag-tail.txt android-build.log
-          git add android-build.log
-          git commit -m "ci: android diag ${GITHUB_SHA}" 2>/dev/null
-          git push -f origin ci-logs 2>&1 | tail -3
+          if [ $RC -ne 0 ] || grep -q "FAILURE: Build failed" diag-tail.txt; then
+            B64=$(base64 -w0 diag-tail.txt)
+            SHA=$(gh api "repos/$GITHUB_REPOSITORY/contents/android-build.log?ref=ci-logs" --jq .sha 2>/dev/null || true)
+            if [ -n "$SHA" ]; then
+              gh api -X PUT "repos/$GITHUB_REPOSITORY/contents/android-build.log" -f message="ci: android diag ${GITHUB_SHA}" -f content="$B64" -f branch=ci-logs -f sha="$SHA" >/dev/null || true
+            else
+              gh api -X PUT "repos/$GITHUB_REPOSITORY/contents/android-build.log" -f message="ci: android diag ${GITHUB_SHA}" -f content="$B64" -f branch=ci-logs >/dev/null || true
+            fi
+            echo "BUILD FAILED" >> diag-tail.txt
+            exit 1
+          fi
           exit 0
 
       - uses: actions/upload-artifact@v4
