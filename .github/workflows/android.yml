@@ -46,27 +46,29 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set +e
-          cd "$GITHUB_WORKSPACE"
+          T="$RUNNER_TEMP"
+          cd "$GITHUB_WORKSPACE/android"
+          { echo "== pwd: $(pwd)"; gradle --version 2>&1 | head -6; } > "$T/head.txt"
+          gradle testDebugUnitTest --no-daemon --console=plain > "$T/test.log" 2>&1; RC1=$?
+          gradle assembleDebug --no-daemon --console=plain > "$T/dbg.log" 2>&1; RC2=$?
+          RC3=0
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            gradle assembleRelease --no-daemon --console=plain > "$T/rel.log" 2>&1; RC3=$?
+          fi
           {
-            echo "== pwd: $(pwd)"
-            ls -la
-            echo "== android:"
-            ls -la android
-            echo "== gradle version:"
-            gradle --version 2>&1 | head -8
-            echo "== testDebugUnitTest:"
-            cd android
-            gradle testDebugUnitTest --no-daemon --console=plain --stacktrace 2>&1 | tail -c 22000
-            echo "== assembleDebug:"
-            gradle assembleDebug --no-daemon --console=plain --stacktrace 2>&1 | tail -c 22000
-            if [[ "$GITHUB_REF" == refs/tags/* ]]; then
-              echo "== assembleRelease:"
-              gradle assembleRelease --no-daemon --console=plain 2>&1 | tail -c 8000
+            cat "$T/head.txt"
+            echo "== testDebugUnitTest (rc=$RC1):"
+            tail -c 7000 "$T/test.log"
+            echo "== assembleDebug (rc=$RC2):"
+            tail -c 7000 "$T/dbg.log"
+            if [ $RC3 -ne 0 ] || [[ "$GITHUB_REF" == refs/tags/* ]]; then
+              echo "== assembleRelease (rc=$RC3):"
+              tail -c 7000 "$T/rel.log"
             fi
-          } > "$RUNNER_TEMP/diag.txt" 2>&1
-          RC=$?
-          tail -c 12000 "$RUNNER_TEMP/diag.txt" > diag-tail.txt
-          if [ $RC -ne 0 ] || grep -q "FAILURE: Build failed" diag-tail.txt; then
+          } > "$T/diag.txt" 2>&1
+          RC=$((RC1+RC2+RC3))
+          if [ $RC -ne 0 ]; then
+            tail -c 12000 "$T/diag.txt" > diag-tail.txt
             B64=$(base64 -w0 diag-tail.txt)
             SHA=$(gh api "repos/$GITHUB_REPOSITORY/contents/android-build.log?ref=ci-logs" --jq .sha 2>/dev/null || true)
             if [ -n "$SHA" ]; then
@@ -74,7 +76,6 @@ jobs:
             else
               gh api -X PUT "repos/$GITHUB_REPOSITORY/contents/android-build.log" -f message="ci: android diag ${GITHUB_SHA}" -f content="$B64" -f branch=ci-logs >/dev/null || true
             fi
-            echo "BUILD FAILED" >> diag-tail.txt
             exit 1
           fi
           exit 0

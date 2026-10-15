@@ -75,6 +75,7 @@ object Vault {
                                             .put("expire", it.expire)
                                     }
                                 )
+                        )
                     }
                 }
             )
