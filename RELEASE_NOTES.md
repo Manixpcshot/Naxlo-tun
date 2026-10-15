@@ -1,28 +1,27 @@
-# Naxlo v1.4.0 📱
+# naxlo v1.4.1
 
-## چه چیزهای جدیدی آمد؟
+## فارسی
 
-- 📱 **ناکسلو برای اندروید** — کلاینت بومی Kotlin در پوشهٔ `android/`:
-  - تونل بر پایهٔ VpnService خود اندروید (بدون روت، بدون درایور سیستمی) با هستهٔ Xray باندل‌شده با gomobile
-    (`libv2ray.aar`) — همان پشتیبانی VLESS/REALITY/WebSocket/gRPC دسکتاپ.
-  - import اشتراک با رمزگشایی Base64، نوارهای حجم از هدر `subscription-userinfo` و نام اشتراک از `profile-title`.
-  - لیست سرورها با پین، تست تأخیر و جست‌وجو؛ UI سه‌زبانه (فا/ان/تر) با همان طراحی نزدیک‌مشکی دسکتاپ.
-  - والت رمزنگاری‌شده (Android Keystore) برای لینک‌ها و کلیدها؛ هیچ مقدار حساسی در لاگ نمی‌آید.
-  - بیلد APK روی GitHub Actions؛ فایل‌های `Naxlo-android-v1.4.0-debug.apk` و `-unsigned.apk` کنار نصب‌کننده‌های ویندوز
-    در همین ریلیز منتشر می‌شوند.
+**رفع دو مشکل مهم:**
 
-## فایل‌های این ریلیز
+- 📱 **اندروید**: مشکل باز نشدن برنامه برطرف شد. علت، ناسازگاری تم فعالیت با `AppCompatActivity` بود؛ اکنون تم سازگار است و علاوه بر آن، استارت‌اپ برنامه در برابر خطاهای Keystore و زبان مقاوم‌سازی شد — اپلیکیشن تحت هر شرایطی باز می‌شود.
+- 💻 **ویندوز**: به‌روزرسانی اکنون کاملاً خودکار است و **هیچ‌وقت لینک ریپازیتوری/مرورگر باز نمی‌شود**. برنامه در پس‌زمینه نسخهٔ جدید را دانلود و اعتبارسنجی (sha512) می‌کند، نصب بی‌صدا انجام می‌شود و برنامه **فقط یک‌بار** بسته و با نسخهٔ جدید باز می‌شود. دکمهٔ «بررسی به‌روزرسانی» هم به‌جای بازکردن لینک، همان خط لولهٔ خودکار را شروع می‌کند. در صورت قطعی موقت شبکه، تلاش مجدد خودکار پس از ۴۵ ثانیه انجام می‌شود.
 
+### فایل‌ها
 | فایل | توضیح |
-| --- | --- |
-| `Naxlo-Setup-1.4.0.exe` / `Naxlo-Portable-1.4.0.exe` | نصب‌کننده و پرتابل ویندوز |
-| `Naxlo-android-v1.4.0-debug.apk` | APK اندروید (امضای debug، برای نصب مستقیم) |
-| `Naxlo-android-v1.4.0-unsigned.apk` | APK ریلیز بدون امضا |
-| `latest.yml` / `SHA256SUMS.txt` | خوراک آپدیت خودکار / کنترل یکپارچگی |
+|---|---|
+| `Naxlo-Setup-1.4.1.exe` | نصب‌کنندهٔ ویندوز |
+| `Naxlo-Portable-1.4.1.exe` | نسخهٔ پرتابل |
+| `Naxlo-android-v1.4.1-debug.apk` | اپ اندروید (قابل نصب) |
+| `Naxlo-android-v1.4.1-unsigned.apk` | بیلد release بدون امضا |
+| `latest.yml` / `SHA256SUMS.txt` | خوراک به‌روزرسانی خودکار و checksum |
 
----
+> کاربران نسخهٔ ۱.۴.۰ ویندوز: برنامه خودش این نسخه را دانلود و با یک ریستارت نصب می‌کند.
+> کاربران اندروید: APK جدید را نصب کنید (روی نسخهٔ قبلی قابل نصب است؛ داده‌ها حفظ می‌شود).
 
-**English:** v1.4.0 ships **Naxlo for Android** — a native Kotlin client with a VpnService tunnel (no root), the
-gomobile-bound Xray core, subscription import with quota bars, pins/latency tests and the trilingual near-black UI.
-Debug + unsigned APKs are attached to this release next to the Windows installers; desktop users on 1.1.1+
-auto-update as usual.
+## English
+
+**Two critical fixes:**
+
+- 📱 **Android**: the launch crash is fixed — the activity theme is now AppCompat-compatible, and start-up is hardened so Keystore/locale errors can never prevent the app from opening.
+- 💻 **Windows**: self-update is fully automatic and **never opens the repository link or a browser**. Updates download silently in the background, sha512 is verified, the installer runs silently and the app restarts **exactly once**. The manual "check for update" button now triggers the same pipeline instead of opening a link, and transient network failures retry automatically after 45 s.

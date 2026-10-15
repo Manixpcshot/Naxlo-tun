@@ -6,6 +6,13 @@ All notable changes to Naxlo are documented here. Releases are cut per tag
 The format follows [Keep a Changelog](https://keepachangelog.com/) and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.4.1] - 2026-10-15
+
+### Fixed
+- Android: launch crash on devices — `MainActivity` (AppCompatActivity) now uses an AppCompat theme (`Theme.AppCompat.NoActionBar`); app start-up is additionally hardened (Keystore/locale failures can no longer kill the process).
+- Desktop: self-update never opens the browser anymore — the web-installer fallback is disabled, the manual "check for update" button now starts the silent download → verify → install pipeline, and the installer runs silently so the app restarts exactly once.
+- Desktop: a failed update check/download retries automatically after 45 s.
+
 ## [1.4.0] — 2026-10-15
 
 ### Added

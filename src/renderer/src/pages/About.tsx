@@ -30,12 +30,9 @@ export function About(): React.ReactElement {
         kind: result.updateAvailable ? 'info' : 'success',
         title: result.updateAvailable ? t('appUpdateAvailable') : t('appUpToDate'),
         message: result.updateAvailable
-          ? t('appUpdateAvailableBody', { v: result.latest ?? '—' })
+          ? t('appUpdateAutoBody', { v: result.latest ?? '—' })
           : t('appUpToDateBody', { v: result.current })
       })
-      if (result.updateAvailable && result.releaseUrl) {
-        void window.naxlo.shell.open(result.releaseUrl).catch(() => undefined)
-      }
     } else {
       pushToast({ kind: 'error', title: t('updateCheckFailed') })
     }

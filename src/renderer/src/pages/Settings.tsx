@@ -284,7 +284,7 @@ export function Settings(): React.ReactElement {
                         kind: result.updateAvailable ? 'info' : 'success',
                         title: result.updateAvailable ? t('appUpdateAvailable') : t('appUpToDate'),
                         message: result.updateAvailable
-                          ? t('appUpdateAvailableBody', { v: result.latest ?? '—' })
+                          ? t('appUpdateAutoBody', { v: result.latest ?? '—' })
                           : t('appUpToDateBody', { v: result.current })
                       })
                     }

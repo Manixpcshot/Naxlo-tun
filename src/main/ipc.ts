@@ -26,7 +26,7 @@ import { runtime } from './runtime'
 import { isAllowedExternalUrl } from './window'
 import { purgeDownloadedCores } from './lib/xray/core'
 import { checkAppUpdate } from './lib/update'
-import { installNow } from './lib/updater'
+import { checkForUpdates, installNow } from './lib/updater'
 
 const SCOPE = 'ipc'
 
@@ -64,7 +64,13 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
     logsDir: `${app.getPath('userData')}\\logs`
   }))
 
-  handle(IPC.appUpdate, () => checkAppUpdate())
+  handle(IPC.appUpdate, async () => {
+    const info = await checkAppUpdate()
+    // Kick the self-update pipeline immediately: electron-updater downloads
+    // the package and restarts the app once — no browser, no repo link.
+    if (info.updateAvailable) void checkForUpdates()
+    return info
+  })
   handle(IPC.appInstallUpdate, () => {
     installNow()
     return true
