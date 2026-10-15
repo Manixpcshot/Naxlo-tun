@@ -1,38 +1,28 @@
-# Naxlo v1.3.0 🧠
+# Naxlo v1.4.0 📱
 
 ## چه چیزهای جدیدی آمد؟
 
-- 🇹🇷 **زبان ترکی** — زبان سوم اضافه شد (فارسی → انگلیسی → ترکی). دکمهٔ نوار عنوان بین هر سه می‌چرخد و در تنظیمات هم
-  هر سه گزینه هست؛ اعداد و تاریخ‌ها با locale ترکی نمایش داده می‌شوند.
-- 🧠 **اتصال هوشمند:**
-  - «خودکار — بهترین سرور»: بالای لیست سرورها؛ هنگام اتصال، سریع‌ترین سرور سالم انتخاب می‌شود.
-  - «سوییچ خودکار در قطعی»: اگر سرور فعال ۳ بار پیاپی در تست تأخیر بیفتد، به بهترین سرور بعدی می‌رود و توست می‌زند
-    (کلیدش در تنظیمات ⇦ رفتار).
-- 📌 **پین سرورها** — سرورهای پرکاربرد را پین کنید تا بالای گروه بمانند + چیپ فیلتر «پین‌شده‌ها».
-- 🗺️ **چیپ‌های کشور** — فیلتر لیست سرورها با پرچم کشورها (به‌همراه تعداد).
-- 🚨 **قطع اضطراری** — دکمه در صفحهٔ اصلی یا هات‌کی سراسری `Ctrl+Alt+Q`: قطع فوری + بازگرداندن پروکسی سیستم.
-- 🧰 **سینی سیستم دوزبانه/سه‌زبانه** — منو و tooltip ترای با زبان برنامه هماهنگ می‌شوند.
-
-## رفع اشکال
-
-- 🔢 **نشت زبان اعداد:** در حالت انگلیسی/ترکی، مدت‌ها، زمان‌های نسبی و تأخیرها دیگر با اعداد یا قالب فارسی نمایش داده
-  نمی‌شوند؛ کل لایهٔ قالب‌بندی بر اساس جدول locale هر زبان بازنویسی شد.
+- 📱 **ناکسلو برای اندروید** — کلاینت بومی Kotlin در پوشهٔ `android/`:
+  - تونل بر پایهٔ VpnService خود اندروید (بدون روت، بدون درایور سیستمی) با هستهٔ Xray باندل‌شده با gomobile
+    (`libv2ray.aar`) — همان پشتیبانی VLESS/REALITY/WebSocket/gRPC دسکتاپ.
+  - import اشتراک با رمزگشایی Base64، نوارهای حجم از هدر `subscription-userinfo` و نام اشتراک از `profile-title`.
+  - لیست سرورها با پین، تست تأخیر و جست‌وجو؛ UI سه‌زبانه (فا/ان/تر) با همان طراحی نزدیک‌مشکی دسکتاپ.
+  - والت رمزنگاری‌شده (Android Keystore) برای لینک‌ها و کلیدها؛ هیچ مقدار حساسی در لاگ نمی‌آید.
+  - بیلد APK روی GitHub Actions؛ فایل‌های `Naxlo-android-v1.4.0-debug.apk` و `-unsigned.apk` کنار نصب‌کننده‌های ویندوز
+    در همین ریلیز منتشر می‌شوند.
 
 ## فایل‌های این ریلیز
 
 | فایل | توضیح |
 | --- | --- |
-| `Naxlo-Setup-1.3.0.exe` | نصب‌کنندهٔ NSIS (پیشنهادی) |
-| `Naxlo-Portable-1.3.0.exe` | نسخهٔ پرتابل |
-| `latest.yml` | خوراک به‌روزرسانی خودکار |
-| `SHA256SUMS.txt` | کنترل یکپارچگی |
-
-نسخه‌های ≥1.1.1 به‌صورت خودکار (یک‌بار restart) به 1.3.0 می‌رسند.
+| `Naxlo-Setup-1.4.0.exe` / `Naxlo-Portable-1.4.0.exe` | نصب‌کننده و پرتابل ویندوز |
+| `Naxlo-android-v1.4.0-debug.apk` | APK اندروید (امضای debug، برای نصب مستقیم) |
+| `Naxlo-android-v1.4.0-unsigned.apk` | APK ریلیز بدون امضا |
+| `latest.yml` / `SHA256SUMS.txt` | خوراک آپدیت خودکار / کنترل یکپارچگی |
 
 ---
 
-**English:** Naxlo 1.3.0 adds the **Turkish interface** (fa → en → tr cycle), **smart connect** (“Auto — best server”
-plus auto-switch after three failed probes), **pinned servers**, **country filter chips**, a **panic disconnect**
-(button + global `Ctrl+Alt+Q` hotkey) and a **localized tray**. It also fixes locale leakage: durations, relative
-times and latency no longer render with Persian digits/text in English or Turkish. Installs on 1.1.1+ auto-update
-with a single restart.
+**English:** v1.4.0 ships **Naxlo for Android** — a native Kotlin client with a VpnService tunnel (no root), the
+gomobile-bound Xray core, subscription import with quota bars, pins/latency tests and the trilingual near-black UI.
+Debug + unsigned APKs are attached to this release next to the Windows installers; desktop users on 1.1.1+
+auto-update as usual.

@@ -6,6 +6,23 @@ All notable changes to Naxlo are documented here. Releases are cut per tag
 The format follows [Keep a Changelog](https://keepachangelog.com/) and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.4.0] — 2026-10-15
+
+### Added
+
+- **Naxlo for Android** — a native Kotlin client in `android/`:
+  - VpnService-based tunnel (no root, no system driver) powered by the
+    gomobile-bound Xray core (`libv2ray.aar`), same VLESS/REALITY/WebSocket/
+    gRPC support as the desktop config builder.
+  - Subscription import with Base64 TXT decoding, `subscription-userinfo`
+    quota bars and `profile-title` names, per-country-free server list with
+    pins and latency tests.
+  - Trilingual UI (fa/en/tr) with the desktop's near-black design language.
+  - Encrypted vault (Android Keystore) for links and credentials; nothing
+    sensitive reaches logs.
+  - CI builds the APK on GitHub Actions and attaches debug/unsigned release
+    APKs to every tagged release next to the Windows installers.
+
 ## [1.3.0] — 2026-10-15
 
 ### Added
