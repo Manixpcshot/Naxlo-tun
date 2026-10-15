@@ -1,7 +1,7 @@
 {
   "name": "naxlo",
   "productName": "Naxlo",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Naxlo — کلاینت فارسی‌زبان VLESS برای ویندوز بر پایهٔ Electron و Xray-core در حالت پروکسی محلی (بدون TUN/Wintun)",
   "author": {
     "name": "Naxlo Contributors",

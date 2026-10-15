@@ -169,6 +169,121 @@ export function requestThroughProxy(
   })
 }
 
+export interface ThroughputResult {
+  ok: boolean
+  bytes: number
+  ms: number
+  status: number
+  error?: string
+}
+
+/**
+ * Download-throughput measurement through the local HTTP inbound: opens a
+ * CONNECT tunnel, streams the body and counts bytes until the cap/timeout.
+ * Used for the "speed" tile — the number only ever reaches the UI.
+ */
+export function measureThroughput(
+  proxyHost: string,
+  proxyPort: number,
+  targetUrl: string,
+  maxBytes = 12 * 1024 * 1024,
+  timeoutMs = 15000
+): Promise<ThroughputResult> {
+  return new Promise((resolve) => {
+    let url: URL
+    try {
+      url = new URL(targetUrl)
+    } catch {
+      resolve({ ok: false, bytes: 0, ms: 0, status: 0, error: 'invalid url' })
+      return
+    }
+    const started = performance.now()
+    let settled = false
+    let bytes = 0
+    const finish = (result: ThroughputResult): void => {
+      if (settled) return
+      settled = true
+      clearTimeout(timer)
+      resolve({ ...result, ms: Math.round(performance.now() - started) })
+    }
+    const timer = setTimeout(() => {
+      // A partial download still yields a usable rate.
+      if (bytes > 64 * 1024) finish({ ok: true, bytes, ms: 0, status: 200 })
+      else finish({ ok: false, bytes, ms: 0, status: 0, error: 'timeout' })
+    }, timeoutMs)
+
+    const connectReq = http.request({
+      host: proxyHost,
+      port: proxyPort,
+      method: 'CONNECT',
+      path: `${url.hostname}:${url.port || 443}`
+    })
+    connectReq.on('error', (err) => finish({ ok: false, bytes: 0, ms: 0, status: 0, error: err.message }))
+    connectReq.setTimeout(timeoutMs, () => connectReq.destroy(new Error('timeout')))
+    connectReq.on('connect', (res, socket) => {
+      if (res.statusCode !== 200) {
+        socket.destroy()
+        finish({ ok: false, bytes: 0, ms: 0, status: res.statusCode ?? 0, error: 'tunnel failed' })
+        return
+      }
+      const secure = tls.connect(
+        { socket, servername: url.hostname, ALPNProtocols: ['http/1.1'], rejectUnauthorized: true },
+        () => {
+          secure.write(
+            [
+              `GET ${url.pathname}${url.search} HTTP/1.1`,
+              `Host: ${url.host}`,
+              'User-Agent: naxlo/1.0',
+              'Accept: */*',
+              'Connection: close',
+              '',
+              ''
+            ].join('\r\n')
+          )
+        }
+      )
+      secure.on('error', (err) => {
+        if (bytes > 64 * 1024) finish({ ok: true, bytes, ms: 0, status: 200 })
+        else finish({ ok: false, bytes, ms: 0, status: 0, error: err.message })
+      })
+      let headDone = false
+      let status = 0
+      secure.on('data', (chunk: Buffer) => {
+        if (!headDone) {
+          const text = chunk.toString('utf8', 0, Math.min(chunk.length, 1024))
+          const end = text.indexOf('\r\n\r\n')
+          const head = end >= 0 ? text.slice(0, end) : text
+          const match = /HTTP\/1\.\d\s+(\d{3})/.exec(head.split('\r\n')[0] ?? '')
+          status = match ? Number(match[1]) : 0
+          if (end >= 0) {
+            headDone = true
+            bytes += chunk.length - (end + 4)
+          } else if (text.includes('\r\n\r\n')) {
+            headDone = true
+          }
+          if (status >= 400) {
+            secure.destroy()
+            socket.destroy()
+            finish({ ok: false, bytes: 0, ms: 0, status, error: `http ${status}` })
+          }
+          return
+        }
+        bytes += chunk.length
+        if (bytes >= maxBytes) {
+          secure.destroy()
+          socket.destroy()
+          finish({ ok: true, bytes, ms: 0, status })
+        }
+      })
+      secure.on('end', () => {
+        socket.destroy()
+        finish({ ok: status >= 200 && status < 400 && bytes > 0, bytes, ms: 0, status })
+      })
+    })
+    connectReq.end()
+  })
+}
+
 /** Wait until a local TCP port accepts connections (Xray inbound is up). */
 export function waitForPort(host: string, port: number, timeoutMs = 8000): Promise<boolean> {
   const deadline = Date.now() + timeoutMs

@@ -6,6 +6,34 @@ All notable changes to Naxlo are documented here. Releases are cut per tag
 The format follows [Keep a Changelog](https://keepachangelog.com/) and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.2.0] — 2026-10-15
+
+### Added
+
+- **Multiple subscriptions** — store several subscription links side by side;
+  each keeps its own server list, quota and title. The Servers page groups
+  configs under their subscription (sticky group headers with counts, quota
+  and a per-subscription refresh button); removing one subscription leaves the
+  others untouched. Vaults from older versions migrate automatically.
+- **Subscription quota panel (Happ-style)** — the standard
+  `subscription-userinfo` response header (`upload/download/total/expire`) is
+  parsed and shown as a usage bar with used / remaining / total traffic and an
+  expiry countdown (days left, expired state), both on the Subscription page
+  and on Home for the active subscription.
+- **Subscription names from the service** — the `profile-title` response
+  header (plain, url-encoded or `base64:`) becomes the subscription's name.
+- **Speed test** — a real download-throughput measurement (Mbps) through the
+  active local proxy, on the Home quota card.
+
+### Changed
+
+- Servers page header counts now aggregate all subscriptions plus manual
+  imports; the sidebar badge does the same.
+
+### Tests
+
+- `subscription-userinfo` and `profile-title` parsers covered (18 tests).
+
 ## [1.1.1] — 2026-10-15
 
 ### Fixed

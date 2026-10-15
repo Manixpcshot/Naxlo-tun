@@ -1,29 +1,30 @@
-# Naxlo v1.1.1 🩹
+# Naxlo v1.2.0 📊
 
-## چه چیزی درست شد؟
+## چه چیزهای جدیدی آمد؟
 
-- 🎨 **بازگشت کامل استایل‌ها:** در v1.1.0 یک سمیکالن جاافتاده بعد از `@import` پرچم‌ها باعث شد کل لایهٔ layout/کامپوننت‌ها
-  از باندل CSS حذف شود و برنامه بدون استایل اجرا شود. import ترمیم شد و خروجی build حالا بررسی می‌شود که قوانین layout
-  واقعاً داخل باندل باشند.
-- 🚩 **پرچم‌ها نمایش داده می‌شوند:** سلکتورهای `flags.css` با قرارداد کامپوننت `Flag` (`[data-flag="xx"]`) هم‌خوان شدند.
-- 🧪 **تست regression جدید:** هر `@import` در `global.css` باید سمیکالن داشته باشد و contract پرچم‌ها تست می‌شود — دیگر
-  یک کاراکتر جاافتاده کل UI را از کار نمی‌اندازد.
-
-اگر v1.1.0 را نصب کرده‌اید، برنامه به‌صورت خودکار به 1.1.1 به‌روزرسانی می‌شود (یک‌بار بسته و باز می‌شود).
+- 📚 **چند اشتراک:** چند لینک اشتراک را کنار هم نگه دارید؛ سرورهای هر اشتراک جدا گروه‌بندی می‌شوند، هر اشتراک دکمهٔ
+  به‌روزرسانی و حذف مستقل دارد و حذف یکی به بقیه دست نمی‌زند. والت‌های نسخه‌های قبل خودکار مهاجرت می‌کنند.
+- 📊 **حجم و انقضا (مثل Happ):** هدر استاندارد `subscription-userinfo` خوانده می‌شود و نوار مصرف با «مصرف‌شده /
+  باقی‌مانده / کل حجم» به‌همراه روزهای مانده تا انقضا نمایش داده می‌شود — هم در صفحهٔ اشتراک و هم در صفحهٔ اصلی برای
+  اشتراک فعال.
+- 🏷️ **نام اشتراک از خود سرویس:** هدر `profile-title` (ساده، url-encoded یا base64) به‌عنوان نام اشتراک استفاده می‌شود.
+- ⚡ **تست سرعت:** اندازه‌گیری دانلود واقعی (مگابیت بر ثانیه) از طریق پروکسی فعال، در کارت حجم صفحهٔ اصلی.
+- 🗂️ **صفحهٔ سرورها گروه‌بندی شد:** سرورها زیر سربرگ اشتراک خودشان فهرست می‌شوند (با شمارنده، حجم و دکمهٔ به‌روزرسانی).
 
 ## فایل‌های این ریلیز
 
 | فایل | توضیح |
 | --- | --- |
-| `Naxlo-Setup-1.1.1.exe` | نصب‌کنندهٔ NSIS (پیشنهادی) |
-| `Naxlo-Portable-1.1.1.exe` | نسخهٔ پرتابل |
+| `Naxlo-Setup-1.2.0.exe` | نصب‌کنندهٔ NSIS (پیشنهادی) |
+| `Naxlo-Portable-1.2.0.exe` | نسخهٔ پرتابل |
 | `latest.yml` | خوراک به‌روزرسانی خودکار |
 | `SHA256SUMS.txt` | کنترل یکپارچگی |
 
+نسخه‌های ۱.۱.۱ و جدیدتر به‌صورت خودکار (یک‌بار restart) به این نسخه به‌روزرسانی می‌شوند.
+
 ---
 
-**English:** v1.1.1 is a hotfix for v1.1.0: a missing semicolon after the flags `@import` in `global.css` made the
-CSS parser drop the entire component/layout layer from the shipped bundle (the app rendered unstyled). The import is
-fixed, flag selectors now match the `Flag` component (`[data-flag="xx"]`) so country flags render, and new regression
-tests assert both the import hygiene and the flag selector contract. Existing 1.1.0 installs auto-update to 1.1.1
-(silent download, one restart).
+**English:** Naxlo 1.2.0 adds **multiple subscriptions** (separate server groups, per-subscription refresh/remove,
+automatic vault migration), a **Happ-style quota panel** (used/remaining/total traffic + expiry countdown parsed from
+`subscription-userinfo`), **subscription names from `profile-title`**, a **real speed test** through the active proxy
+(Mbps) and a grouped Servers page. Installs on 1.1.1+ auto-update with a single restart.

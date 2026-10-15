@@ -33,15 +33,18 @@ import { networkInterfaces, hostname, userInfo } from 'node:os'
 import { log } from './logger'
 import { registerSecret } from './redact'
 import { bumpServers } from '../state'
-import type { ServerConfig } from '../../shared/types'
+import type { ServerConfig, StoredSubscription } from '../../shared/types'
+import { stableId } from './ids'
 
 const SCOPE = 'vault'
 const VAULT_VERSION = 2
 const APP_SALT = 'naxlo::vault::v2::sodium-chloride'
 
 export interface VaultPayload {
+  /** Legacy single-subscription fields, kept only to migrate old vaults. */
   subscriptionUrl: string | null
   subscriptionName: string | null
+  subscriptions: StoredSubscription[]
   servers: ServerConfig[]
   selectedServerId: string | null
   lastConnectedAt: number | null
@@ -61,6 +64,7 @@ interface VaultFile {
 let payload: VaultPayload = {
   subscriptionUrl: null,
   subscriptionName: null,
+  subscriptions: [],
   servers: [],
   selectedServerId: null,
   lastConnectedAt: null,
@@ -155,6 +159,7 @@ function decrypt(vaultFile: VaultFile): string | null {
 /** Teach the redactor about every secret currently held in memory. */
 function armRedaction(): void {
   if (payload.subscriptionUrl) registerSecret(payload.subscriptionUrl, 'subscription')
+  for (const sub of payload.subscriptions) registerSecret(sub.url, 'subscription')
   try {
     const u = payload.subscriptionUrl ? new URL(payload.subscriptionUrl) : null
     if (u) {
@@ -174,6 +179,30 @@ function armRedaction(): void {
   }
 }
 
+/**
+ * Vaults written before 1.2.0 stored a single subscription URL. Lift it into
+ * the multi-subscription list and re-attach its servers, so upgrading users
+ * keep everything (name falls back to null → the UI shows the URL host).
+ */
+function migrateLegacySubscription(): void {
+  if (payload.subscriptions.length > 0 || !payload.subscriptionUrl) return
+  const id = stableId(payload.subscriptionUrl)
+  payload.subscriptions = [
+    {
+      id,
+      url: payload.subscriptionUrl,
+      name: payload.subscriptionName,
+      userinfo: null,
+      updatedAt: payload.lastUpdatedAt,
+      lastError: null
+    }
+  ]
+  for (const server of payload.servers) {
+    if (server.source === 'subscription' && !server.subscriptionId) server.subscriptionId = id
+  }
+  log.info(SCOPE, 'migrated legacy single-subscription vault to the multi-subscription list')
+}
+
 export function loadVault(): VaultPayload {
   try {
     if (existsSync(file())) {
@@ -185,6 +214,9 @@ export function loadVault(): VaultPayload {
         const data = JSON.parse(json) as Partial<VaultPayload>
         payload = {
           subscriptionUrl: typeof data.subscriptionUrl === 'string' ? data.subscriptionUrl : null,
+          subscriptions: Array.isArray(data.subscriptions)
+            ? (data.subscriptions as StoredSubscription[])
+            : [],
           subscriptionName: typeof data.subscriptionName === 'string' ? data.subscriptionName : null,
           servers: Array.isArray(data.servers) ? (data.servers as ServerConfig[]) : [],
           selectedServerId: data.selectedServerId ?? null,
@@ -198,6 +230,7 @@ export function loadVault(): VaultPayload {
   } catch (err) {
     log.error(SCOPE, 'vault load failed', err)
   }
+  migrateLegacySubscription()
   armRedaction()
   log.info(
     SCOPE,
@@ -270,6 +303,7 @@ export function wipeVault(): void {
   payload = {
     subscriptionUrl: null,
     subscriptionName: null,
+    subscriptions: [],
     servers: [],
     selectedServerId: null,
     lastConnectedAt: null,

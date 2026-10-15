@@ -10,7 +10,7 @@ import { Flag } from '../components/Flag'
 import { Button, Card, Notice, Progress } from '../components/ui'
 import { useStore } from '../lib/store'
 import { useI18n, type MsgKey } from '../lib/i18n'
-import { fa, faDuration, faMs, maskIpLocal, shortDuration } from '../lib/format'
+import { fa, faDate, faDecimal, faDuration, faMs, formatBytes, maskIpLocal, shortDuration, subDaysLeft, subPercent, subRemaining, subUsed } from '../lib/format'
 import type { PageId } from '../components/Sidebar'
 
 interface Props {
@@ -22,6 +22,8 @@ export function Home({ onNavigate }: Props): React.ReactElement {
   const { t, pick } = useI18n()
   const [now, setNow] = useState(Date.now())
   const [ipVisible, setIpVisible] = useState(false)
+  const [speed, setSpeed] = useState<{ mbps: number; bytes: number; ms: number } | null>(null)
+  const [speedBusy, setSpeedBusy] = useState(false)
   const history = useRef<Array<number | null>>([])
 
   useEffect(() => {
@@ -37,6 +39,10 @@ export function Home({ onNavigate }: Props): React.ReactElement {
       history.current = []
     }
   }, [state.latencyMs, state.connection])
+
+  useEffect(() => {
+    if (state.connection !== 'connected') setSpeed(null)
+  }, [state.connection])
 
   const connected = state.connection === 'connected'
   const busy = state.connection === 'preparing' || state.connection === 'starting' || state.connection === 'stopping'
@@ -76,21 +82,35 @@ export function Home({ onNavigate }: Props): React.ReactElement {
   }
 
   const refresh = async (): Promise<void> => {
-    if (!state.subscription.hasUrl) {
+    if (state.subscriptions.length === 0) {
       onNavigate('subscription')
       return
     }
     const report = await run(() => window.naxlo.subscription.refresh(), t('errorTitle'))
     if (report) {
-      pushToast({
-        kind: 'success',
-        title: t('refreshedToast'),
-        message: t('fetchedBody', { total: fa(report.total), supported: fa(report.supported) })
-      })
+      const first = Array.isArray(report) ? report[0] : report
+      if (first) {
+        pushToast({
+          kind: 'success',
+          title: t('refreshedToast'),
+          message: t('fetchedBody', { total: fa(first.total), supported: fa(first.supported) })
+        })
+      }
     }
   }
 
+  const runSpeed = async (): Promise<void> => {
+    setSpeedBusy(true)
+    const result = await run(() => window.naxlo.speed.test(), t('errorTitle'))
+    if (result) setSpeed(result)
+    setSpeedBusy(false)
+  }
+
   const uptime = state.startedAt ? now - state.startedAt : null
+  const activeSub = state.subscriptions.find((sub) => sub.id === state.activeSubscriptionId) ?? null
+  const activePercent = activeSub?.userinfo ? subPercent(activeSub.userinfo) : null
+  const activeRemaining = activeSub?.userinfo ? subRemaining(activeSub.userinfo) : null
+  const activeDays = activeSub?.userinfo ? subDaysLeft(activeSub.userinfo) : null
 
   return (
     <div>
@@ -131,7 +151,7 @@ export function Home({ onNavigate }: Props): React.ReactElement {
               <Button variant="primary" icon={connected ? 'disconnect' : 'bolt'} onClick={() => void toggle()} loading={busy}>
                 {connected ? t('disconnect') : t('connect')}
               </Button>
-              <Button icon="refresh" onClick={() => void refresh()} loading={state.subscription.fetching} disabled={busy}>
+              <Button icon="refresh" onClick={() => void refresh()} loading={state.subscriptions.some((sub) => sub.fetching)} disabled={busy}>
                 {t('refreshSubscription')}
               </Button>
               <Button variant="ghost" icon="servers" onClick={() => onNavigate('servers')}>
@@ -222,6 +242,74 @@ export function Home({ onNavigate }: Props): React.ReactElement {
           }
         />
       </div>
+
+      {activeSub ? (
+        <Card className="quotacard" style={{ marginTop: 18 }}>
+          <div className="endpoints__head">
+            <div>
+              <div className="card__title">
+                <Icon name="subscription" size={15} /> {t('usageTitle')}
+              </div>
+              <div className="card__subtitle">{activeSub.name ?? activeSub.maskedUrl}</div>
+            </div>
+            <div className="quotacard__speed">
+              <span className="badge badge--muted" title={t('speedHint')}>
+                <Icon name="gauge" size={12} /> {t('speedTitle')}
+              </span>
+              <span className="quotacard__speedvalue mono">
+                {speed ? t('speedValue', { n: faDecimal(speed.mbps) }) : '—'}
+              </span>
+              <Button size="sm" icon="gauge" onClick={() => void runSpeed()} loading={speedBusy} disabled={!connected} title={connected ? t('speedHint') : t('speedNeedConnect')}>
+                {t('speedRun')}
+              </Button>
+            </div>
+          </div>
+
+          {activeSub.userinfo ? (
+            <div className="usage" style={{ marginTop: 14 }}>
+              <div className="usage__bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={activePercent ?? 0}>
+                <span
+                  className="usage__fill"
+                  data-tone={activePercent === null ? 'ok' : activePercent >= 90 ? 'danger' : activePercent >= 70 ? 'warn' : 'ok'}
+                  style={{ width: `${activePercent ?? 4}%` }}
+                />
+              </div>
+              <div className="usage__grid">
+                <div className="usage__cell">
+                  <span className="usage__label">{t('usageUsed')}</span>
+                  <span className="usage__value">{formatBytes(subUsed(activeSub.userinfo))}</span>
+                </div>
+                <div className="usage__cell">
+                  <span className="usage__label">{t('usageRemaining')}</span>
+                  <span className="usage__value">
+                    {activeRemaining === null ? t('usageUnlimited') : formatBytes(activeRemaining)}
+                  </span>
+                </div>
+                <div className="usage__cell">
+                  <span className="usage__label">{t('usageTotal')}</span>
+                  <span className="usage__value">
+                    {activeSub.userinfo.total ? formatBytes(activeSub.userinfo.total) : t('usageUnlimited')}
+                  </span>
+                </div>
+                <div className="usage__cell">
+                  <span className="usage__label">{t('usageExpire')}</span>
+                  <span className="usage__value" data-tone={activeDays !== null && activeDays < 0 ? 'danger' : undefined}>
+                    {activeSub.userinfo.expire
+                      ? activeDays !== null && activeDays < 0
+                        ? t('usageExpired')
+                        : `${faDate(activeSub.userinfo.expire * 1000)}${activeDays !== null ? ` · ${t('usageDaysLeft', { n: fa(activeDays) })}` : ''}`
+                      : t('usageNoExpiry')}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <p className="field__hint" style={{ marginTop: 12 }}>
+              {t('usageNoQuota')}
+            </p>
+          )}
+        </Card>
+      ) : null}
 
       <Card className="endpoints">
         <div className="endpoints__head">

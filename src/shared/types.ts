@@ -68,10 +68,36 @@ export interface ServerConfig {
   /** Metadata */
   addedAt: number
   source: 'subscription' | 'manual' | 'import'
+  /** Which subscription produced this server (null = manual/import). */
+  subscriptionId: string | null
   latencyMs: number | null
   latencyAt: number | null
   /** Original link, kept only inside the encrypted store. Never sent to logs. */
   raw?: string
+}
+
+/** Traffic quota reported by the subscription panel (`subscription-userinfo`). */
+export interface SubUserinfo {
+  upload: number
+  download: number
+  /** 0 means unlimited. */
+  total: number
+  /** Unix seconds; null when the panel reports no expiry. */
+  expire: number | null
+}
+
+/**
+ * A stored subscription (vault side — the raw URL lives only in the
+ * encrypted store and is never logged).
+ */
+export interface StoredSubscription {
+  id: string
+  url: string
+  /** Taken from the `profile-title` response header when the panel sends one. */
+  name: string | null
+  userinfo: SubUserinfo | null
+  updatedAt: number | null
+  lastError: string | LString | null
 }
 
 /** The shape handed to the renderer: secrets are masked unless revealed. */
@@ -111,16 +137,18 @@ export interface CoreStatus {
   error: string | LString | null
 }
 
-export interface SubscriptionInfo {
-  hasUrl: boolean
+export interface SubscriptionView {
+  id: string
+  /** Panel-provided title, falling back to the URL host in the UI. */
+  name: string | null
   /** e.g. `https://exa••••••••••.com/sub/ab••••••` */
   maskedUrl: string
-  lastUpdated: number | null
+  updatedAt: number | null
+  userinfo: SubUserinfo | null
   lastError: string | LString | null
+  fetching: boolean
   totalConfigs: number
   supportedConfigs: number
-  autoRefreshMinutes: number
-  fetching: boolean
 }
 
 export interface PublicIdentity {
@@ -139,6 +167,7 @@ export interface AppState {
   /** The server chosen in the list (vault selection). */
   selectedServerId: string | null
   activeServerId: string | null
+  activeSubscriptionId: string | null
   activeServerName: string | null
   activeServerAddressMasked: string | null
   socksPort: number
@@ -151,7 +180,7 @@ export interface AppState {
   identity: PublicIdentity | null
   update: UpdateState
   core: CoreStatus
-  subscription: SubscriptionInfo
+  subscriptions: SubscriptionView[]
 }
 
 export interface UpdateState {
@@ -223,6 +252,8 @@ export const IPC = {
   subscriptionRefresh: 'naxlo:subscription:refresh',
   subscriptionClear: 'naxlo:subscription:clear',
   subscriptionImportFile: 'naxlo:subscription:import-file',
+  subscriptionRemove: 'naxlo:subscription:remove',
+  speedTest: 'naxlo:speed:test',
   connect: 'naxlo:connect',
   disconnect: 'naxlo:disconnect',
   settingsGet: 'naxlo:settings:get',

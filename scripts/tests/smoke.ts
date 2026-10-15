@@ -15,6 +15,7 @@ import { buildXrayConfig, validateConfig } from '../../src/main/lib/xray/config'
 import { DEFAULT_SETTINGS } from '../../src/shared/types'
 import { maskAddress, maskIp, maskMiddle, maskUrl } from '../../src/shared/mask'
 import { redact, registerSecret } from '../../src/main/lib/redact'
+import { parseProfileTitle, parseSubscriptionUserinfo } from '../../src/main/lib/submeta'
 
 let passed = 0
 const failures: string[] = []
@@ -198,6 +199,30 @@ test('masking helpers keep values unrecognisable but distinguishable', () => {
   assert.equal(maskIp('203.0.113.9'), '203.0.••.••')
   assert.equal(maskMiddle('abcdefghij', 2, 2).startsWith('ab'), true)
   assert.equal(maskUrl('https://panel.example.com/sub/abcdef123456').includes('abcdef123456'), false)
+})
+
+/* ------------------------------------------------- subscription metadata */
+
+test('parses the subscription-userinfo quota header', () => {
+  const info = parseSubscriptionUserinfo(
+    'upload=1073741824; download=2147483648; total=10737418240; expire=1767225600'
+  )
+  assert.ok(info)
+  assert.equal(info.upload, 1073741824)
+  assert.equal(info.download, 2147483648)
+  assert.equal(info.total, 10737418240)
+  assert.equal(info.expire, 1767225600)
+  assert.equal(parseSubscriptionUserinfo(null), null)
+  assert.equal(parseSubscriptionUserinfo('garbage'), null)
+  const unlimited = parseSubscriptionUserinfo('upload=0; download=0; total=0')
+  assert.ok(unlimited && unlimited.total === 0 && unlimited.expire === null)
+})
+
+test('parses the profile-title header (plain + base64)', () => {
+  assert.equal(parseProfileTitle('base64:' + Buffer.from('اشتراک من').toString('base64')), 'اشتراک من')
+  assert.equal(parseProfileTitle('My Plan'), 'My Plan')
+  assert.equal(parseProfileTitle('   '), null)
+  assert.equal(parseProfileTitle(null), null)
 })
 
 /* ------------------------------------------------------- renderer styling */

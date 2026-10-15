@@ -8,14 +8,15 @@
  */
 import { BrowserWindow, app, clipboard, dialog, ipcMain, shell } from 'electron'
 import { existsSync, readFileSync } from 'node:fs'
-import { IPC, maskUrl, type LogEntry, type LString, type ServerView, type Settings } from '../shared/bridge'
+import { IPC, type LogEntry, type LString, type ServerView, type Settings } from '../shared/bridge'
 import { AppError, L, toLString } from '../shared/i18n'
-import { getState, patchState, patchSubscription, toServerView } from './state'
+import { getState, patchState, setSubscriptionFetching, syncSubscriptions, toServerView } from './state'
 import { getSettings, loadSettings, updateSettings } from './lib/settings'
-import { getVault, persistNow, updateVault, vaultEncryptionKind, wipeVault } from './lib/secretStore'
+import { getVault, persistNow, replaceServers, updateVault, vaultEncryptionKind, wipeVault } from './lib/secretStore'
 import { log, getLogs, clearLogs, onLog, setLogLevel } from './lib/logger'
 import { redact, registerSecret, clearSecrets } from './lib/redact'
-import { importPayload, refreshSubscription, SubscriptionError } from './lib/subscription'
+import { importPayload, refreshSubscription, subscriptionIdFor, type FetchReport } from './lib/subscription'
+import { measureThroughput } from './lib/net'
 import { manager } from './lib/xray/manager'
 import { rebuildMenu } from './tray'
 import { runtime } from './runtime'
@@ -116,65 +117,92 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
       throw new AppError(L('فقط لینک‌های http و https پشتیبانی می‌شوند', 'Only http and https links are supported'))
     }
+    const id = subscriptionIdFor(trimmed)
     registerSecret(trimmed, 'subscription')
-    patchSubscription({ fetching: true, lastError: null })
-    try {
-      const report = await refreshSubscription(trimmed)
-      patchSubscription({
-        fetching: false,
-        lastError: null,
-        lastUpdated: Date.now(),
-        totalConfigs: report.total,
-        supportedConfigs: report.supported
+    const vault = getVault()
+    if (!vault.subscriptions.some((sub) => sub.id === id)) {
+      updateVault({
+        subscriptions: [
+          ...vault.subscriptions,
+          { id, url: trimmed, name: null, userinfo: null, updatedAt: null, lastError: null }
+        ]
       })
-      return report
-    } catch (err) {
-      const message = err instanceof SubscriptionError ? err.message : redact(err)
-      patchSubscription({ fetching: false, lastError: message })
-      throw err
     }
+    return refreshOne(id)
   })
 
-  handle(IPC.subscriptionReveal, () => {
-    const url = getVault().subscriptionUrl
-    log.info(SCOPE, 'user revealed the stored subscription URL (value not logged)')
-    return url
+  handle(IPC.subscriptionRefresh, async (id?: string) => {
+    const vault = getVault()
+    const targets = id ? vault.subscriptions.filter((sub) => sub.id === id) : vault.subscriptions
+    if (targets.length === 0) {
+      throw new AppError(L('ابتدا یک اشتراک اضافه کنید', 'Add a subscription first'))
+    }
+    const reports: FetchReport[] = []
+    let firstError: unknown = null
+    for (const target of targets) {
+      try {
+        reports.push(await refreshOne(target.id))
+      } catch (err) {
+        firstError = firstError ?? err
+      }
+    }
+    if (firstError && (Boolean(id) || reports.length === 0)) throw firstError
+    return reports
   })
 
-  handle(IPC.subscriptionRefresh, async () => {
-    const url = getVault().subscriptionUrl
-    if (!url) throw new Error('ابتدا لینک اشتراک را ذخیره کنید')
-    patchSubscription({ fetching: true, lastError: null })
-    try {
-      const report = await refreshSubscription(url)
-      patchSubscription({
-        fetching: false,
-        lastError: null,
-        lastUpdated: Date.now(),
-        totalConfigs: report.total,
-        supportedConfigs: report.supported
-      })
-      return report
-    } catch (err) {
-      const message = toLString(err)
-      patchSubscription({ fetching: false, lastError: message })
-      throw err
+  handle(IPC.subscriptionRemove, async (id: string) => {
+    const vault = getVault()
+    const owned = vault.servers.filter((server) => server.subscriptionId === id)
+    if (manager.isConnected && owned.some((server) => server.id === getState().activeServerId)) {
+      await manager.disconnect('subscription-removed')
     }
+    const remaining = vault.servers.filter((server) => server.subscriptionId !== id)
+    updateVault({
+      subscriptions: vault.subscriptions.filter((sub) => sub.id !== id),
+      selectedServerId:
+        vault.selectedServerId && remaining.some((server) => server.id === vault.selectedServerId)
+          ? vault.selectedServerId
+          : (remaining.find((server) => server.supported)?.id ?? null)
+    })
+    replaceServers(remaining)
+    syncSubscriptions()
+    rebuildMenu()
+    log.info(SCOPE, `subscription removed with ${owned.length} configs`)
+    return true
+  })
+
+  handle(IPC.subscriptionReveal, (id: string) => {
+    const entry = getVault().subscriptions.find((sub) => sub.id === id)
+    log.info(SCOPE, 'user revealed a stored subscription URL (value not logged)')
+    return entry?.url ?? null
+  })
+
+  handle(IPC.speedTest, async () => {
+    if (!manager.isConnected) {
+      throw new AppError(L('برای تست سرعت ابتدا متصل شوید', 'Connect first to run a speed test'))
+    }
+    const state = getState()
+    const targets = [
+      'https://speed.cloudflare.com/__down?bytes=16000000',
+      'https://proof.ovh.net/files/10Mb.dat'
+    ]
+    for (const target of targets) {
+      const result = await measureThroughput('127.0.0.1', state.httpPort, target)
+      if (result.ok && result.ms > 0) {
+        const mbps = (result.bytes * 8) / result.ms / 1000
+        return { mbps: Math.round(mbps * 10) / 10, bytes: result.bytes, ms: result.ms }
+      }
+    }
+    throw new AppError(
+      L('تست سرعت ناموفق بود؛ سرورهای اندازه‌گیری در دسترس نیستند', 'Speed test failed — measurement servers are unreachable')
+    )
   })
 
   handle(IPC.subscriptionClear, async () => {
     if (manager.isConnected) await manager.disconnect('subscription-cleared')
     wipeVault()
     clearSecrets()
-    patchSubscription({
-      hasUrl: false,
-      maskedUrl: '',
-      lastUpdated: null,
-      lastError: null,
-      totalConfigs: 0,
-      supportedConfigs: 0,
-      fetching: false
-    })
+    syncSubscriptions()
     patchState({ activeServerId: null, activeServerName: null, activeServerAddressMasked: null })
     log.info(SCOPE, 'vault wiped by user request')
     return true
@@ -197,7 +225,7 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
     const text = readFileSync(path, 'utf8')
     registerSecret(text, 'import')
     const report = importPayload(text)
-    syncSubscriptionCounts()
+    syncSubscriptions()
     return report
   })
 
@@ -225,7 +253,6 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
       systemProxyEnabled: next.applySystemProxy
     })
     manager.scheduleAutoRefresh()
-    patchSubscription({ autoRefreshMinutes: next.autoRefreshMinutes })
     return next
   })
 
@@ -309,20 +336,36 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
   })
 }
 
+/** Refresh a single stored subscription and keep state + vault in sync. */
+async function refreshOne(id: string): Promise<FetchReport> {
+  const entry = getVault().subscriptions.find((sub) => sub.id === id)
+  if (!entry) throw new AppError(L('اشتراک پیدا نشد', 'Subscription not found'))
+  setSubscriptionFetching(id, true)
+  try {
+    const report = await refreshSubscription(entry.url)
+    syncSubscriptions()
+    rebuildMenu()
+    return report
+  } catch (err) {
+    const message = toLString(err)
+    updateVault({
+      subscriptions: getVault().subscriptions.map((sub) =>
+        sub.id === id ? { ...sub, lastError: message } : sub
+      )
+    })
+    syncSubscriptions()
+    throw err
+  } finally {
+    setSubscriptionFetching(id, false)
+  }
+}
+
 function listServers(reveal: boolean): ServerView[] {
   return getVault().servers.map((s) => toServerView(s, reveal))
 }
 
 export function syncSubscriptionCounts(): void {
-  const vault = getVault()
-  patchSubscription({
-    hasUrl: Boolean(vault.subscriptionUrl),
-    maskedUrl: maskUrl(vault.subscriptionUrl),
-    lastUpdated: vault.lastUpdatedAt,
-    totalConfigs: vault.servers.length,
-    supportedConfigs: vault.servers.filter((s) => s.supported).length,
-    autoRefreshMinutes: getSettings().autoRefreshMinutes
-  })
+  syncSubscriptions()
 }
 
 function applyAutoStart(enabled: boolean): void {

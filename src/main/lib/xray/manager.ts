@@ -170,6 +170,7 @@ class XrayManager {
       patchState({
         selectedServerId: server.id,
         activeServerId: server.id,
+        activeSubscriptionId: server.subscriptionId,
         activeServerName: server.name,
         activeServerAddressMasked: maskAddress(server.address),
         lastError: null,
@@ -303,6 +304,7 @@ class XrayManager {
       latencyMs: null,
       identity: null,
       activeServerId: null,
+      activeSubscriptionId: null,
       activeServerName: null,
       activeServerAddressMasked: null,
       lastError: null
