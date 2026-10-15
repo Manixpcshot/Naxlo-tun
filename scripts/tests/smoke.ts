@@ -16,6 +16,8 @@ import { DEFAULT_SETTINGS } from '../../src/shared/types'
 import { maskAddress, maskIp, maskMiddle, maskUrl } from '../../src/shared/mask'
 import { redact, registerSecret } from '../../src/main/lib/redact'
 import { parseProfileTitle, parseSubscriptionUserinfo } from '../../src/main/lib/submeta'
+import { pickBestServer } from '../../src/main/lib/autoselect'
+import type { ServerConfig } from '../../src/shared/types'
 
 let passed = 0
 const failures: string[] = []
@@ -223,6 +225,41 @@ test('parses the profile-title header (plain + base64)', () => {
   assert.equal(parseProfileTitle('My Plan'), 'My Plan')
   assert.equal(parseProfileTitle('   '), null)
   assert.equal(parseProfileTitle(null), null)
+})
+
+/* ---------------------------------------------------- smart server pick */
+
+function fakeServer(patch: Partial<ServerConfig>): ServerConfig {
+  return {
+    id: patch.id ?? 'x',
+    name: patch.name ?? 'server',
+    protocol: 'vless',
+    supported: true,
+    address: '1.1.1.1',
+    port: 443,
+    credential: 'uuid',
+    security: 'none',
+    network: 'tcp',
+    addedAt: 1,
+    source: 'subscription',
+    subscriptionId: null,
+    latencyMs: null,
+    latencyAt: null,
+    ...patch
+  }
+}
+
+test('auto pick prefers the fastest healthy server and honours exclusions', () => {
+  const slow = fakeServer({ id: 'slow', latencyMs: 400 })
+  const fast = fakeServer({ id: 'fast', latencyMs: 80 })
+  const untested = fakeServer({ id: 'untested', addedAt: 5 })
+  const broken = fakeServer({ id: 'broken', supported: false, latencyMs: 10 })
+  const pool = [slow, fast, untested, broken]
+  assert.equal(pickBestServer(pool)?.id, 'fast')
+  assert.equal(pickBestServer(pool, ['fast'])?.id, 'slow')
+  assert.equal(pickBestServer([untested, broken])?.id, 'untested')
+  assert.equal(pickBestServer([broken]), null)
+  assert.equal(pickBestServer([]), null)
 })
 
 /* ------------------------------------------------------- renderer styling */

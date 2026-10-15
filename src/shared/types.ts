@@ -102,6 +102,8 @@ export interface StoredSubscription {
 
 /** The shape handed to the renderer: secrets are masked unless revealed. */
 export interface ServerView extends Omit<ServerConfig, 'credential' | 'pbk' | 'sid' | 'raw' | 'address'> {
+  /** Whether the user pinned this server to the top of its group. */
+  pinned: boolean
   credentialMasked: string
   pbkMasked?: string
   sidMasked?: string
@@ -210,6 +212,8 @@ export interface Settings {
   autoRefreshMinutes: number
   autoConnectLast: boolean
   minimizeToTray: boolean
+  /** Switch to the next best server after repeated probe failures. */
+  autoFailover: boolean
   logLevel: 'error' | 'warn' | 'info' | 'debug'
   accent: 'cyan' | 'violet' | 'emerald' | 'amber' | 'rose'
   reduceMotion: boolean
@@ -245,6 +249,8 @@ export const IPC = {
   serversRemove: 'naxlo:servers:remove',
   serversClear: 'naxlo:servers:clear',
   serversTest: 'naxlo:servers:test',
+  serversPin: 'naxlo:servers:pin',
+  panic: 'naxlo:panic',
   serversTestAll: 'naxlo:servers:test-all',
   serversLatency: 'naxlo:servers:latency',
   subscriptionSave: 'naxlo:subscription:save',
@@ -291,6 +297,7 @@ export const DEFAULT_SETTINGS: Settings = {
   autoRefreshMinutes: 0,
   autoConnectLast: false,
   minimizeToTray: true,
+  autoFailover: true,
   logLevel: 'info',
   accent: 'cyan',
   reduceMotion: false,
@@ -298,6 +305,9 @@ export const DEFAULT_SETTINGS: Settings = {
   xrayLogLevel: 'warning',
   language: 'fa'
 }
+
+/** Pseudo server id: let Naxlo pick the best healthy server. */
+export const AUTO_SERVER_ID = 'auto'
 
 export const PINNED_XRAY_VERSION = 'v26.3.27'
 

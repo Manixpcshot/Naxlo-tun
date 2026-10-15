@@ -10,7 +10,7 @@ import { BrowserWindow, app, clipboard, dialog, ipcMain, shell } from 'electron'
 import { existsSync, readFileSync } from 'node:fs'
 import { IPC, type LogEntry, type LString, type ServerView, type Settings } from '../shared/bridge'
 import { AppError, L, toLString } from '../shared/i18n'
-import { getState, patchState, setSubscriptionFetching, syncSubscriptions, toServerView } from './state'
+import { getState, patchState, setSubscriptionFetching, syncSubscriptions, toast, toServerView } from './state'
 import { getSettings, loadSettings, updateSettings } from './lib/settings'
 import { getVault, persistNow, replaceServers, updateVault, vaultEncryptionKind, wipeVault } from './lib/secretStore'
 import { log, getLogs, clearLogs, onLog, setLogLevel } from './lib/logger'
@@ -18,6 +18,9 @@ import { redact, registerSecret, clearSecrets } from './lib/redact'
 import { importPayload, refreshSubscription, subscriptionIdFor, type FetchReport } from './lib/subscription'
 import { measureThroughput } from './lib/net'
 import { manager } from './lib/xray/manager'
+import { restoreSystemProxy } from './lib/systemProxy'
+import { pickBestServer } from './lib/autoselect'
+import { AUTO_SERVER_ID } from '../shared/bridge'
 import { rebuildMenu } from './tray'
 import { runtime } from './runtime'
 import { isAllowedExternalUrl } from './window'
@@ -93,6 +96,18 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
     syncSubscriptionCounts()
     return true
   })
+  handle(IPC.serversPin, (id: string) => {
+    const vault = getVault()
+    const pinned = vault.pinned.includes(id)
+      ? vault.pinned.filter((entry) => entry !== id)
+      : [...vault.pinned, id]
+    updateVault({ pinned })
+    log.info(SCOPE, `server pin toggled (${pinned.includes(id) ? 'pinned' : 'unpinned'})`)
+    return pinned
+  })
+
+  handle(IPC.panic, () => panicNow())
+
   handle(IPC.serversTest, async (id: string) => manager.testServer(id))
   handle(IPC.serversTestAll, async () => manager.testAll())
   handle(IPC.serversLatency, () =>
@@ -231,7 +246,15 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
 
   /* --------------------------------------------------------- connection */
   handle(IPC.connect, async (serverId?: string) => {
-    await manager.connect(serverId)
+    let target = serverId ?? getVault().selectedServerId ?? undefined
+    if (target === AUTO_SERVER_ID) {
+      const best = pickBestServer(getVault().servers)
+      if (!best) throw new AppError(L('سرور پشتیبانی‌شده‌ای برای انتخاب خودکار وجود ندارد', 'No supported server is available for auto selection'))
+      log.info(SCOPE, `auto selection picked ${best.name}`)
+      toast('info', L(`انتخاب خودکار: ${best.name}`, `Auto-picked: ${best.name}`))
+      target = best.id
+    }
+    await manager.connect(target)
     rebuildMenu()
     return getState().connection
   })
@@ -361,7 +384,26 @@ async function refreshOne(id: string): Promise<FetchReport> {
 }
 
 function listServers(reveal: boolean): ServerView[] {
-  return getVault().servers.map((s) => toServerView(s, reveal))
+  const pinned = new Set(getVault().pinned)
+  return getVault().servers.map((s) => toServerView(s, reveal, pinned.has(s.id)))
+}
+
+/** Immediate emergency stop: disconnect, force the system proxy off, toast. */
+export async function panicNow(): Promise<boolean> {
+  log.warn(SCOPE, 'PANIC triggered — emergency disconnect')
+  try {
+    if (manager.isConnected) await manager.disconnect('panic')
+  } catch (err) {
+    log.error(SCOPE, 'panic disconnect failed', err)
+  }
+  try {
+    await restoreSystemProxy()
+  } catch (err) {
+    log.error(SCOPE, 'panic could not restore system proxy', err)
+  }
+  patchState({ systemProxyApplied: false })
+  toast('warning', L('قطع اضطراری انجام شد', 'Panic disconnect completed'))
+  return true
 }
 
 export function syncSubscriptionCounts(): void {

@@ -5,11 +5,12 @@
  * vault, then the window, then the Xray supervisor. Shutdown is the mirror
  * image and always restores the user's system proxy.
  */
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, globalShortcut } from 'electron'
 import { createMainWindow } from './window'
 import { destroyTray, initTray, rebuildMenu, showWindow } from './tray'
 import {
   bootstrapSettings,
+  panicNow,
   persistAll,
   registerIpc,
   syncSubscriptionCounts
@@ -19,6 +20,9 @@ import { loadVault, getVault, updateVault } from './lib/secretStore'
 import { getSettings } from './lib/settings'
 import { patchState, setConnection, setSubscriptionFetching, subscribeToState, syncSubscriptions } from './state'
 import { manager } from './lib/xray/manager'
+import { pickBestServer } from './lib/autoselect'
+import { toast } from './state'
+import { L } from '../shared/i18n'
 import { refreshSubscription, SubscriptionError } from './lib/subscription'
 import { redact } from './lib/redact'
 import { runtime } from './runtime'
@@ -64,6 +68,23 @@ async function bootstrap(): Promise<void> {
 
   await manager.init()
   manager.autoRefreshHandler = autoRefreshSubscription
+  manager.failoverHandler = (failedId) => {
+    if (!getSettings().autoFailover) return
+    const next = pickBestServer(getVault().servers, [failedId])
+    if (!next) return
+    const failed = getVault().servers.find((server) => server.id === failedId)
+    log.warn(SCOPE, `failover: ${failed?.name ?? failedId} → ${next.name}`)
+    toast('warning', L('سرور قبلی پاسخ نداد؛ سوییچ خودکار', 'Previous server stopped answering — auto switch'), L(next.name, next.name))
+    void manager.connect(next.id)
+  }
+
+  try {
+    globalShortcut.register('CommandOrControl+Alt+Q', () => {
+      void panicNow()
+    })
+  } catch (err) {
+    log.warn(SCOPE, 'could not register the panic hotkey', err)
+  }
 
   subscribeToState(() => rebuildMenu())
 
@@ -113,6 +134,7 @@ async function cleanup(): Promise<void> {
   cleaning = true
   log.info(SCOPE, 'shutting down')
   try {
+    globalShortcut.unregisterAll()
     await manager.shutdown()
   } catch (err) {
     log.error(SCOPE, 'manager shutdown failed', err)

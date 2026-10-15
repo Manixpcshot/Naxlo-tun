@@ -46,6 +46,8 @@ export interface VaultPayload {
   subscriptionName: string | null
   subscriptions: StoredSubscription[]
   servers: ServerConfig[]
+  /** Server ids pinned to the top of their list. */
+  pinned: string[]
   selectedServerId: string | null
   lastConnectedAt: number | null
   lastUpdatedAt: number | null
@@ -66,6 +68,7 @@ let payload: VaultPayload = {
   subscriptionName: null,
   subscriptions: [],
   servers: [],
+  pinned: [],
   selectedServerId: null,
   lastConnectedAt: null,
   lastUpdatedAt: null
@@ -219,6 +222,7 @@ export function loadVault(): VaultPayload {
             : [],
           subscriptionName: typeof data.subscriptionName === 'string' ? data.subscriptionName : null,
           servers: Array.isArray(data.servers) ? (data.servers as ServerConfig[]) : [],
+          pinned: Array.isArray(data.pinned) ? (data.pinned as string[]) : [],
           selectedServerId: data.selectedServerId ?? null,
           lastConnectedAt: data.lastConnectedAt ?? null,
           lastUpdatedAt: data.lastUpdatedAt ?? null
@@ -305,6 +309,7 @@ export function wipeVault(): void {
     subscriptionName: null,
     subscriptions: [],
     servers: [],
+    pinned: [],
     selectedServerId: null,
     lastConnectedAt: null,
     lastUpdatedAt: null

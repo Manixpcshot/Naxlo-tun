@@ -6,6 +6,37 @@ All notable changes to Naxlo are documented here. Releases are cut per tag
 The format follows [Keep a Changelog](https://keepachangelog.com/) and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.3.0] — 2026-10-15
+
+### Added
+
+- **Turkish interface** — the third language (fa → en → tr). The titlebar
+  button cycles through all three; Settings shows a three-way choice. Numbers,
+  dates and relative times follow the Turkish locale.
+- **Auto — best server** — a dashed "Auto" entry at the top of the server list
+  lets Naxlo pick the fastest healthy server at connect time.
+- **Auto-switch on failure** — when the active server fails three latency
+  probes in a row, Naxlo moves to the next best server and says so in a toast
+  (toggle in Settings → Behaviour).
+- **Pinned servers** — pin any server to keep it at the top of its group, plus
+  a "Pinned" filter chip.
+- **Country filter chips** — flag chips with per-country counts above the
+  server list filter by country.
+- **Panic disconnect** — one button (Home) or the global hotkey `Ctrl+Alt+Q`:
+  instant disconnect, system proxy force-restored, warning toast.
+- **Localized tray** — tray menu and tooltip follow the app language instead
+  of being Persian-only.
+
+### Fixed
+
+- **Locale leakage** — durations, relative times and latency values no longer
+  fall back to Persian digits/text when English (or Turkish) is active; the
+  whole formatting layer is now driven by a per-language locale table.
+
+### Tests
+
+- `pickBestServer` ordering rules covered (19 tests).
+
 ## [1.2.0] — 2026-10-15
 
 ### Added

@@ -1900,3 +1900,41 @@ html[dir='ltr'] .logline {
 .group__refresh {
   margin-inline-start: auto;
 }
+
+/* ============================================================
+   v1.3 — auto server, pins, country chips, panic
+   ============================================================ */
+
+.autocard {
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  background: color-mix(in srgb, var(--accent) 5%, transparent);
+  margin-bottom: 14px;
+}
+
+.autocard__icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  flex: none;
+}
+
+.btn--pinned {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.chips--countries {
+  margin-top: 10px;
+}
+
+.chips--countries .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}

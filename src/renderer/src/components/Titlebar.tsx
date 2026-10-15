@@ -13,6 +13,14 @@ import { Logo } from './Logo'
 import { useStore } from '../lib/store'
 import { useI18n } from '../lib/i18n'
 
+
+/** Language cycle: Persian → English → Turkish → Persian. */
+const NEXT_LANG: Record<string, { next: 'fa' | 'en' | 'tr'; native: string }> = {
+  fa: { next: 'en', native: 'English' },
+  en: { next: 'tr', native: 'Türkçe' },
+  tr: { next: 'fa', native: 'فارسی' }
+}
+
 export function Titlebar(): React.ReactElement {
   const { state } = useStore()
   const { t, lang, setLang } = useI18n()
@@ -64,10 +72,10 @@ export function Titlebar(): React.ReactElement {
       <div className="titlebar__controls">
         <button
           className="winbtn winbtn--lang"
-          title={t('languageSwitchTitle')}
-          onClick={() => setLang(lang === 'fa' ? 'en' : 'fa')}
+          title={t('switchToLang', { name: NEXT_LANG[lang].native })}
+          onClick={() => setLang(NEXT_LANG[lang].next)}
         >
-          <span className="winbtn__lang">{t('languageSwitch')}</span>
+          <span className="winbtn__lang">{NEXT_LANG[lang].native}</span>
         </button>
         <span className="titlebar__sep" aria-hidden="true" />
         <button className="winbtn" title={t('windowMinimize')} onClick={() => call(() => window.naxlo.window.minimize())}>

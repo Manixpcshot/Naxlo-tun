@@ -31,6 +31,9 @@ class XrayManager {
   private core: CoreLocation | null = null
   private refreshTimer: NodeJS.Timeout | null = null
   private latencyTimer: NodeJS.Timeout | null = null
+  private probeFailures = 0
+  /** Called after repeated probe failures so the app can switch servers. */
+  failoverHandler: ((failedServerId: string) => void) | null = null
   /** Injected by the bootstrap layer to avoid an import cycle. */
   autoRefreshHandler: (() => Promise<void>) | null = null
 
@@ -371,7 +374,18 @@ class XrayManager {
       }
       const settings = getSettings()
       void requestThroughProxy(settings.listenAddress, settings.httpPort, settings.testUrl, 8000).then((probe) => {
-        if (probe.ok && this.handle) patchState({ latencyMs: probe.ms })
+        if (!this.handle) return
+        if (probe.ok) {
+          this.probeFailures = 0
+          patchState({ latencyMs: probe.ms })
+          return
+        }
+        this.probeFailures += 1
+        log.warn(SCOPE, `latency probe failed (${this.probeFailures} in a row)`)
+        if (this.probeFailures >= 3 && this.failoverHandler && this.activeServerId) {
+          this.probeFailures = 0
+          this.failoverHandler(this.activeServerId)
+        }
       })
     }, 25_000)
   }

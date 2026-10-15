@@ -307,7 +307,8 @@ export function Settings(): React.ReactElement {
                   value={lang}
                   options={[
                     { value: 'fa', label: t('languageFa') },
-                    { value: 'en', label: t('languageEn') }
+                    { value: 'en', label: t('languageEn') },
+                    { value: 'tr', label: t('languageTr') }
                   ]}
                   onChange={(value) => setLang(value)}
                 />
