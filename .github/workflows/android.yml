@@ -78,17 +78,22 @@ jobs:
       - name: Publish build log to ci-logs branch
         if: always()
         run: |
-          cd android
-          if [ -f build.log ]; then
-            git config user.name naxlo-ci
-            git config user.email ci@users.noreply.github.com
-            git fetch origin ci-logs || true
-            git checkout -B ci-logs origin/ci-logs 2>/dev/null || git checkout -b ci-logs
-            cp build.log android-build.log
-            git add android-build.log
-            git commit -m "ci: android build log for ${GITHUB_SHA}" || true
-            git push -f origin ci-logs || true
-          fi
+          {
+            echo "== pwd: $(pwd)"
+            ls -la . | head -20
+            echo "== android dir:"
+            ls -la android | head -30
+            echo "== build.log tail:"
+            tail -c 4500 android/build.log 2>&1
+          } > diag.txt 2>&1
+          git config user.name naxlo-ci
+          git config user.email ci@users.noreply.github.com
+          git fetch origin ci-logs || true
+          git checkout -B ci-logs origin/ci-logs 2>/dev/null || git checkout -b ci-logs
+          cp diag.txt android-build.log
+          git add android-build.log
+          git commit -m "ci: android diag for ${GITHUB_SHA}" || true
+          git push -f origin ci-logs || true
 
       - uses: actions/upload-artifact@v4
         with:
