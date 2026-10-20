@@ -16,6 +16,17 @@ import { DEFAULT_SETTINGS } from '../../src/shared/types'
 import { maskAddress, maskIp, maskMiddle, maskUrl } from '../../src/shared/mask'
 import { redact, registerSecret } from '../../src/main/lib/redact'
 import { parseProfileTitle, parseSubscriptionUserinfo } from '../../src/main/lib/submeta'
+import {
+  crc32Buf,
+  decodeSubscriptionBytes,
+  extractFromZip,
+  fileNameOf,
+  isZipBuffer,
+  zipCryptoEncrypt,
+  zipNeedsPassword,
+  zipUsesAes
+} from '../../src/main/lib/fileImport'
+import { strToU8, zipSync } from 'fflate'
 import { pickBestServer } from '../../src/main/lib/autoselect'
 import type { ServerConfig } from '../../src/shared/types'
 
@@ -38,6 +49,90 @@ const VLESS_TLS_WS =
 
 const VLESS_REALITY =
   'vless://aaaa1111-2222-3333-4444-555566667777@1.2.3.4:2053?security=reality&type=tcp&pbk=SbVKOEMjK0sIlbwg4TIBgHoBac6VblXYYz1n6UZ8XgU&sid=6ba85179&fp=chrome&sni=www.microsoft.com&spx=%2F&sni2=&flow=xtls-rprx-vision#Reality-TE'
+
+test('file import: decodes raw link lists and base64 payloads', () => {
+  const raw = 'vless://abc@1.2.3.4:443?security=reality#DE\ntrojan://pw@5.6.7.8:443'
+  assert.equal(decodeSubscriptionBytes(Buffer.from(raw, 'utf8')), raw)
+  const b64 = Buffer.from(raw, 'utf8').toString('base64')
+  assert.equal(decodeSubscriptionBytes(Buffer.from(b64, 'utf8')), raw)
+})
+
+test('file import: zip detection helpers', () => {
+  const text = Buffer.from('hello', 'utf8')
+  assert.equal(isZipBuffer(text), false)
+  assert.equal(zipNeedsPassword(text), false)
+  const local = Buffer.from([0x50, 0x4b, 0x03, 0x04])
+  assert.equal(isZipBuffer(local), true)
+  const central = Buffer.alloc(50)
+  central.writeUInt32LE(0x02014b50, 0)
+  central.writeUInt16LE(0x0001, 8) // general purpose flag: encrypted
+  central.writeUInt16LE(0, 10) // method: deflate
+  assert.equal(zipNeedsPassword(Buffer.concat([local, central])), true)
+  const aes = Buffer.alloc(50)
+  aes.writeUInt32LE(0x02014b50, 0)
+  aes.writeUInt16LE(0x0001, 8)
+  aes.writeUInt16LE(99, 10) // method 99 = WinZip AES
+  assert.equal(zipUsesAes(Buffer.concat([local, aes])), true)
+})
+
+test('file import: extracts text from a plain zip', () => {
+  const raw = 'vless://abc@1.2.3.4:443#DE'
+  const zip = Buffer.from(zipSync({ 'configs.txt': strToU8(raw) }))
+  assert.equal(isZipBuffer(zip), true)
+  assert.equal(zipNeedsPassword(zip), false)
+  const out = extractFromZip(zip)
+  assert.equal(out.data.toString('utf8'), raw)
+})
+
+test('file import: decrypts a ZipCrypto password-protected zip', () => {
+  const content = Buffer.from('trojan://pw@9.9.9.9:443#TR', 'utf8')
+  const password = 'naxlo-test'
+  const crc = crc32Buf(content)
+  const enc = zipCryptoEncrypt(content, password, (crc >>> 24) & 0xff)
+  const name = Buffer.from('subs.txt', 'utf8')
+
+  const local = Buffer.alloc(30)
+  local.writeUInt32LE(0x04034b50, 0)
+  local.writeUInt16LE(20, 4)
+  local.writeUInt16LE(1, 6) // encrypted flag
+  local.writeUInt16LE(0, 8) // method: stored
+  local.writeUInt32LE(crc, 14)
+  local.writeUInt32LE(enc.length, 18)
+  local.writeUInt32LE(content.length, 22)
+  local.writeUInt16LE(name.length, 26)
+
+  const central = Buffer.alloc(46)
+  central.writeUInt32LE(0x02014b50, 0)
+  central.writeUInt16LE(20, 4)
+  central.writeUInt16LE(20, 6)
+  central.writeUInt16LE(1, 8)
+  central.writeUInt16LE(0, 10)
+  central.writeUInt32LE(crc, 16)
+  central.writeUInt32LE(enc.length, 20)
+  central.writeUInt32LE(content.length, 24)
+  central.writeUInt16LE(name.length, 28)
+
+  const localSize = 30 + name.length + enc.length
+  const centralSize = 46 + name.length
+  const eocd = Buffer.alloc(22)
+  eocd.writeUInt32LE(0x06054b50, 0)
+  eocd.writeUInt16LE(1, 8)
+  eocd.writeUInt16LE(1, 10)
+  eocd.writeUInt32LE(centralSize, 12)
+  eocd.writeUInt32LE(localSize, 16)
+
+  const zip = Buffer.concat([local, name, enc, central, name, eocd])
+  assert.equal(zipNeedsPassword(zip), true)
+  assert.throws(() => extractFromZip(zip), (e: unknown) => (e as Error).name === 'FilePasswordRequired')
+  const out = extractFromZip(zip, password)
+  assert.equal(out.data.toString('utf8'), content.toString('utf8'))
+  assert.throws(() => extractFromZip(zip, 'wrong-pass'), (e: unknown) => (e as Error).name === 'FilePasswordWrong')
+})
+
+test('file import: file name extraction handles windows paths', () => {
+  assert.equal(fileNameOf('C:\\Users\\x\\configs.txt'), 'configs.txt')
+  assert.equal(fileNameOf('/home/x/subs/my-file.zip'), 'my-file.zip')
+})
 
 test('parses a VLESS + TLS + WebSocket link', () => {
   const parsed = parseProxyLink(VLESS_TLS_WS)

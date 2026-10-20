@@ -7,7 +7,6 @@
  * exception and it is guarded by a user action.
  */
 import { BrowserWindow, app, clipboard, dialog, ipcMain, shell } from 'electron'
-import { existsSync, readFileSync } from 'node:fs'
 import { IPC, type LogEntry, type LString, type ServerView, type Settings } from '../shared/bridge'
 import { AppError, L, toLString } from '../shared/i18n'
 import { getState, patchState, setSubscriptionFetching, syncSubscriptions, toast, toServerView } from './state'
@@ -15,7 +14,7 @@ import { getSettings, loadSettings, updateSettings } from './lib/settings'
 import { getVault, persistNow, replaceServers, updateVault, vaultEncryptionKind, wipeVault } from './lib/secretStore'
 import { log, getLogs, clearLogs, onLog, setLogLevel } from './lib/logger'
 import { redact, registerSecret, clearSecrets } from './lib/redact'
-import { importPayload, refreshSubscription, subscriptionIdFor, type FetchReport } from './lib/subscription'
+import { refreshFileSubscription, refreshSubscription, subscriptionIdFor, type FetchReport } from './lib/subscription'
 import { measureThroughput } from './lib/net'
 import { manager } from './lib/xray/manager'
 import { restoreSystemProxy } from './lib/systemProxy'
@@ -194,8 +193,8 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
 
   handle(IPC.subscriptionReveal, (id: string) => {
     const entry = getVault().subscriptions.find((sub) => sub.id === id)
-    log.info(SCOPE, 'user revealed a stored subscription URL (value not logged)')
-    return entry?.url ?? null
+    log.info(SCOPE, 'user revealed a stored subscription source (value not logged)')
+    return entry?.filePath ?? entry?.url ?? null
   })
 
   handle(IPC.speedTest, async () => {
@@ -229,24 +228,25 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
     return true
   })
 
-  handle(IPC.subscriptionImportFile, async () => {
-    const win = getWindow()
-    const result = await dialog.showOpenDialog(win ?? undefined!, {
-      title: 'انتخاب فایل کانفیگ',
-      buttonLabel: 'افزودن',
-      properties: ['openFile'],
-      filters: [
-        { name: 'Text / subscription', extensions: ['txt', 'text', 'conf', 'json', 'sub'] },
-        { name: 'All files', extensions: ['*'] }
-      ]
-    })
-    if (result.canceled || !result.filePaths[0]) return { imported: 0 }
-    const path = result.filePaths[0]
-    if (!existsSync(path)) throw new AppError(L('فایل پیدا نشد', 'File not found'))
-    const text = readFileSync(path, 'utf8')
-    registerSecret(text, 'import')
-    const report = importPayload(text)
+  handle(IPC.subscriptionImportFile, async (filePath?: string | null, password?: string | null) => {
+    let target = filePath ?? null
+    if (!target) {
+      const win = getWindow()
+      const result = await dialog.showOpenDialog(win ?? undefined!, {
+        title: 'انتخاب فایل کانفیگ',
+        buttonLabel: 'افزودن',
+        properties: ['openFile'],
+        filters: [
+          { name: 'Config / archive', extensions: ['txt', 'text', 'conf', 'json', 'sub', 'zip'] },
+          { name: 'All files', extensions: ['*'] }
+        ]
+      })
+      if (result.canceled || !result.filePaths[0]) return { imported: 0 }
+      target = result.filePaths[0]
+    }
+    const report = await refreshFileSubscription(target, password ?? null)
     syncSubscriptions()
+    rebuildMenu()
     return report
   })
 
@@ -371,7 +371,20 @@ async function refreshOne(id: string): Promise<FetchReport> {
   if (!entry) throw new AppError(L('اشتراک پیدا نشد', 'Subscription not found'))
   setSubscriptionFetching(id, true)
   try {
-    const report = await refreshSubscription(entry.url)
+    const report = entry.filePath
+      ? await refreshFileSubscription(entry.filePath, entry.password ?? null)
+      : await refreshSubscription(entry.url)
+    if (report.needPassword) {
+      const message = L(
+        'این فایل رمز دارد؛ رمز را از «وارد کردن از فایل» وارد کنید تا ذخیره شود',
+        'This file is password-protected; enter its password via "Import from file" so it can be stored'
+      )
+      updateVault({
+        subscriptions: getVault().subscriptions.map((sub) => (sub.id === id ? { ...sub, lastError: message } : sub))
+      })
+      syncSubscriptions()
+      throw new AppError(message)
+    }
     syncSubscriptions()
     rebuildMenu()
     return report

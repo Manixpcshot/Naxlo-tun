@@ -65,6 +65,8 @@ object Vault {
                                 .put("name", sub.name)
                                 .put("updatedAt", sub.updatedAt)
                                 .put("lastError", sub.lastError)
+                                .put("filePath", sub.filePath)
+                                .put("password", sub.password)
                                 .put(
                                     "userinfo",
                                     sub.userinfo?.let {
@@ -133,7 +135,9 @@ object Vault {
                             )
                         },
                         updatedAt = o.optLong("updatedAt", 0L).takeIf { v -> v > 0 },
-                        lastError = o.optString("lastError", null)
+                        lastError = o.optString("lastError", null),
+                        filePath = o.optString("filePath", null),
+                        password = o.optString("password", null)
                     )
                 }
             },

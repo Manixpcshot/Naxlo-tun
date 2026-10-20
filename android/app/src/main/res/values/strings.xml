@@ -40,4 +40,14 @@
     <string name="settings_ports">پروکسی محلی</string>
     <string name="ports_value">SOCKS5 127.0.0.1:%1$d · HTTP 127.0.0.1:%2$d</string>
     <string name="no_tun_note">بدون TUN سیستمی: تونل فقط داخل sandbox خود اندروید و بدون روت ساخته می‌شود.</string>
+    <string name="add_from_file">افزودن از فایل</string>
+    <string name="file_label">فایل</string>
+    <string name="file_password_title">فایل رمز دارد</string>
+    <string name="file_password_body">رمز فایل را وارد کنید تا کانفیگ‌ها خوانده شوند. رمز به‌صورت رمزنگاری‌شده ذخیره می‌شود و دیگر پرسیده نمی‌شود.</string>
+    <string name="file_password_wrong">رمز اشتباه بود؛ دوباره تلاش کنید.</string>
+    <string name="file_password_wrong_short">رمز فایل اشتباه بود</string>
+    <string name="file_password_hint">رمز فایل</string>
+    <string name="file_password_submit">خواندن فایل</string>
+    <string name="file_needs_password">این فایل رمز دارد؛ رمز را از «افزودن از فایل» وارد کنید</string>
+    <string name="cancel">لغو</string>
 </resources>

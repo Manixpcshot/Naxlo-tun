@@ -162,6 +162,15 @@ export const MESSAGES = {
   refreshedToast: { fa: 'اشتراک به‌روزرسانی شد', en: 'Subscription refreshed' },
   fetchedBody: { fa: '{total} کانفیگ • {supported} مورد پشتیبانی‌شده', en: '{total} configs • {supported} supported' },
   importedToast: { fa: 'کانفیگ‌ها اضافه شدند', en: 'Configs imported' },
+  fileBadge: { fa: 'فایل', en: 'File' },
+  filePasswordTitle: { fa: 'فایل رمز دارد', en: 'Password-protected file' },
+  filePasswordBody: {
+    fa: 'رمز فایل را وارد کنید تا کانفیگ‌ها خوانده شوند. رمز به‌صورت رمزنگاری‌شده ذخیره می‌شود و دیگر پرسیده نمی‌شود.',
+    en: 'Enter the file password so the configs can be read. It is stored encrypted and never asked again.'
+  },
+  filePasswordWrong: { fa: 'رمز اشتباه بود؛ دوباره تلاش کنید.', en: 'Wrong password — please try again.' },
+  filePasswordPlaceholder: { fa: 'رمز فایل', en: 'File password' },
+  filePasswordSubmit: { fa: 'خواندن فایل', en: 'Read file' },
   importedBody: { fa: '{total} مورد در فهرست', en: '{total} in the list' },
   emptyUrlToast: { fa: 'لینک اشتراک خالی است', en: 'Subscription URL is empty' },
   clearSubConfirmTitle: { fa: 'حذف اشتراک و همهٔ سرورها؟', en: 'Delete subscription and all servers?' },

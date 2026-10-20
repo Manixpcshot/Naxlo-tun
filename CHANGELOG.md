@@ -6,6 +6,17 @@ All notable changes to Naxlo are documented here. Releases are cut per tag
 The format follows [Keep a Changelog](https://keepachangelog.com/) and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.5.0] - 2026-10-15
+
+### Added
+- **Password-protected file imports (desktop + Android):** subscription files can now be imported from disk — `txt/json/conf/sub` (raw or Base64) and ZIP archives. Encrypted ZIPs prompt for a password: on Windows the classic ZipCrypto algorithm is implemented directly in `fileImport.ts` (no new native deps, fully unit-tested round-trip); on Android `zip4j` handles both ZipCrypto and AES archives.
+- Imported files become first-class subscriptions: they appear in the subscription list with a file badge, keep their name, and can be **refreshed** — the stored password (encrypted vault / EncryptedSharedPreferences) means the prompt appears only once.
+- Desktop: file-password modal on the Subscription page with wrong-password feedback; file paths and passwords are registered with the log redactor.
+- Android: "Add from file" button (SAF document picker, persisted read permission) + password dialog; new trilingual strings.
+
+### Changed
+- Desktop refresh of a file subscription re-reads the file from disk instead of fetching a URL; `reveal` on a file subscription shows its path.
+
 ## [1.4.1] - 2026-10-15
 
 ### Fixed

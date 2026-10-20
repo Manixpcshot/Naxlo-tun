@@ -20,6 +20,7 @@ import {
 } from '../shared/bridge'
 import { log } from './lib/logger'
 import { getVault } from './lib/secretStore'
+import { fileNameOf } from './lib/fileImport'
 import type { LString } from '../shared/i18n'
 
 const SCOPE = 'state'
@@ -102,7 +103,8 @@ export function syncSubscriptions(): AppState {
     return {
       id: sub.id,
       name: sub.name,
-      maskedUrl: maskUrl(sub.url),
+      maskedUrl: sub.filePath ? fileNameOf(sub.filePath) : maskUrl(sub.url),
+      isFile: Boolean(sub.filePath),
       updatedAt: sub.updatedAt,
       userinfo: sub.userinfo,
       lastError: sub.lastError,

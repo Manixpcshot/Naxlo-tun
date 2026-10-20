@@ -98,6 +98,10 @@ export interface StoredSubscription {
   userinfo: SubUserinfo | null
   updatedAt: number | null
   lastError: string | LString | null
+  /** Set for file-based subscriptions (imported from disk instead of a URL). */
+  filePath?: string | null
+  /** Password of an encrypted ZIP import — stored encrypted, never logged. */
+  password?: string | null
 }
 
 /** The shape handed to the renderer: secrets are masked unless revealed. */
@@ -151,6 +155,8 @@ export interface SubscriptionView {
   fetching: boolean
   totalConfigs: number
   supportedConfigs: number
+  /** True for subscriptions imported from a local file. */
+  isFile?: boolean
 }
 
 export interface PublicIdentity {
