@@ -34,6 +34,8 @@ export function Subscription({ onNavigate }: Props): React.ReactElement {
   const [url, setUrl] = useState('')
   const [revealed, setRevealed] = useState<Record<string, string>>({})
   const [removing, setRemoving] = useState<SubscriptionView | null>(null)
+  const [pwPrompt, setPwPrompt] = useState<{ path: string; wrong: boolean } | null>(null)
+  const [pwValue, setPwValue] = useState('')
 
   const add = async (): Promise<void> => {
     if (!url.trim()) {
@@ -65,16 +67,39 @@ export function Subscription({ onNavigate }: Props): React.ReactElement {
     }
   }
 
-  const importFile = async (): Promise<void> => {
-    const report = await run(() => window.naxlo.subscription.importFile(), t('errorTitle'))
-    if (report && 'merged' in report) {
+  const afterImport = async (
+    report: Awaited<ReturnType<typeof window.naxlo.subscription.importFile>> | null | undefined
+  ): Promise<void> => {
+    if (!report || !('ok' in report)) return
+    if (report.needPassword) {
+      setPwPrompt({ path: report.filePath ?? '', wrong: Boolean(report.wrongPassword) })
+      setPwValue('')
+      return
+    }
+    setPwPrompt(null)
+    if (report.ok) {
       pushToast({
         kind: 'success',
         title: t('importedToast'),
         message: t('fetchedBody', { total: fa(report.total), supported: fa(report.supported) })
       })
       await reloadServers()
+      if (report.total > 0) onNavigate('servers')
     }
+  }
+
+  const importFile = async (): Promise<void> => {
+    const report = await run(() => window.naxlo.subscription.importFile(), t('errorTitle'))
+    await afterImport(report)
+  }
+
+  const submitFilePassword = async (): Promise<void> => {
+    if (!pwPrompt) return
+    const report = await run(
+      () => window.naxlo.subscription.importFile(pwPrompt.path, pwValue),
+      t('errorTitle')
+    )
+    await afterImport(report)
   }
 
   const reveal = async (sub: SubscriptionView): Promise<void> => {
@@ -198,6 +223,42 @@ export function Subscription({ onNavigate }: Props): React.ReactElement {
       >
         {t('subRemoveConfirm')}
       </Modal>
+
+      <Modal
+        open={pwPrompt !== null}
+        title={t('filePasswordTitle')}
+        onClose={() => setPwPrompt(null)}
+        actions={
+          <>
+            <Button variant="primary" icon="folder" onClick={() => void submitFilePassword()} disabled={!pwValue}>
+              {t('filePasswordSubmit')}
+            </Button>
+            <Button variant="ghost" onClick={() => setPwPrompt(null)}>
+              {t('cancel')}
+            </Button>
+          </>
+        }
+      >
+        <div style={{ marginBottom: 12 }}>{t('filePasswordBody')}</div>
+        {pwPrompt?.wrong ? (
+          <div style={{ marginBottom: 12 }}>
+            <Notice kind="danger" icon="error" title={t('filePasswordWrong')} />
+          </div>
+        ) : null}
+        <Field label={t('filePasswordPlaceholder')}>
+          <input
+            className="input mono"
+            dir="ltr"
+            type="password"
+            autoFocus
+            value={pwValue}
+            onChange={(event) => setPwValue(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') void submitFilePassword()
+            }}
+          />
+        </Field>
+      </Modal>
     </div>
   )
 }
@@ -229,7 +290,13 @@ function SubCard({ sub, revealedUrl, onRefresh, onReveal, onCopy, onRemove, onGo
           <span className="subcard__name" title={t('subFromPanel')}>
             {sub.name ?? hostOf(sub.maskedUrl)}
           </span>
-          {sub.name ? <span className="badge badge--accent">{t('subFromPanel')}</span> : null}
+          {sub.isFile ? (
+            <span className="badge badge--accent">
+              <Icon name="folder" size={11} /> {t('fileBadge')}
+            </span>
+          ) : sub.name ? (
+            <span className="badge badge--accent">{t('subFromPanel')}</span>
+          ) : null}
           {sub.fetching ? (
             <span className="badge badge--muted">
               <Icon name="refresh" size={11} /> {t('subFetching')}

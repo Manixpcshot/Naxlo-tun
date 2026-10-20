@@ -14,8 +14,8 @@ android {
         applicationId = "net.naxlo.android"
         minSdk = 24
         targetSdk = 35
-        versionCode = (System.getenv("ANDROID_VERSION_CODE") ?: "1401").toInt()
-        versionName = System.getenv("ANDROID_VERSION_NAME") ?: "1.4.1"
+        versionCode = (System.getenv("ANDROID_VERSION_CODE") ?: "1500").toInt()
+        versionName = System.getenv("ANDROID_VERSION_NAME") ?: "1.5.0"
     }
 
     buildTypes {
@@ -53,5 +53,7 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
+    // Password-protected (ZipCrypto + AES) config archives.
+    implementation("net.lingala.zip4j:zip4j:2.11.5")
     testImplementation("junit:junit:4.13.2")
 }

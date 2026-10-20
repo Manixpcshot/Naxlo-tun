@@ -40,4 +40,14 @@
     <string name="settings_ports">Yerel proxy</string>
     <string name="ports_value">SOCKS5 127.0.0.1:%1$d · HTTP 127.0.0.1:%2$d</string>
     <string name="no_tun_note">Sistem TUN’u yok: tünel yalnızca Android sandbox içinde, root’suz.</string>
+    <string name="add_from_file">Dosyadan ekle</string>
+    <string name="file_label">Dosya</string>
+    <string name="file_password_title">Dosya parola korumalı</string>
+    <string name="file_password_body">Yapılandırmaların okunabilmesi için dosya parolasını girin. Parola şifreli saklanır ve bir daha sorulmaz.</string>
+    <string name="file_password_wrong">Yanlış parola — tekrar deneyin.</string>
+    <string name="file_password_wrong_short">Yanlış dosya parolası</string>
+    <string name="file_password_hint">Dosya parolası</string>
+    <string name="file_password_submit">Dosyayı oku</string>
+    <string name="file_needs_password">Bu dosya parola korumalı; parolasını “Dosyadan ekle” üzerinden girin</string>
+    <string name="cancel">İptal</string>
 </resources>

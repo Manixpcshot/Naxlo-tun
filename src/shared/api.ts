@@ -21,6 +21,12 @@ export interface FetchReportView {
   merged: number
   error: string | null
   warnings: string[]
+  /** The imported file is an encrypted ZIP — ask the user for its password. */
+  needPassword?: boolean
+  /** The supplied password did not decrypt the archive. */
+  wrongPassword?: boolean
+  /** Echoed file path so the UI can retry the same file with a password. */
+  filePath?: string | null
 }
 
 export interface AppInfo {
@@ -75,7 +81,7 @@ export interface NaxloApi {
     refresh(id?: string): Promise<FetchReportView | FetchReportView[]>
     remove(id: string): Promise<boolean>
     clear(): Promise<boolean>
-    importFile(): Promise<FetchReportView | { imported: number }>
+    importFile(filePath?: string | null, password?: string | null): Promise<FetchReportView | { imported: number }>
   }
 
   speed: {

@@ -52,7 +52,8 @@ const api: NaxloApi = {
     refresh: (id?) => invoke(IPC.subscriptionRefresh, id),
     remove: (id) => invoke(IPC.subscriptionRemove, id),
     clear: () => invoke(IPC.subscriptionClear),
-    importFile: () => invoke(IPC.subscriptionImportFile)
+    importFile: (filePath?: string | null, password?: string | null) =>
+      invoke(IPC.subscriptionImportFile, filePath ?? null, password ?? null)
   },
 
   speed: {

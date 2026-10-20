@@ -10,10 +10,10 @@ class NaxloApp : Application() {
         // Never let storage/keystore quirks kill the process at launch.
         try {
             Vault.init(this)
-            Repo.init()
+            Repo.init(this)
         } catch (_: Exception) {
             try {
-                Repo.init()
+                Repo.init(this)
             } catch (_: Exception) {
                 // App still opens with an empty state.
             }

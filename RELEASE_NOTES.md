@@ -1,27 +1,32 @@
-# naxlo v1.4.1
+# naxlo v1.5.0
 
 ## فارسی
 
-**رفع دو مشکل مهم:**
+**وارد کردن کانفیگ از فایل + پشتیبانی از فایل‌های رمزدار 🔐**
 
-- 📱 **اندروید**: مشکل باز نشدن برنامه برطرف شد. علت، ناسازگاری تم فعالیت با `AppCompatActivity` بود؛ اکنون تم سازگار است و علاوه بر آن، استارت‌اپ برنامه در برابر خطاهای Keystore و زبان مقاوم‌سازی شد — اپلیکیشن تحت هر شرایطی باز می‌شود.
-- 💻 **ویندوز**: به‌روزرسانی اکنون کاملاً خودکار است و **هیچ‌وقت لینک ریپازیتوری/مرورگر باز نمی‌شود**. برنامه در پس‌زمینه نسخهٔ جدید را دانلود و اعتبارسنجی (sha512) می‌کند، نصب بی‌صدا انجام می‌شود و برنامه **فقط یک‌بار** بسته و با نسخهٔ جدید باز می‌شود. دکمهٔ «بررسی به‌روزرسانی» هم به‌جای بازکردن لینک، همان خط لولهٔ خودکار را شروع می‌کند. در صورت قطعی موقت شبکه، تلاش مجدد خودکار پس از ۴۵ ثانیه انجام می‌شود.
+- 📁 **وارد کردن از فایل** (ویندوز و اندروید): علاوه بر لینک اشتراک، حالا می‌توانید فایل‌های کانفیگ را مستقیم از گوشی/کامپیوتر وارد کنید — `txt`, `json`, `conf`, `sub` (خام یا Base64) و **ZIP**.
+- 🔑 **فایل رمزدار؟** اگر فایل زیپ رمز داشته باشد، پنجرهٔ واردکردن رمز باز می‌شود. رمز یک‌بار پرسیده می‌شود و به‌صورت **رمزنگاری‌شده** ذخیره می‌شود تا رفرش‌های بعدی بدون سؤال انجام شود. رمز اشتباه هم پیام مشخص دارد.
+  - در ویندوز الگوریتم استاندارد ZipCrypto (همان رمز معمول WinRAR) پیاده‌سازی شده؛ در اندروید علاوه بر آن، زیپ‌های AES هم پشتیبانی می‌شوند.
+- 🔁 فایل واردشده مثل یک اشتراک کامل رفتار می‌کند: در فهرست اشتراک‌ها با برچسب «فایل» دیده می‌شود، دکمهٔ رفرش دارد و حذفش فقط سرورهای خودش را پاک می‌کند.
+- 🔒 مثل همیشه: مسیر فایل، رمز و محتوای کانفیگ‌ها **هرگز در لاگ ثبت نمی‌شوند**.
 
 ### فایل‌ها
 | فایل | توضیح |
 |---|---|
-| `Naxlo-Setup-1.4.1.exe` | نصب‌کنندهٔ ویندوز |
-| `Naxlo-Portable-1.4.1.exe` | نسخهٔ پرتابل |
-| `Naxlo-android-v1.4.1-debug.apk` | اپ اندروید (قابل نصب) |
-| `Naxlo-android-v1.4.1-unsigned.apk` | بیلد release بدون امضا |
+| `Naxlo-Setup-1.5.0.exe` | نصب‌کنندهٔ ویندوز |
+| `Naxlo-Portable-1.5.0.exe` | نسخهٔ پرتابل |
+| `Naxlo-android-v1.5.0-debug.apk` | اپ اندروید (قابل نصب) |
+| `Naxlo-android-v1.5.0-unsigned.apk` | بیلد release بدون امضا |
 | `latest.yml` / `SHA256SUMS.txt` | خوراک به‌روزرسانی خودکار و checksum |
 
-> کاربران نسخهٔ ۱.۴.۰ ویندوز: برنامه خودش این نسخه را دانلود و با یک ریستارت نصب می‌کند.
-> کاربران اندروید: APK جدید را نصب کنید (روی نسخهٔ قبلی قابل نصب است؛ داده‌ها حفظ می‌شود).
+> ویندوز: برنامهٔ نصب‌شده خودش این نسخه را خودکار دانلود و با یک ریستارت نصب می‌کند.
+> اندروید: APK جدید را نصب کنید؛ داده‌های شما حفظ می‌شود.
 
 ## English
 
-**Two critical fixes:**
+**Import configs from files + password-protected archives 🔐**
 
-- 📱 **Android**: the launch crash is fixed — the activity theme is now AppCompat-compatible, and start-up is hardened so Keystore/locale errors can never prevent the app from opening.
-- 💻 **Windows**: self-update is fully automatic and **never opens the repository link or a browser**. Updates download silently in the background, sha512 is verified, the installer runs silently and the app restarts **exactly once**. The manual "check for update" button now triggers the same pipeline instead of opening a link, and transient network failures retry automatically after 45 s.
+- 📁 **File import (Windows + Android):** besides subscription links, config files can now be imported straight from disk — `txt`, `json`, `conf`, `sub` (raw or Base64) and **ZIP** archives.
+- 🔑 **Password-protected?** Encrypted ZIPs open a password prompt. The password is asked once, stored **encrypted**, and reused silently on later refreshes; a wrong password reports clearly. Windows implements classic ZipCrypto (WinRAR-style) natively; Android also supports AES zips via zip4j.
+- 🔁 An imported file behaves like a full subscription: it shows up in the list with a "File" badge, has its own refresh button, and removing it only drops its servers.
+- 🔒 As always, file paths, passwords and config contents are **never written to logs**.

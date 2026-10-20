@@ -11,6 +11,7 @@ import { extractLinks, parseProxyLink, tryDecodeBase64 } from './parseConfig'
 import { getVault, replaceServers, updateVault } from './secretStore'
 import { stableId } from './ids'
 import { parseProfileTitle, parseSubscriptionUserinfo } from './submeta'
+import { FilePasswordRequired, FilePasswordWrong, fileNameOf, readConfigFile } from './fileImport'
 export { parseProfileTitle, parseSubscriptionUserinfo }
 import type { ServerConfig, StoredSubscription, SubUserinfo } from '../../shared/types'
 import { AppError, L, type LString } from '../../shared/i18n'
@@ -30,6 +31,12 @@ export interface FetchReport {
   /** Panel-reported title (`profile-title` header), when present. */
   title?: string | null
   userinfo?: SubUserinfo | null
+  /** Set when the imported file is an encrypted ZIP and needs a password. */
+  needPassword?: boolean
+  /** Set when the supplied password failed to decrypt the archive. */
+  wrongPassword?: boolean
+  /** File-system path for file-based subscriptions (echoed back to the UI). */
+  filePath?: string | null
 }
 
 /** Stable identifier for a subscription URL (the URL itself stays secret). */
@@ -141,6 +148,111 @@ export async function refreshSubscription(url: string, timeoutMs = 25000): Promi
     subscriptionId: id,
     title,
     userinfo
+  }
+}
+
+/**
+ * Import (or re-import) a subscription from a local file. Supports plain text,
+ * base64 payloads and ZIP archives — including classic password-protected ZIPs.
+ * File paths and passwords are treated as secrets (redactor + encrypted vault).
+ */
+export async function refreshFileSubscription(filePath: string, password?: string | null): Promise<FetchReport> {
+  registerSecret(filePath, 'import')
+  if (password) registerSecret(password, 'import')
+  const id = stableId(`file:${filePath}`)
+
+  let text: string
+  try {
+    text = await readConfigFile(filePath, password)
+  } catch (err) {
+    if (err instanceof FilePasswordRequired) {
+      return { ok: false, total: 0, supported: 0, merged: 0, error: null, warnings: [], needPassword: true, filePath }
+    }
+    if (err instanceof FilePasswordWrong) {
+      return {
+        ok: false,
+        total: 0,
+        supported: 0,
+        merged: 0,
+        error: null,
+        warnings: [],
+        needPassword: true,
+        wrongPassword: true,
+        filePath
+      }
+    }
+    throw err
+  }
+  registerSecret(text, 'import')
+
+  const links = extractLinks(text)
+  if (links.length === 0) {
+    throw new SubscriptionError(L('هیچ کانفیگی در فایل پیدا نشد', 'No configs were found in the file'))
+  }
+
+  const warnings: string[] = []
+  const servers: ServerConfig[] = []
+  const seen = new Set<string>()
+  for (const link of links) {
+    const parsed = parseProxyLink(link)
+    if (!parsed) {
+      warnings.push('یک لینک قابل تجزیه نبود و نادیده گرفته شد')
+      continue
+    }
+    if (seen.has(parsed.server.id)) continue
+    seen.add(parsed.server.id)
+    servers.push(parsed.server)
+  }
+  for (const server of servers) server.subscriptionId = id
+
+  const vault = getVault()
+  const kept = vault.servers.filter((s) => s.subscriptionId !== id)
+  const previous = new Map(vault.servers.map((s) => [s.id, s]))
+  for (const s of servers) {
+    const old = previous.get(s.id)
+    if (old) {
+      s.latencyMs = old.latencyMs
+      s.latencyAt = old.latencyAt
+    }
+  }
+  const merged = [...servers, ...kept]
+  const supported = merged.filter((s) => s.supported).length
+
+  const existing = vault.subscriptions.find((sub) => sub.id === id)
+  const entry: StoredSubscription = {
+    id,
+    url: '',
+    name: existing?.name ?? fileNameOf(filePath),
+    userinfo: null,
+    updatedAt: Date.now(),
+    lastError: null,
+    filePath,
+    password: password ?? existing?.password ?? null
+  }
+  const subscriptions = [...vault.subscriptions.filter((sub) => sub.id !== id), entry]
+
+  updateVault({
+    subscriptions,
+    lastUpdatedAt: Date.now(),
+    selectedServerId:
+      vault.selectedServerId && merged.some((s) => s.id === vault.selectedServerId)
+        ? vault.selectedServerId
+        : (merged.find((s) => s.supported)?.id ?? null)
+  })
+  replaceServers(merged)
+
+  log.info(SCOPE, `file subscription refreshed: ${servers.length} configs (${supported} supported overall)`)
+  return {
+    ok: true,
+    total: merged.length,
+    supported,
+    merged: servers.length,
+    error: null,
+    warnings,
+    subscriptionId: id,
+    title: entry.name,
+    userinfo: null,
+    filePath
   }
 }
 

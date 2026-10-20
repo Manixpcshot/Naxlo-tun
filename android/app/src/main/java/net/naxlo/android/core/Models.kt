@@ -43,7 +43,11 @@ data class Subscription(
     val name: String? = null,
     val userinfo: Userinfo? = null,
     val updatedAt: Long? = null,
-    val lastError: String? = null
+    val lastError: String? = null,
+    /** Set for subscriptions imported from a local file (content:// URI string). */
+    val filePath: String? = null,
+    /** Password of an encrypted ZIP import — stored encrypted, never logged. */
+    val password: String? = null
 )
 
 /** Everything persisted inside EncryptedSharedPreferences. */

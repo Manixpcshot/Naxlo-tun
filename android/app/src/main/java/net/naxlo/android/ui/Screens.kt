@@ -2,6 +2,7 @@ package net.naxlo.android.ui
 
 import android.content.Intent
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -20,7 +21,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.Key
@@ -29,7 +33,9 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -304,6 +310,17 @@ fun SubscriptionScreen(subscriptions: List<Subscription>) {
     val scope = rememberCoroutineScope()
     val revision by AppState.revision.collectAsState()
     val state = remember(revision) { Repo.state }
+    // (uriString, wrongPassword) while asking for an encrypted archive's password.
+    var pwDialog by remember { mutableStateOf<Pair<String, Boolean>?>(null) }
+
+    val filePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        uri?.let { picked ->
+            scope.launch {
+                val report = runCatching { Repo.importFile(picked.toString(), null) }.getOrNull()
+                if (report?.needPassword == true) pwDialog = Pair(picked.toString(), report.wrongPassword)
+            }
+        }
+    }
 
     Column(Modifier.fillMaxSize().padding(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -325,6 +342,12 @@ fun SubscriptionScreen(subscriptions: List<Subscription>) {
                 Icon(Icons.Filled.Add, contentDescription = null)
             }
         }
+        Spacer(Modifier.height(8.dp))
+        OutlinedButton(onClick = { filePicker.launch(arrayOf("*/*")) }) {
+            Icon(Icons.Filled.AttachFile, contentDescription = null, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(6.dp))
+            Text(stringResource(R.string.add_from_file), fontSize = 13.sp)
+        }
         Spacer(Modifier.height(14.dp))
         if (state.subscriptions.isEmpty()) {
             Text(stringResource(R.string.empty_subs), color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -334,6 +357,50 @@ fun SubscriptionScreen(subscriptions: List<Subscription>) {
                 SubscriptionCard(sub)
             }
         }
+    }
+
+    pwDialog?.let { prompt ->
+        var pw by remember(prompt.first) { mutableStateOf("") }
+        AlertDialog(
+            onDismissRequest = { pwDialog = null },
+            containerColor = MaterialTheme.colorScheme.surface,
+            title = { Text(stringResource(R.string.file_password_title)) },
+            text = {
+                Column {
+                    Text(stringResource(R.string.file_password_body), fontSize = 13.sp)
+                    if (prompt.second) {
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            stringResource(R.string.file_password_wrong),
+                            color = MaterialTheme.colorScheme.error,
+                            fontSize = 12.sp
+                        )
+                    }
+                    Spacer(Modifier.height(10.dp))
+                    OutlinedTextField(
+                        value = pw,
+                        onValueChange = { pw = it },
+                        singleLine = true,
+                        label = { Text(stringResource(R.string.file_password_hint)) },
+                        visualTransformation = PasswordVisualTransformation()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val entered = pw
+                    val uriString = prompt.first
+                    pwDialog = null
+                    scope.launch {
+                        val report = runCatching { Repo.importFile(uriString, entered) }.getOrNull()
+                        if (report?.needPassword == true) pwDialog = Pair(uriString, true)
+                    }
+                }) { Text(stringResource(R.string.file_password_submit)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { pwDialog = null }) { Text(stringResource(R.string.cancel)) }
+            }
+        )
     }
 }
 
@@ -352,6 +419,13 @@ fun SubscriptionCard(sub: Subscription) {
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp
                     )
+                    if (sub.filePath != null) {
+                        Text(
+                            stringResource(R.string.file_label),
+                            color = MaterialTheme.colorScheme.primary,
+                            fontSize = 10.sp
+                        )
+                    }
                     Text(
                         stringResource(R.string.configs_count, Repo.state.servers.count { it.subscriptionId == sub.id }, Repo.state.servers.count { it.subscriptionId == sub.id && it.supported }),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,

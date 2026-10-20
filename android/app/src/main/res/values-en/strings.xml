@@ -40,4 +40,14 @@
     <string name="settings_ports">Local proxy</string>
     <string name="ports_value">SOCKS5 127.0.0.1:%1$d · HTTP 127.0.0.1:%2$d</string>
     <string name="no_tun_note">No system TUN: the tunnel lives inside the Android sandbox, no root.</string>
+    <string name="add_from_file">Add from file</string>
+    <string name="file_label">File</string>
+    <string name="file_password_title">Password-protected file</string>
+    <string name="file_password_body">Enter the file password so the configs can be read. It is stored encrypted and never asked again.</string>
+    <string name="file_password_wrong">Wrong password — try again.</string>
+    <string name="file_password_wrong_short">Wrong file password</string>
+    <string name="file_password_hint">File password</string>
+    <string name="file_password_submit">Read file</string>
+    <string name="file_needs_password">This file is password-protected; enter its password via “Add from file”</string>
+    <string name="cancel">Cancel</string>
 </resources>
