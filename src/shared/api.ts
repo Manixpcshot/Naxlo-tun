@@ -131,5 +131,9 @@ export interface NaxloApi {
     checkUpdate(): Promise<AppUpdateInfo>
     /** Quit and run the staged installer (relaunches the app). */
     installUpdate(): Promise<boolean>
+    /** True when the app runs with administrator rights (needed for TUN mode). */
+    isAdmin(): Promise<boolean>
+    /** Relaunch the app elevated through UAC so TUN mode can run; this instance exits. */
+    relaunchElevated(): Promise<boolean>
   }
 }

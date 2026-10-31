@@ -5,7 +5,7 @@
  * vault, then the window, then the Xray supervisor. Shutdown is the mirror
  * image and always restores the user's system proxy.
  */
-import { app, BrowserWindow, globalShortcut } from 'electron'
+import { app, BrowserWindow, dialog, globalShortcut } from 'electron'
 import { createMainWindow } from './window'
 import { destroyTray, initTray, rebuildMenu, showWindow } from './tray'
 import {
@@ -46,6 +46,7 @@ if (!gotTheLock) {
 app.setName('Naxlo')
 if (process.platform === 'win32') app.setAppUserModelId('com.naxlo.desktop')
 runtime.autoStarted = process.argv.includes('--autostart')
+runtime.tunElevated = process.argv.includes('--tun-elevated')
 
 async function bootstrap(): Promise<void> {
   initLogger(getSettings().logLevel)
@@ -57,10 +58,16 @@ async function bootstrap(): Promise<void> {
 
   mainWindow = createMainWindow()
   registerIpc(() => mainWindow)
-  initTray(mainWindow, () => void quit())
+  initTray(mainWindow, () => void requestQuit())
 
   mainWindow.on('close', (event) => {
-    if (getSettings().minimizeToTray && !runtime.quitting) {
+    if (runtime.quitting) return
+    if (manager.isConnected) {
+      event.preventDefault()
+      void confirmCloseWhileConnected()
+      return
+    }
+    if (getSettings().minimizeToTray) {
       event.preventDefault()
       mainWindow?.hide()
     }
@@ -101,6 +108,12 @@ async function bootstrap(): Promise<void> {
 
   if (runtime.autoStarted && settings.autoConnectLast && getVault().selectedServerId) {
     log.info(SCOPE, 'auto-connecting to the last used server')
+    setConnection('preparing')
+    void manager.connect()
+  }
+
+  if (runtime.tunElevated && settings.connectionMode === 'tun' && getVault().selectedServerId) {
+    log.info(SCOPE, 'elevated relaunch: auto-connecting in TUN mode')
     setConnection('preparing')
     void manager.connect()
   }
@@ -152,6 +165,46 @@ async function quit(): Promise<void> {
   runtime.quitting = true
   await cleanup()
   app.exit(0)
+}
+
+/** Tray/window close while a tunnel is up: warn first, then act. */
+async function requestQuit(): Promise<void> {
+  if (runtime.quitting) return
+  if (manager.isConnected) {
+    await confirmCloseWhileConnected()
+    return
+  }
+  await quit()
+}
+
+async function confirmCloseWhileConnected(): Promise<void> {
+  const win = mainWindow
+  if (!win) return
+  const faLang = getSettings().language === 'fa'
+  const { response } = await dialog.showMessageBox(win, {
+    type: 'warning',
+    noLink: true,
+    defaultId: 0,
+    cancelId: 2,
+    message: faLang ? 'اتصال هنوز برقرار است!' : 'You are still connected!',
+    detail: faLang
+      ? 'پروکسی/تونل ناکسلو فعال است. قبل از بستن برنامه خاموشش کنیم؟'
+      : 'The Naxlo proxy/tunnel is still active. Turn it off before closing?',
+    buttons: faLang
+      ? ['خاموش کن و ببند', 'متصل بمان و ببند', 'لغو']
+      : ['Disconnect and close', 'Stay connected and close', 'Cancel']
+  })
+  if (response === 0) {
+    runtime.quitting = true
+    try {
+      await manager.disconnect('user')
+    } catch {
+      /* cleanup() inside quit() handles the rest */
+    }
+    await quit()
+  } else if (response === 1) {
+    win.hide()
+  }
 }
 
 app.whenReady().then(() => {

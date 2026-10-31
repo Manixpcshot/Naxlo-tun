@@ -50,4 +50,8 @@
     <string name="file_password_submit">خواندن فایل</string>
     <string name="file_needs_password">این فایل رمز دارد؛ رمز را از «افزودن از فایل» وارد کنید</string>
     <string name="cancel">لغو</string>
+    <string name="exit_warn_title">اتصال هنوز برقرار است!</string>
+    <string name="exit_warn_body">تونل ناکسلو فعال است. قبل از بستن برنامه خاموشش کنیم؟</string>
+    <string name="exit_disconnect_close">خاموش کن و ببند</string>
+    <string name="exit_stay_close">متصل بمان و ببند</string>
 </resources>

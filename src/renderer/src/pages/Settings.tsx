@@ -31,10 +31,30 @@ export function Settings(): React.ReactElement {
   const { t, pick, lang, setLang } = useI18n()
   const [updateInfo, setUpdateInfo] = useState<{ current: string | null; latest: string | null; updateAvailable: boolean } | null>(null)
   const [confirmWipe, setConfirmWipe] = useState(false)
+  const [tunElevate, setTunElevate] = useState(false)
   const [wiping, setWiping] = useState(false)
 
   const patch = (partial: Partial<SettingsType>): void => {
     void saveSettings(partial).catch(() => pushToast({ kind: 'error', title: t('saveSettingsFailed') }))
+  }
+
+  const changeConnectionMode = async (mode: 'proxy' | 'tun'): Promise<void> => {
+    if (mode === settings.connectionMode) return
+    if (mode === 'proxy') {
+      patch({ connectionMode: 'proxy' })
+      return
+    }
+    const admin = await window.naxlo.app.isAdmin().catch(() => false)
+    if (admin) patch({ connectionMode: 'tun' })
+    else setTunElevate(true)
+  }
+
+  const relaunchForTun = async (): Promise<void> => {
+    setTunElevate(false)
+    // Persist first: the elevated instance must come up in TUN mode and
+    // auto-connect without another prompt.
+    await saveSettings({ connectionMode: 'tun' }).catch(() => undefined)
+    await window.naxlo.app.relaunchElevated().catch(() => undefined)
   }
 
   const numberField = (key: 'socksPort' | 'httpPort', value: number): React.ReactElement => (
@@ -64,6 +84,22 @@ export function Settings(): React.ReactElement {
               <Icon name="link" size={15} /> {t('localProxySection')}
             </div>
             <div className="card__subtitle">{t('localProxyDesc')}</div>
+
+            <div style={{ marginTop: 14 }}>
+              <Field
+                label={t('connectionModeLabel')}
+                hint={t(settings.connectionMode === 'tun' ? 'connectionModeTunHint' : 'connectionModeProxyHint')}
+              >
+                <Segmented<'proxy' | 'tun'>
+                  value={settings.connectionMode}
+                  options={[
+                    { value: 'proxy', label: t('connectionModeProxy') },
+                    { value: 'tun', label: t('connectionModeTun') }
+                  ]}
+                  onChange={(mode) => void changeConnectionMode(mode)}
+                />
+              </Field>
+            </div>
 
             <div className="grid grid--2" style={{ marginTop: 16 }}>
               <Field label={t('socksPort')} hint={t('socksPortHint')}>
@@ -393,6 +429,24 @@ export function Settings(): React.ReactElement {
         }
       >
         {t('wipeConfirmBody')}
+      </Modal>
+
+      <Modal
+        open={tunElevate}
+        title={t('tunElevateTitle')}
+        onClose={() => setTunElevate(false)}
+        actions={
+          <>
+            <Button variant="primary" icon="shield" onClick={() => void relaunchForTun()}>
+              {t('tunElevateConfirm')}
+            </Button>
+            <Button variant="ghost" onClick={() => setTunElevate(false)}>
+              {t('cancel')}
+            </Button>
+          </>
+        }
+      >
+        {t('tunElevateBody')}
       </Modal>
     </div>
   )

@@ -50,4 +50,8 @@
     <string name="file_password_submit">Dosyayı oku</string>
     <string name="file_needs_password">Bu dosya parola korumalı; parolasını “Dosyadan ekle” üzerinden girin</string>
     <string name="cancel">İptal</string>
+    <string name="exit_warn_title">Bağlantı hâlâ açık!</string>
+    <string name="exit_warn_body">Naxlo tüneli hâlâ etkin. Kapatmadan önce bağlantı kesilsin mi?</string>
+    <string name="exit_disconnect_close">Bağlantıyı kes ve kapat</string>
+    <string name="exit_stay_close">Bağlı kal ve kapat</string>
 </resources>

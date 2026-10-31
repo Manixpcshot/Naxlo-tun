@@ -4,7 +4,7 @@
 
 # naxlo
 
-**کلاینت فارسی‌زبان VLESS برای ویندوز — سبک، تاریک و بدون TUN**
+**کلاینت فارسی‌زبان VLESS برای ویندوز — سبک، تاریک، با حالت TUN اختیاری**
 
 Electron + React + Xray-core در حالت پروکسی محلی
 
@@ -19,8 +19,9 @@ Electron + React + Xray-core در حالت پروکسی محلی
 
 ناکسلو یک کارگیر (کلاینت) دسکتاپ برای ویندوز است: لینک اشتراک را می‌گیرید، فایل TXT را دریافت و Base64 آن را
 بازگشایی می‌کند، کانفیگ‌های VLESS را در یک فهرست زیبا نشان می‌دهد و با یک کلیک، هستهٔ Xray را در **حالت پروکسی
-محلی** (SOCKS5 + HTTP روی `127.0.0.1`) اجرا می‌کند. بدون TUN، بدون Wintun، بدون درایور شبکه و بدون نیاز به دسترسی
-مدیر (Admin).
+محلی** (SOCKS5 + HTTP روی `127.0.0.1`) اجرا می‌کند — بدون درایور و بدون دسترسی مدیر. از v1.6.0 یک **حالت TUN
+اختیاری** هم وجود دارد: تونل کل‌سیستمی با اینباند TUN داخلی خود Xray و درایور رسمی Wintun (یک‌بار تأیید UAC)، برای
+برنامه‌هایی که پروکسی ویندوز را نادیده می‌گیرند.
 
 ## ✨ ویژگی‌ها
 
@@ -31,6 +32,8 @@ Electron + React + Xray-core در حالت پروکسی محلی
 | 🖥️ سرورها | فهرست زنده با جست‌وجو، فیلتر (REALITY/WS/gRPC)، تست تأخیر گروهی و مرتب‌سازی بر اساس سرعت |
 | ⚡ اتصال | اجرای Xray با اینباندهای لوکال، تست واقعی عبور ترافیک، نمایش وضعیت، آی‌پی خروجی و مدت اتصال |
 | 🧩 پروکسی سیستم | تنظیم خودکار پروکسی ویندوز (WinINET) و بازگردانی دقیق تنظیمات قبلی هنگام قطع |
+| 🌐 حالت TUN | تونل اختیاری کل‌سیستمی با اینباند TUN داخلی Xray و درایور رسمی Wintun (پین SHA-256 + یک‌بار تأیید UAC) — حتی برنامه‌هایی که پروکسی را نادیده می‌گیرند |
+| 🚪 خروج ایمن | هشدار سه‌گزینه‌ای هنگام بستن برنامه در حالت اتصال: «خاموش کن و ببند»، «متصل بمان و ببند» یا «لغو» (دسکتاپ و اندروید) |
 | 🧠 هسته | دانلود خودکار Xray-core از مخزن رسمی + اعتبارسنجی SHA-512 + امکان انتخاب فایل دلخواه |
 | 🔒 حریم خصوصی | خزانهٔ رمزنگاری‌شده (DPAPI)، نمایش پوشیدهٔ همهٔ مقادیر حساس، و **عدم ثبت هرگز** آن‌ها در لاگ |
 | 🌙 طراحی | تم مشکی با یک رنگ تأکیدی، رابط کاملاً راست‌چین با قلم وزیرمتن و انیمیشن‌های نرم |
@@ -52,8 +55,11 @@ Electron + React + Xray-core در حالت پروکسی محلی
         (اختیاری) پروکسی سیستم ویندوز ◄───┘  ──► تست عبور ترافیک ──► وضعیت «متصل»
 ```
 
-- **بدون TUN/Wintun:** ترافیک فقط از دو اینباند لوکال عبور می‌کند؛ یا با پروکسی خودکار ویندوز، یا با تنظیم دستی
-  هر برنامه روی آدرسهای بالا.
+- **حالت پیش‌فرض (پروکسی):** ترافیک از دو اینباند لوکال عبور می‌کند؛ یا با پروکسی خودکار ویندوز، یا با تنظیم دستی
+  هر برنامه روی آدرسهای بالا — بدون درایور و بدون دسترسی مدیر.
+- **حالت TUN (اختیاری):** اینباند TUN داخلی Xray با درایور رسمی Wintun کل ترافیک سیستم را از تونل عبور می‌دهد —
+  حتی برنامه‌هایی که پروکسی را نادیده می‌گیرند. یک‌بار تأیید UAC لازم است؛ پس از باز شدن مجدد، اتصال خودکار برقرار
+  می‌شود و هنگام قطع، آداپتور و روت‌ها پاک می‌شوند.
 - **کانفیگ Xray** در فایلی با دسترسی `0600` در پوشهٔ کاربر نوشته می‌شود و بلافاصله پس از خروج فرایند حذف می‌گردد.
 - **مسیریابی:** سه حالت «همه از پروکسی»، «سایت‌های ایران مستقیم» و «شبکهٔ داخلی مستقیم» + مسدودسازی تبلیغات.
 
@@ -129,7 +135,8 @@ src/
 │     ├─ subscription.ts  # دریافت و بازگشایی اشتراک
 │     ├─ fileImport.ts    # وارد کردن از فایل + زیپ رمزدار (ZipCrypto)
 │     ├─ systemProxy.ts   # پروکسی WinINET + بازگردانی
-│     └─ xray/            # core (دانلود/اعتبارسنجی)، config، runner، manager
+│     ├─ elevate.ts       # تشخیص دسترسی مدیر + باز شدن مجدد با UAC (حالت TUN)
+│     └─ xray/            # core (دانلود/اعتبارسنجی)، config، runner، manager، wintun (درایور رسمی، پین SHA-256)
 ├─ preload/         # پل contextBridge با تایپ‌های مشترک
 ├─ renderer/        # رابط کاربری React (RTL، تم مشکی، انیمیشن با motion)
 └─ shared/          # قراردادها و ماسک‌کننده‌های مشترک بین فرایندها
@@ -153,8 +160,10 @@ src/
 
 **English summary** — Naxlo is a Persian (RTL), dark-themed Windows desktop client for VLESS subscriptions built
 with Electron + React. It fetches a subscription TXT, decodes Base64, lists parsed configs, and runs the official
-Xray core as a **local proxy** (SOCKS5 + HTTP on loopback, optional WinINET system proxy) — no TUN, no Wintun, no
-admin rights. Secrets live in an encrypted vault, are masked in the UI and never logged. Installers are published
-on every tag via GitHub Actions with SHA-256 checksums.
+Xray core as a **local proxy** (SOCKS5 + HTTP on loopback, optional WinINET system proxy) by default, with an
+optional **system-wide TUN mode** (Xray's built-in TUN inbound + the official, checksum-pinned Wintun driver, one-time
+UAC elevation). Closing while connected always asks first: disconnect, stay connected, or cancel. Secrets live in an
+encrypted vault, are masked in the UI and never logged. Installers are published on every tag via GitHub Actions with
+SHA-256 checksums.
 
 </div>

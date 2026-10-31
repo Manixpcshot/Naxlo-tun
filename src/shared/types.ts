@@ -207,6 +207,8 @@ export interface Settings {
   httpPort: number
   listenAddress: string
   applySystemProxy: boolean
+  /** 'proxy' = local SOCKS/HTTP + system proxy; 'tun' = system-wide Wintun tunnel. */
+  connectionMode: 'proxy' | 'tun'
   routeMode: RouteMode
   blockAds: boolean
   muxEnabled: boolean
@@ -284,7 +286,9 @@ export const IPC = {
   clipboardWrite: 'naxlo:clipboard:write',
   appInfo: 'naxlo:app:info',
   appUpdate: 'naxlo:app:update',
-  appInstallUpdate: 'naxlo:app:install-update'
+  appInstallUpdate: 'naxlo:app:install-update',
+  appIsAdmin: 'naxlo:app:is-admin',
+  appRelaunchElevated: 'naxlo:app:relaunch-elevated'
 } as const
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -292,6 +296,7 @@ export const DEFAULT_SETTINGS: Settings = {
   httpPort: 10809,
   listenAddress: '127.0.0.1',
   applySystemProxy: true,
+  connectionMode: 'proxy',
   routeMode: 'all-proxy',
   blockAds: false,
   muxEnabled: false,
@@ -315,6 +320,6 @@ export const DEFAULT_SETTINGS: Settings = {
 /** Pseudo server id: let Naxlo pick the best healthy server. */
 export const AUTO_SERVER_ID = 'auto'
 
-export const PINNED_XRAY_VERSION = 'v26.3.27'
+export const PINNED_XRAY_VERSION = 'v26.10.31'
 
 export const isWindows = typeof process !== 'undefined' && process.platform === 'win32'
