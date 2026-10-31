@@ -100,7 +100,9 @@ const api: NaxloApi = {
   app: {
     info: () => invoke(IPC.appInfo),
     checkUpdate: () => invoke(IPC.appUpdate),
-    installUpdate: () => invoke(IPC.appInstallUpdate)
+    installUpdate: () => invoke(IPC.appInstallUpdate),
+    isAdmin: () => invoke(IPC.appIsAdmin),
+    relaunchElevated: () => invoke(IPC.appRelaunchElevated)
   }
 }
 

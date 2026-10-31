@@ -1,10 +1,12 @@
 /**
  * Xray configuration builder.
  *
- * Only local inbounds are created (SOCKS5 + HTTP). There is no TUN, no
- * Wintun, no service installation and no privileged networking: Naxlo behaves
- * like an ordinary local proxy that Windows (and any app you point at it) can
- * use.
+ * Two connection modes:
+ *   - proxy (default): local SOCKS5 + HTTP inbounds only — no driver, no
+ *     privileged networking; Windows uses them through the system proxy.
+ *   - tun: Xray's built-in TUN inbound (Wintun on Windows) routes the whole
+ *     system through the tunnel, including apps that ignore the proxy. It
+ *     needs a one-time elevated relaunch and the official wintun.dll.
  */
 import type { RouteMode, ServerConfig, Settings } from '../../../shared/types'
 import { L, type LString } from '../../../shared/i18n'
@@ -56,6 +58,31 @@ export function buildXrayConfig({ server, settings }: BuildOptions): Json {
       }
     }
   ]
+
+  if (settings.connectionMode === 'tun') {
+    // System-wide tunnel via Xray's built-in TUN inbound (Wintun adapter).
+    // IPv4-only on purpose: on systems with IPv6 disabled, IPv6 routes here
+    // would stop the adapter from starting.
+    inbounds.unshift({
+      tag: 'naxlo-tun',
+      port: 0,
+      protocol: 'tun',
+      settings: {
+        name: 'naxlo',
+        desc: 'Naxlo',
+        mtu: 1500,
+        gateway: ['10.213.0.1/24'],
+        dns: ['1.1.1.1', '8.8.8.8'],
+        autoSystemRoutingTable: ['0.0.0.0/0'],
+        autoOutboundsInterface: 'auto'
+      },
+      sniffing: {
+        enabled: true,
+        destOverride: ['http', 'tls', 'quic'],
+        metadataOnly: false
+      }
+    })
+  }
 
   const outbounds: Json[] = [buildOutbound(server, settings), directOutbound(), blockOutbound()]
 

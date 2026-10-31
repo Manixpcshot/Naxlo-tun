@@ -1,6 +1,8 @@
 package net.naxlo.android.ui
 
+import android.app.Activity
 import android.content.Intent
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.foundation.background
@@ -84,9 +86,52 @@ fun AppShell() {
     var tab by remember { mutableStateOf(0) }
     val revision by AppState.revision.collectAsState()
     val context = LocalContext.current
+    val connection by AppState.connection.collectAsState()
+    var exitPrompt by remember { mutableStateOf(false) }
 
     // Keep the encrypted vault and the UI in sync.
     val state = remember(revision) { Repo.state }
+
+    // Never close silently while the tunnel is up: warn and let the user choose.
+    BackHandler(enabled = connection == ConnectionState.CONNECTED || connection == ConnectionState.STARTING) {
+        exitPrompt = true
+    }
+
+    if (exitPrompt) {
+        val activity = context as? Activity
+        AlertDialog(
+            onDismissRequest = { exitPrompt = false },
+            containerColor = MaterialTheme.colorScheme.surface,
+            title = { Text(stringResource(R.string.exit_warn_title)) },
+            text = {
+                Column {
+                    Text(stringResource(R.string.exit_warn_body), fontSize = 13.sp)
+                    Spacer(Modifier.height(6.dp))
+                    TextButton(onClick = {
+                        exitPrompt = false
+                        activity?.finishAffinity()
+                    }) {
+                        Text(
+                            stringResource(R.string.exit_stay_close),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    exitPrompt = false
+                    context.startService(
+                        Intent(context, NaxloVpnService::class.java).setAction(NaxloVpnService.ACTION_DISCONNECT)
+                    )
+                    activity?.finishAffinity()
+                }) { Text(stringResource(R.string.exit_disconnect_close)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { exitPrompt = false }) { Text(stringResource(R.string.cancel)) }
+            }
+        )
+    }
 
     NaxloTheme {
         Scaffold(

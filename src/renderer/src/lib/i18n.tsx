@@ -389,6 +389,23 @@ export const MESSAGES = {
     fa: 'نسخهٔ {v} به‌صورت خودکار دانلود می‌شود؛ پس از آماده‌شدن، برنامه یک‌بار بسته و با نسخهٔ جدید اجرا می‌شود.',
     en: 'Version {v} is downloading automatically; Naxlo will restart once to install it.'
   },
+  connectionModeLabel: { fa: 'حالت اتصال', en: 'Connection mode' },
+  connectionModeProxy: { fa: 'پروکسی', en: 'Proxy' },
+  connectionModeTun: { fa: 'TUN کل‌سیستمی', en: 'System-wide TUN' },
+  connectionModeProxyHint: {
+    fa: 'پروکسی محلی + پروکسی سیستم ویندوز؛ سبک و بدون درایور.',
+    en: 'Local proxy + Windows system proxy; light and driver-free.'
+  },
+  connectionModeTunHint: {
+    fa: 'کل ترافیک سیستم از تونل عبور می‌کند — حتی برنامه‌هایی که پروکسی را نادیده می‌گیرند. یک‌بار تأیید مدیر (UAC) و درایور رسمی Wintun لازم دارد که خودکار و اعتبارسنجی‌شده دانلود می‌شود.',
+    en: 'All system traffic goes through the tunnel — even apps that ignore the proxy. Needs a one-time admin approval (UAC) and the official Wintun driver, downloaded automatically with checksum verification.'
+  },
+  tunElevateTitle: { fa: 'دسترسی مدیر لازم است', en: 'Administrator rights required' },
+  tunElevateBody: {
+    fa: 'برای حالت TUN، ناکسلو یک‌بار با دسترسی مدیر باز می‌شود (پنجرهٔ UAC ویندوز). پس از تأیید، برنامه دوباره باز شده و اتصال به‌صورت خودکار در حالت TUN برقرار می‌شود.',
+    en: 'For TUN mode, Naxlo relaunches once with administrator rights (the Windows UAC prompt). After approval it reopens and connects automatically in TUN mode.'
+  },
+  tunElevateConfirm: { fa: 'باز کردن به‌عنوان مدیر', en: 'Relaunch as administrator' },
   appUpToDate: { fa: 'ناکسلو به‌روز است', en: 'Naxlo is up to date' },
   appUpToDateBody: { fa: 'نسخهٔ نصب‌شده: {v}', en: 'Installed version: {v}' },
   updateCheckFailed: { fa: 'بررسی به‌روزرسانی ناموفق بود', en: 'Update check failed' },

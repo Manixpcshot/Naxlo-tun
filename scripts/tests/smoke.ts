@@ -26,6 +26,7 @@ import {
   zipNeedsPassword,
   zipUsesAes
 } from '../../src/main/lib/fileImport'
+import { WINTUN_VERSION, WINTUN_ZIP_SHA256, WINTUN_ZIP_URL } from '../../src/main/lib/xray/wintun'
 import { strToU8, zipSync } from 'fflate'
 import { pickBestServer } from '../../src/main/lib/autoselect'
 import type { ServerConfig } from '../../src/shared/types'
@@ -251,8 +252,29 @@ test('builds a valid VLESS outbound with local inbounds only', () => {
   assert.equal(outbounds[0].streamSettings.tlsSettings.serverName, 'cdn.example.com')
   assert.equal(outbounds[1].protocol, 'freedom')
   assert.equal(outbounds[2].protocol, 'blackhole')
-  // No TUN / no dokodemo-door / no sniffing-only hacks.
+  // Proxy mode stays driver-free: no tun inbound anywhere in the config.
   assert.equal(JSON.stringify(config).includes('tun'), false)
+})
+
+test('xray config: TUN mode adds the built-in tun inbound', () => {
+  const parsed = parseProxyLink(VLESS_TLS_WS)
+  assert.ok(parsed)
+  const config = buildXrayConfig({ server: parsed.server, settings: { ...DEFAULT_SETTINGS, connectionMode: 'tun' } })
+  const inbounds = config.inbounds as any[]
+  const tun = inbounds.find((i) => i.protocol === 'tun')
+  assert.ok(tun)
+  assert.deepEqual(tun.settings.autoSystemRoutingTable, ['0.0.0.0/0'])
+  assert.equal(tun.settings.autoOutboundsInterface, 'auto')
+  assert.equal(tun.settings.gateway[0], '10.213.0.1/24')
+  assert.ok(Array.isArray(tun.settings.dns) && tun.settings.dns.length > 0)
+  // Local SOCKS/HTTP inbounds remain available for direct clients.
+  assert.ok(inbounds.some((i) => i.protocol === 'socks'))
+  assert.ok(inbounds.some((i) => i.protocol === 'http'))
+})
+
+test('wintun: pinned official checksum and URL', () => {
+  assert.match(WINTUN_ZIP_SHA256, /^[0-9a-f]{64}$/)
+  assert.equal(WINTUN_ZIP_URL, `https://www.wintun.net/builds/wintun-${WINTUN_VERSION}.zip`)
 })
 
 test('REALITY stream settings carry publicKey, shortId and spiderX', () => {

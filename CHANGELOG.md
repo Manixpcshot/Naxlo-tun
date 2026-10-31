@@ -6,6 +6,17 @@ All notable changes to Naxlo are documented here. Releases are cut per tag
 The format follows [Keep a Changelog](https://keepachangelog.com/) and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.6.0] - 2026-10-31
+
+### Added
+- **حالت TUN کل‌سیستمی (اختیاری، ویندوز):** در «تنظیمات → پروکسی محلی» می‌توان حالت اتصال را بین «پروکسی» (پیش‌فرض، بدون درایور) و «TUN» جابه‌جا کرد. حالت TUN از **اینباند TUN داخلی خود Xray** استفاده می‌کند (بدون فرایند جانبی) و کل ترافیک سیستم — حتی برنامه‌هایی که پروکسی ویندوز را نادیده می‌گیرند (UWP و…) — از تونل عبور می‌کند. درایور رسمی **Wintun 0.14.1** خودکار دانلود و با **SHA-256 پین‌شده** اعتبارسنجی می‌شود؛ فقط یک‌بار تأیید UAC لازم است و برنامه پس از باز شدن مجدد، خودکار متصل می‌شود. هنگام قطع، آداپتور و روت‌های سیستم پاک می‌شوند.
+- **هشدار خروج هنگام اتصال (دسکتاپ + اندروید):** بستن برنامه در حالت اتصال دیگر خاموش نیست؛ هشدار سه‌گزینه‌ای: «خاموش کن و ببند» (قطع اتصال سپس خروج)، «متصل بمان و ببند» (دسکتاپ: رفتن به tray؛ اندروید: ماندن تونل و بسته شدن رابط) و «لغو».
+- **System-wide TUN mode (optional, Windows):** a Proxy/TUN connection-mode switch in Settings. TUN uses Xray's built-in TUN inbound (no sidecar), routes the entire system through the tunnel, fetches the official Wintun 0.14.1 driver with pinned SHA-256 verification, and needs a one-time UAC elevation with auto-connect afterwards.
+- **Exit warning while connected (desktop + Android):** "Disconnect and close", "Stay connected and close" or "Cancel".
+
+### Changed
+- هستهٔ پین‌شدهٔ Xray از v26.3.27 به **v26.10.31** ارتقا یافت (شامل رفع امنیتی MPTCP). / The pinned Xray core moved from v26.3.27 to **v26.10.31** (includes the MPTCP security fix).
+
 ## [1.5.0] - 2026-10-15
 
 ### Added

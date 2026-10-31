@@ -26,6 +26,7 @@ import { isAllowedExternalUrl } from './window'
 import { purgeDownloadedCores } from './lib/xray/core'
 import { checkAppUpdate } from './lib/update'
 import { checkForUpdates, installNow } from './lib/updater'
+import { isAdmin, relaunchElevated } from './lib/elevate'
 
 const SCOPE = 'ipc'
 
@@ -74,6 +75,8 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
     installNow()
     return true
   })
+  handle(IPC.appIsAdmin, () => isAdmin())
+  handle(IPC.appRelaunchElevated, () => relaunchElevated())
 
   /* ----------------------------------------------------------- servers */
   handle(IPC.serversList, () => listServers(false))

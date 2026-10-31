@@ -14,6 +14,8 @@ import { getSettings } from '../settings'
 import { getVault, updateVault } from '../secretStore'
 import { downloadCore, findCore, latestReleaseTag, readVersion, type CoreLocation } from './core'
 import { buildXrayConfig, validateConfig } from './config'
+import { ensureWintun } from './wintun'
+import { isAdmin } from '../elevate'
 import { cleanupStaleConfigs, startCore, type RunHandle } from './runner'
 import { fetchIdentityThroughProxy, requestThroughProxy, tcpPing, waitForPort } from '../net'
 import { applySystemProxy, readSystemProxy, restoreSystemProxy } from '../systemProxy'
@@ -203,6 +205,18 @@ class XrayManager {
         )
       }
 
+      if (settings.connectionMode === 'tun') {
+        if (!isAdmin()) {
+          throw new AppError(
+            L(
+              'حالت TUN به دسترسی مدیر نیاز دارد؛ از صفحهٔ تنظیمات اجازهٔ باز شدن مجدد برنامه به‌عنوان مدیر را بدهید',
+              'TUN mode needs administrator rights — allow the elevated relaunch from the Settings page'
+            )
+          )
+        }
+        await ensureWintun(dirname(core.path))
+      }
+
       setConnection('starting')
       const geoDir = dirname(core.path)
       const config = buildXrayConfig({ server, settings, geoDir })
@@ -235,7 +249,7 @@ class XrayManager {
         )
       }
 
-      if (settings.applySystemProxy) {
+      if (settings.applySystemProxy && settings.connectionMode !== 'tun') {
         try {
           await applySystemProxy(settings.listenAddress, settings.httpPort)
           patchState({ systemProxyApplied: true })
