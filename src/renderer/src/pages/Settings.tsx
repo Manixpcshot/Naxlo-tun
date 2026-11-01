@@ -9,6 +9,7 @@ import { useStore } from '../lib/store'
 import { useI18n, type MsgKey } from '../lib/i18n'
 import { ROUTE_MODE_KEY } from '../lib/labels'
 import { fa } from '../lib/format'
+import { isTauri } from '../lib/platform'
 import type { Lang, RouteMode, Settings as SettingsType } from '@shared/bridge'
 
 const ACCENTS: Array<{ id: SettingsType['accent']; color: string }> = [
@@ -85,6 +86,7 @@ export function Settings(): React.ReactElement {
             </div>
             <div className="card__subtitle">{t('localProxyDesc')}</div>
 
+            {!isTauri() ? (
             <div style={{ marginTop: 14 }}>
               <Field
                 label={t('connectionModeLabel')}
@@ -100,6 +102,7 @@ export function Settings(): React.ReactElement {
                 />
               </Field>
             </div>
+            ) : null}
 
             <div className="grid grid--2" style={{ marginTop: 16 }}>
               <Field label={t('socksPort')} hint={t('socksPortHint')}>
@@ -216,9 +219,11 @@ export function Settings(): React.ReactElement {
               >
                 {state.core.ready ? t('coreInstall') : t('coreDownload')}
               </Button>
-              <Button icon="folder" onClick={() => void run(() => window.naxlo.core.pick(), t('errorTitle'))}>
-                {t('corePickFile')}
-              </Button>
+              {!isTauri() ? (
+                <Button icon="folder" onClick={() => void run(() => window.naxlo.core.pick(), t('errorTitle'))}>
+                  {t('corePickFile')}
+                </Button>
+              ) : null}
               <Button
                 icon="refresh"
                 variant="ghost"
@@ -269,6 +274,7 @@ export function Settings(): React.ReactElement {
             ) : null}
           </Card>
 
+          {!isTauri() ? (
           <Card>
             <div className="card__title">
               <Icon name="download" size={15} /> {t('updateSection')}
@@ -332,6 +338,7 @@ export function Settings(): React.ReactElement {
               </div>
             </div>
           </Card>
+          ) : null}
 
           <Card>
             <div className="card__title">
@@ -349,13 +356,17 @@ export function Settings(): React.ReactElement {
                   onChange={(value) => setLang(value)}
                 />
               </Field>
-              <Toggle checked={settings.autoStart} onChange={(value) => patch({ autoStart: value })} title={t('autoStart')} />
-              <Toggle
-                checked={settings.minimizeToTray}
-                onChange={(value) => patch({ minimizeToTray: value })}
-                title={t('minimizeToTray')}
-                description={t('minimizeToTrayDesc')}
-              />
+              {!isTauri() ? (
+                <>
+                  <Toggle checked={settings.autoStart} onChange={(value) => patch({ autoStart: value })} title={t('autoStart')} />
+                  <Toggle
+                    checked={settings.minimizeToTray}
+                    onChange={(value) => patch({ minimizeToTray: value })}
+                    title={t('minimizeToTray')}
+                    description={t('minimizeToTrayDesc')}
+                  />
+                </>
+              ) : null}
               <Toggle checked={settings.reduceMotion} onChange={(value) => patch({ reduceMotion: value })} title={t('reduceMotion')} description={t('reduceMotionDesc')} />
 
               <Field label={t('accentField')}>

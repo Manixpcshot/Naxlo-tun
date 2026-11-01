@@ -1,45 +1,50 @@
-# naxlo v1.6.0
+# naxlo v1.7.0
 
 ## فارسی
 
-**حالت TUN کل‌سیستمی + هشدار خروج 🌐🚪**
+**نسخهٔ Rust + لینوکس + مک 🦀🐧🍎**
 
-- 🌐 **حالت TUN (اختیاری، ویندوز):** در «تنظیمات → پروکسی محلی» یک کلید جدید اضافه شده: **حالت اتصال**.
-  - **پروکسی (پیش‌فرض):** همان رفتار همیشگی — اینباندهای لوکال + پروکسی سیستم ویندوز؛ سبک و بدون درایور.
-  - **TUN کل‌سیستمی:** کل ترافیک ویندوز از تونل عبور می‌کند — **حتی برنامه‌هایی که پروکسی را نادیده می‌گیرند** (بسیاری از برنامه‌های استور/UWP، بعضی CLIها و بازی‌ها). از **اینباند TUN داخلی خود Xray** استفاده می‌شود (بدون هیچ برنامهٔ جانبی).
-- 🛡️ **درایور رسمی Wintun:** نسخهٔ ۰.۱۴.۱ مستقیم از wintun.net دانلود و با **SHA-256 پین‌شده** اعتبارسنجی می‌شود؛ فقط هنگام اولین اتصال TUN، کنار هسته ذخیره می‌شود.
-- 🔑 **فقط یک‌بار تأیید مدیر (UAC):** وقتی حالت TUN را روشن کنید، برنامه یک‌بار با دسترسی مدیر باز می‌شود و پس از آن **اتصال خودکار** برقرار می‌شود. هنگام قطع یا خروج، آداپتور و روت‌های سیستم به‌تمیزی حذف می‌شوند.
-- 🚪 **هشدار خروج (ویندوز + اندروید):** بستن برنامه در حالت اتصال دیگر خاموش نیست! یک هشدار سه‌گزینه‌ای می‌آید:
-  - **خاموش کن و ببند** — اول اتصال قطع (و پروکسی/تونل پاک) می‌شود، بعد برنامه بسته می‌شود.
-  - **متصل بمان و ببند** — ویندوز: رفتن به tray با اتصال فعال؛ اندروید: تونل در اعلان فعال می‌ماند و رابط بسته می‌شود.
-  - **لغو**.
-- ⚙️ **ارتقای هسته:** Xray پین‌شده از v26.3.27 به **v26.10.31** ارتقا یافت (شامل رفع امنیتی MPTCP).
-- 🔒 مثل همیشه: لینک اشتراک و کانفیگ‌ها رمزنگاری‌شده می‌مانند و **هرگز در لاگ ثبت نمی‌شوند**.
+- 🦀 **نسخهٔ Rust/Tauri:** از این نسخه، همان رابط زیبای React روی یک بک‌اند **Rust** (Tauri v2 با WebView بومی — بدون Chromium) هم منتشر می‌شود:
+  - افزودن اشتراک با لینک، دریافت و بازگشایی Base64، تجزیهٔ `vless://`/`trojan://`/`vmess://`، نام و سهمیهٔ پنل از هدرهای استاندارد
+  - اتصال/قطع در حالت **پروکسی محلی** با هستهٔ رسمی Xray (پین `v26.10.31`، دانلود خودکار + اعتبارسنجی digest)
+  - تست تأخیر تکی و گروهی، تست سرعت، انتخاب خودکار بهترین سرور، پین‌ها و هشدار خروج هنگام اتصال
+  - خزانهٔ رمزنگاری‌شدهٔ **AES-256-GCM** (کلید تصادفی با دسترسی `0600`) و ماسک کامل مقادیر حساس — مثل همیشه **هرگز در لاگ ثبت نمی‌شوند**
+- 🐧 **لینوکس:** خروجی **AppImage** (بدون نصب) و **deb** (دبیان/اوبونتو)
+- 🍎 **مک:** خروجی **DMG** برای Apple Silicon — **بدون امضای Apple**؛ بار اول با کلیک راست → Open یا دستور `xattr -cr /Applications/naxlo.app` اجرا کنید
+- 🪟 **ویندوز:** نصب‌کنندهٔ NSIS برای نسخهٔ Rust در کنار نسخهٔ Electron
+- 🌐 **پروکسی سیستم در هر سه سیستم‌عامل:** ویندوز (WinINET با پشتیبان‌گیری دقیق)، مک (`networksetup`) و لینوکس (`gsettings`) — هنگام قطع یا خروج، تنظیمات قبلی بازگردانده می‌شود
+- 📝 **دامنهٔ نسخهٔ Rust فعلاً lean است:** حالت TUN، tray، شروع خودکار، به‌روزرسانی خودکار برنامه و وارد کردن از فایل در این نسخه **Electron-only** هستند و در آپدیت‌های بعدی به Rust هم می‌آیند
+- 🤖 اندروید: versionName 1.7.0 (بدون تغییر عملکردی)
 
 ### فایل‌ها
 | فایل | توضیح |
 |---|---|
-| `Naxlo-Setup-1.6.0.exe` | نصب‌کنندهٔ ویندوز |
-| `Naxlo-Portable-1.6.0.exe` | نسخهٔ پرتابل |
-| `Naxlo-android-v1.6.0-debug.apk` | اپ اندروید (قابل نصب) |
-| `Naxlo-android-v1.6.0-unsigned.apk` | بیلد release بدون امضا |
-| `latest.yml` / `SHA256SUMS.txt` | خوراک به‌روزرسانی خودکار و checksum |
+| `Naxlo-Setup-1.7.0.exe` | نصب‌کنندهٔ ویندوز (Electron — نسخهٔ کامل با TUN و به‌روزرسانی خودکار) |
+| `Naxlo-Portable-1.7.0.exe` | نسخهٔ پرتابل Electron |
+| `Naxlo-Rust-Setup-1.7.0.exe` | نصب‌کنندهٔ ویندوز برای نسخهٔ Rust/Tauri |
+| `Naxlo-Rust-v1.7.0-linux-amd64.AppImage` | لینوکس — قابل‌اجرا بدون نصب |
+| `Naxlo-Rust-v1.7.0-linux-amd64.deb` | دبیان/اوبونتو |
+| `Naxlo-Rust-v1.7.0-macos-arm64.dmg` | مک (Apple Silicon، بدون امضا) |
+| `Naxlo-android-v1.7.0-debug.apk` | اپ اندروید (قابل نصب) |
+| `Naxlo-android-v1.7.0-unsigned.apk` | بیلد release بدون امضا |
+| `latest.yml` / `SHA256SUMS.txt` / `*.sha256` | خوراک به‌روزرسانی خودکار و checksum فایل‌ها |
 
-> ویندوز: برنامهٔ نصب‌شده خودش این نسخه را خودکار دانلود و با یک ریستارت نصب می‌کند.
+> ویندوز (Electron): برنامهٔ نصب‌شده خودش این نسخه را خودکار دانلود و با یک ریستارت نصب می‌کند.
 > اندروید: APK جدید را نصب کنید؛ داده‌های شما حفظ می‌شود.
+> نسخهٔ Rust: داده‌ها در پوشهٔ برنامهٔ خودش ذخیره می‌شود (`net.naxlo.rust`) — مستقل از نسخهٔ Electron.
 
 ## English
 
-**System-wide TUN mode + exit warning 🌐🚪**
+**Rust edition + Linux + macOS 🦀🐧🍎**
 
-- 🌐 **TUN mode (optional, Windows):** Settings now has a **Connection mode** switch.
-  - **Proxy (default):** the classic behavior — local inbounds + Windows system proxy; light and driver-free.
-  - **System-wide TUN:** all Windows traffic goes through the tunnel — **including apps that ignore the proxy** (most Store/UWP apps, some CLIs and games). It uses **Xray's built-in TUN inbound** (no sidecar process).
-- 🛡️ **Official Wintun driver:** 0.14.1 is downloaded straight from wintun.net and verified against a **pinned SHA-256**, stored next to the core on the first TUN connection.
-- 🔑 **One-time UAC elevation:** turning on TUN relaunches the app once as administrator and then **auto-connects**. On disconnect/exit the adapter and system routes are cleaned up.
-- 🚪 **Exit warning (Windows + Android):** closing while connected now asks first:
-  - **Disconnect and close** — the tunnel/proxy is torn down, then the app quits.
-  - **Stay connected and close** — Windows: minimize to tray with the connection up; Android: the tunnel keeps running behind the notification while the UI closes.
-  - **Cancel**.
-- ⚙️ **Core upgrade:** pinned Xray moved from v26.3.27 to **v26.10.31** (includes the MPTCP security fix).
-- 🔒 As always: subscription links and configs stay encrypted and are **never written to logs**.
+- 🦀 **Rust/Tauri edition:** the same React UI now also ships on a **Rust** backend (Tauri v2, native webview — no Chromium):
+  - Add subscriptions by URL, fetch + Base64-decode, parse `vless://`/`trojan://`/`vmess://`, panel name/quota from the standard headers
+  - Connect/disconnect in **local-proxy mode** with the official Xray core (pinned `v26.10.31`, auto-download + digest verification)
+  - Single & batch latency tests, speed test, auto best-server pick, pins and the connected-exit warning dialog
+  - **AES-256-GCM** encrypted vault (random key file, `0600`) and full masking — secrets are, as always, **never logged**
+- 🐧 **Linux:** **AppImage** (no install) and **deb** (Debian/Ubuntu)
+- 🍎 **macOS:** **DMG** for Apple Silicon — **unsigned**; first launch via right-click → Open or `xattr -cr /Applications/naxlo.app`
+- 🪟 **Windows:** NSIS installer for the Rust edition alongside the Electron build
+- 🌐 **System proxy on all three OSes:** Windows (WinINET with exact backup/restore), macOS (`networksetup`) and Linux (`gsettings`)
+- 📝 **Lean scope for now:** TUN mode, tray, auto-start, app self-update and file import remain **Electron-only**; they will land in the Rust edition in later releases
+- 🤖 Android: versionName 1.7.0 (no functional change)

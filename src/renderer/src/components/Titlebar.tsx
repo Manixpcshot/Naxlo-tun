@@ -39,18 +39,18 @@ export function Titlebar(): React.ReactElement {
   }
 
   return (
-    <header className="titlebar">
-      <div className="titlebar__brand">
+    <header className="titlebar" data-tauri-drag-region>
+      <div className="titlebar__brand" data-tauri-drag-region>
         <span className="titlebar__logo">
           <Logo size={22} animated />
         </span>
-        <span>naxlo</span>
-        <span className="titlebar__tag">{t('appTagline')}</span>
+        <span data-tauri-drag-region>naxlo</span>
+        <span className="titlebar__tag" data-tauri-drag-region>{t('appTagline')}</span>
       </div>
 
-      <div className="titlebar__spacer" />
+      <div className="titlebar__spacer" data-tauri-drag-region />
 
-      <div className="titlebar__hint">
+      <div className="titlebar__hint" data-tauri-drag-region>
         <motion.span
           key={statusKey}
           initial={{ opacity: 0, y: -4 }}

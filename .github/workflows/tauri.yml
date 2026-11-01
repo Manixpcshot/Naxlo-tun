@@ -1,0 +1,186 @@
+name: tauri
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    paths:
+      - 'tauri/**'
+      - 'src/renderer/**'
+      - 'src/shared/**'
+      - 'src/preload/index.d.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/tauri.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tauri-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  RUST_BACKTRACE: 1
+
+jobs:
+  # Compile + unit-test the Rust backend on every push/PR (no bundling).
+  check:
+    if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: ubuntu-22.04
+          - platform: windows-latest
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Install Linux system dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev libfuse2
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: 'tauri -> target'
+
+      - name: Build the shared UI bundle
+        run: npm run build:tauri-ui
+
+      - name: cargo check (all targets)
+        working-directory: tauri
+        shell: bash
+        run: |
+          set -o pipefail
+          cargo check --all-targets 2>&1 | tee ../cargo-check.log
+
+      - name: cargo test
+        if: matrix.platform == 'ubuntu-22.04'
+        working-directory: tauri
+        shell: bash
+        run: |
+          set -o pipefail
+          cargo test 2>&1 | tee -a ../cargo-check.log
+
+      # The sandbox cannot download Actions logs directly; push them to the
+      # ci-logs branch through the contents API so they can be read back.
+      - name: Publish cargo log to ci-logs branch
+        if: always()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          [ -f cargo-check.log ] || exit 0
+          tail -c 300000 cargo-check.log > log-trim.txt
+          base64 -w0 log-trim.txt > log-b64.txt 2>/dev/null || base64 log-trim.txt | tr -d '\n' > log-b64.txt
+          NAME="${{ runner.os }}-cargo-check.log"
+          MSG="ci: cargo check log run $GITHUB_RUN_NUMBER"
+          SHA=$(gh api "repos/$GITHUB_REPOSITORY/contents/ci-logs/$NAME?ref=ci-logs" --jq .sha 2>/dev/null || true)
+          # jq --rawfile keeps the huge content off the command line (Windows
+          # has a 32K argument limit that broke the previous -f approach).
+          if [ -n "$SHA" ]; then
+            jq -n --rawfile content log-b64.txt --arg message "$MSG" --arg sha "$SHA" \
+              '{message:$message, content:($content|gsub("[\r\n]";"")), branch:"ci-logs", sha:$sha}' > payload.json
+          else
+            jq -n --rawfile content log-b64.txt --arg message "$MSG" \
+              '{message:$message, content:($content|gsub("[\r\n]";"")), branch:"ci-logs"}' > payload.json
+          fi
+          gh api -X PUT "repos/$GITHUB_REPOSITORY/contents/ci-logs/$NAME" --input payload.json > /dev/null
+          echo "published $NAME"
+
+  # Tagged releases: build + publish AppImage/DEB (Linux), NSIS EXE (Windows)
+  # and an unsigned DMG (macOS) to the GitHub release.
+  build:
+    if: startsWith(github.ref, 'refs/tags/v')
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: ubuntu-22.04
+          - platform: windows-latest
+          - platform: macos-latest
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Install Linux system dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev libfuse2
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: 'tauri -> target'
+
+      - name: Build bundles
+        working-directory: tauri
+        run: npx tauri build
+
+      - name: Collect + rename artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+          UP="$RUNNER_TEMP/upload"
+          mkdir -p "$UP"
+          BUNDLE="tauri/target/release/bundle"
+          if [ -d "$BUNDLE/deb" ]; then
+            cp "$BUNDLE"/deb/*.deb "$UP/Naxlo-Rust-${TAG}-linux-amd64.deb"
+          fi
+          if [ -d "$BUNDLE/appimage" ]; then
+            cp "$BUNDLE"/appimage/*.AppImage "$UP/Naxlo-Rust-${TAG}-linux-amd64.AppImage"
+          fi
+          if [ -d "$BUNDLE/nsis" ]; then
+            cp "$BUNDLE"/nsis/*-setup.exe "$UP/Naxlo-Rust-Setup-${VERSION}.exe"
+          fi
+          if [ -d "$BUNDLE/dmg" ]; then
+            cp "$BUNDLE"/dmg/*.dmg "$UP/Naxlo-Rust-${TAG}-macos-$(uname -m).dmg"
+          fi
+          cd "$UP"
+          for f in Naxlo-Rust-*; do
+            [ -f "$f" ] || continue
+            sha256sum "$f" > "$f.sha256"
+          done
+          ls -la "$UP"
+
+      - name: Upload to the release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+          # The release is normally drafted before the tag is pushed; create a
+          # placeholder draft if this workflow wins the race.
+          gh release view "$TAG" --json tagName >/dev/null 2>&1 || \
+            gh release create "$TAG" --draft --title "Naxlo ${VERSION}" --notes "Artifacts are being uploaded…"
+          gh release upload "$TAG" "$RUNNER_TEMP/upload/"* --clobber
