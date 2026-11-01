@@ -91,6 +91,7 @@ export const MESSAGES = {
   testAll: { fa: 'تست تأخیر همه', en: 'Test all latency' },
   clearList: { fa: 'پاک کردن فهرست', en: 'Clear list' },
   searchPlaceholder: { fa: 'جست‌وجوی نام سرور، پروتکل یا لایهٔ امنیتی…', en: 'Search name, protocol or security…' },
+  filterResults: { fa: '{n} نتیجه از {total}', en: '{n} of {total} shown' },
   filterAll: { fa: 'همه', en: 'All' },
   filterFast: { fa: 'سریع‌ترین‌ها', en: 'Fastest' },
   sortBySpeed: { fa: 'مرتب‌سازی بر اساس سرعت', en: 'Sort by speed' },

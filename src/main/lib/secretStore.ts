@@ -238,7 +238,7 @@ export function loadVault(): VaultPayload {
   armRedaction()
   log.info(
     SCOPE,
-    `vault loaded (servers=${payload.servers.length}, subscription=${payload.subscriptionUrl ? 'yes' : 'no'}, protection=${vaultEncryptionKind()})`
+    `vault loaded (servers=${payload.servers.length}, subscriptions=${payload.subscriptions.length}, protection=${vaultEncryptionKind()})`
   )
   return payload
 }
@@ -259,7 +259,7 @@ export function updateVault(patch: Partial<VaultPayload>): VaultPayload {
 export function replaceServers(servers: ServerConfig[]): void {
   payload.servers = servers
   if (payload.selectedServerId && !servers.some((s) => s.id === payload.selectedServerId)) {
-    payload.selectedServerId = servers[0]?.id ?? null
+    payload.selectedServerId = servers.find((s) => s.supported)?.id ?? servers[0]?.id ?? null
   }
   armRedaction()
   schedulePersist()

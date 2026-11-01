@@ -173,6 +173,7 @@ $p = 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings'
 Set-ItemProperty -Path $p -Name ProxyEnable -Value ${backup ? backup.proxyEnable : 0} -Type DWord
 Set-ItemProperty -Path $p -Name ProxyServer -Value '${backup?.proxyServer ?? ''}'
 Set-ItemProperty -Path $p -Name ProxyOverride -Value '${backup?.proxyOverride ?? ''}'
+${backup ? `Set-ItemProperty -Path $p -Name AutoConfigURL -Value '${backup.autoConfigUrl}'` : '# no backup — leave the PAC script untouched'}
 ${REFRESH_SNIPPET}
 `
   try {

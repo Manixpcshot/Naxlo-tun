@@ -1,7 +1,7 @@
 {
   "name": "naxlo",
   "productName": "Naxlo",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "Naxlo — کلاینت فارسی‌زبان VLESS برای ویندوز، لینوکس و مک بر پایهٔ Electron و نسخهٔ Rust/Tauri با هستهٔ رسمی Xray",
   "author": {
     "name": "Naxlo Contributors",

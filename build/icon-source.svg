@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!--
+    Naxlo mark — "the tunnel": a geometric N drawn as a light beam between two
+    nodes, centred inside concentric orbit rings on a near-black tile.
+    Master source for every raster/icon artefact (see scripts/make-icons.mjs).
+  -->
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0b0e15"/>
+      <stop offset="0.55" stop-color="#07090d"/>
+      <stop offset="1" stop-color="#04050a"/>
+    </linearGradient>
+    <radialGradient id="sheen" cx="0.5" cy="0" r="0.95">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.09"/>
+      <stop offset="0.45" stop-color="#ffffff" stop-opacity="0.028"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="beam" x1="172" y1="146" x2="340" y2="366" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#a5f3fc"/>
+      <stop offset="0.5" stop-color="#22d3ee"/>
+      <stop offset="1" stop-color="#0891b2"/>
+    </linearGradient>
+    <radialGradient id="node" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#f4feff"/>
+      <stop offset="0.45" stop-color="#a5f3fc"/>
+      <stop offset="1" stop-color="#22d3ee" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="vig" cx="0.5" cy="0.42" r="0.75">
+      <stop offset="0.62" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.42"/>
+    </radialGradient>
+    <filter id="soft" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+    <clipPath id="tileClip">
+      <rect x="8" y="8" width="496" height="496" rx="116"/>
+    </clipPath>
+  </defs>
+
+  <rect x="8" y="8" width="496" height="496" rx="116" fill="url(#tile)"/>
+
+  <g clip-path="url(#tileClip)">
+    <rect x="8" y="8" width="496" height="300" fill="url(#sheen)"/>
+
+    <!-- concentric orbit rings (exact centre) -->
+    <circle cx="256" cy="256" r="152" fill="none" stroke="#7deaf7" stroke-opacity="0.17" stroke-width="2"/>
+    <circle cx="256" cy="256" r="184" fill="none" stroke="#7deaf7" stroke-opacity="0.08" stroke-width="2" stroke-dasharray="1 9" stroke-linecap="round"/>
+
+    <!-- grounding shadow -->
+    <ellipse cx="256" cy="400" rx="116" ry="22" fill="#000000" opacity="0.5" filter="url(#soft)"/>
+
+    <!-- halo behind the beam -->
+    <path d="M172 360 V152 L340 360 V152" fill="none" stroke="#22d3ee" stroke-opacity="0.32" stroke-width="60" stroke-linecap="round" stroke-linejoin="round" filter="url(#soft)"/>
+
+    <!-- the N -->
+    <path d="M172 360 V152 L340 360 V152" fill="none" stroke="url(#beam)" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- light entering / leaving the tunnel -->
+    <circle cx="172" cy="152" r="36" fill="url(#node)" opacity="0.9"/>
+    <circle cx="340" cy="360" r="36" fill="url(#node)" opacity="0.9"/>
+    <circle cx="172" cy="152" r="13" fill="#f2feff"/>
+    <circle cx="340" cy="360" r="13" fill="#f2feff"/>
+  <rect x="8" y="8" width="496" height="496" fill="url(#vig)"/>
+  </g>
+
+  <!-- premium inner hairline -->
+  <rect x="19" y="19" width="474" height="474" rx="106" fill="none" stroke="#ffffff" stroke-opacity="0.07" stroke-width="2"/>
+</svg>

@@ -1,50 +1,36 @@
-# naxlo v1.7.0
+# Naxlo 1.8.0 — bug-hunt + new brand identity 🎯
 
-## فارسی
+> کلاینت فارسی‌زبان VLESS برای ویندوز، لینوکس، مک و اندروید بر پایهٔ هستهٔ رسمی Xray
+> Persian-first VLESS client for Windows, Linux, macOS and Android on the official Xray core.
 
-**نسخهٔ Rust + لینوکس + مک 🦀🐧🍎**
+## ✨ تازه‌ها / What's new
 
-- 🦀 **نسخهٔ Rust/Tauri:** از این نسخه، همان رابط زیبای React روی یک بک‌اند **Rust** (Tauri v2 با WebView بومی — بدون Chromium) هم منتشر می‌شود:
-  - افزودن اشتراک با لینک، دریافت و بازگشایی Base64، تجزیهٔ `vless://`/`trojan://`/`vmess://`، نام و سهمیهٔ پنل از هدرهای استاندارد
-  - اتصال/قطع در حالت **پروکسی محلی** با هستهٔ رسمی Xray (پین `v26.10.31`، دانلود خودکار + اعتبارسنجی digest)
-  - تست تأخیر تکی و گروهی، تست سرعت، انتخاب خودکار بهترین سرور، پین‌ها و هشدار خروج هنگام اتصال
-  - خزانهٔ رمزنگاری‌شدهٔ **AES-256-GCM** (کلید تصادفی با دسترسی `0600`) و ماسک کامل مقادیر حساس — مثل همیشه **هرگز در لاگ ثبت نمی‌شوند**
-- 🐧 **لینوکس:** خروجی **AppImage** (بدون نصب) و **deb** (دبیان/اوبونتو)
-- 🍎 **مک:** خروجی **DMG** برای Apple Silicon — **بدون امضای Apple**؛ بار اول با کلیک راست → Open یا دستور `xattr -cr /Applications/naxlo.app` اجرا کنید
-- 🪟 **ویندوز:** نصب‌کنندهٔ NSIS برای نسخهٔ Rust در کنار نسخهٔ Electron
-- 🌐 **پروکسی سیستم در هر سه سیستم‌عامل:** ویندوز (WinINET با پشتیبان‌گیری دقیق)، مک (`networksetup`) و لینوکس (`gsettings`) — هنگام قطع یا خروج، تنظیمات قبلی بازگردانده می‌شود
-- 📝 **دامنهٔ نسخهٔ Rust فعلاً lean است:** حالت TUN، tray، شروع خودکار، به‌روزرسانی خودکار برنامه و وارد کردن از فایل در این نسخه **Electron-only** هستند و در آپدیت‌های بعدی به Rust هم می‌آیند
-- 🤖 اندروید: versionName 1.7.0 (بدون تغییر عملکردی)
+### 🎨 هویت بصری جدید / New brand identity
+- **نشان «تونل» بازطراحی شد:** N هندسی به‌شکل پرتوی نور میان دو گره، حلقه‌های هم‌مرکز دقیق و کاشی تقریباً مشکی با عمق و نورپردازی مهارشده — حرفه‌ای‌تر، متوازن‌تر و خوانا در ۱۶ پیکسل.
+- **The mark was redrawn:** a geometric N as a light beam between two nodes, exactly concentric orbit rings and a near-black tile with restrained lighting — more professional, balanced, and legible at 16 px.
+- همهٔ artefactها از یک master SVG (`build/icon-source.svg`) با `scripts/make-icons.mjs` ساخته می‌شوند: آیکون نصب و taskbar، tray، **favicon جدید**، بنر گیت‌هاب و آییکون adaptive اندروید.
+- Every artefact renders from one SVG master via `scripts/make-icons.mjs`: installer/taskbar icon, tray icon, **a new favicon**, the GitHub banner and the Android adaptive icon.
+- صفحهٔ بوت برندشده (نشان + wordmark + نوار پیشرفت) و عنوان پنجره بر اساس صفحهٔ فعال. / Branded boot screen (mark + wordmark + progress shimmer) and per-page window titles.
 
-### فایل‌ها
-| فایل | توضیح |
-|---|---|
-| `Naxlo-Setup-1.7.0.exe` | نصب‌کنندهٔ ویندوز (Electron — نسخهٔ کامل با TUN و به‌روزرسانی خودکار) |
-| `Naxlo-Portable-1.7.0.exe` | نسخهٔ پرتابل Electron |
-| `Naxlo-Rust-Setup-1.7.0.exe` | نصب‌کنندهٔ ویندوز برای نسخهٔ Rust/Tauri |
-| `Naxlo-Rust-v1.7.0-linux-amd64.AppImage` | لینوکس — قابل‌اجرا بدون نصب |
-| `Naxlo-Rust-v1.7.0-linux-amd64.deb` | دبیان/اوبونتو |
-| `Naxlo-Rust-v1.7.0-macos-arm64.dmg` | مک (Apple Silicon، بدون امضا) |
-| `Naxlo-android-v1.7.0-debug.apk` | اپ اندروید (قابل نصب) |
-| `Naxlo-android-v1.7.0-unsigned.apk` | بیلد release بدون امضا |
-| `latest.yml` / `SHA256SUMS.txt` / `*.sha256` | خوراک به‌روزرسانی خودکار و checksum فایل‌ها |
+### 🐞 باگ‌گیری نسخهٔ الکترون / Electron bug-hunt
+- **به‌روزرسانی خودکار اشتراک هرگز اجرا نمی‌شد** (بررسی فیلد legacy تک‌اشتراکی) — حالا واقعاً کار می‌کند. / **Subscription auto-refresh never ran** (legacy single-URL field check) — it actually works now.
+- **فیلتر چیپ‌های کشور اعمال نمی‌شد.** / **The country-chip filter never applied.**
+- **قطع اتصال هنگام اتصال در جریان** دیگر تونل zombie یا پروکسی سیستمِ باقی‌مانده نمی‌سازد؛ هر اتصال با توکن نسل لغو می‌شود و پروکسی سیستم در همهٔ نقاط انتظار rollback می‌شود. / **Disconnecting mid-connect** no longer leaves a zombie tunnel or leftover system proxy; connects are generation-tokened and roll the proxy back at every await point.
+- حذف/پاک‌کردن سرورها هنگام اتصال، اول قطع می‌کند و انتخاب به سرور پشتیبانی‌شدهٔ بعدی می‌رود. / Removing/clearing servers while connected disconnects first and re-selects the next supported server.
+- `window.open` رندرر پشت همان allowlist لینک‌های خارجی؛ بازگردانی پروکسی، PAC کاربر را هم برمی‌گرداند؛ تلاش مجدد updater محدود به ۳ بار؛ میان‌برهای Ctrl+1..6 هنگام تایپ غیرفعال. / Renderer `window.open` behind the same external-link allowlist; proxy restore returns the user's PAC; updater retries capped at 3; Ctrl+1..6 shortcuts inert while typing.
+- نشان تعداد نتایج هنگام فیلتر/جست‌وجوی سرورها. / Result-count badge while filtering/searching servers.
 
-> ویندوز (Electron): برنامهٔ نصب‌شده خودش این نسخه را خودکار دانلود و با یک ریستارت نصب می‌کند.
-> اندروید: APK جدید را نصب کنید؛ داده‌های شما حفظ می‌شود.
-> نسخهٔ Rust: داده‌ها در پوشهٔ برنامهٔ خودش ذخیره می‌شود (`net.naxlo.rust`) — مستقل از نسخهٔ Electron.
+## 📦 دانلود / Downloads
 
-## English
+| فایل / File | برای / For |
+| --- | --- |
+| `Naxlo-Setup-1.8.0.exe` | نصب‌کنندهٔ ویندوز (NSIS) / Windows installer |
+| `Naxlo-Portable-1.8.0.exe` | نسخهٔ قابل‌حمل ویندوز / Windows portable |
+| `Naxlo-Rust-Setup-1.8.0.exe` | نسخهٔ Rust/Tauri ویندوز / Rust edition, Windows |
+| `Naxlo-Rust-v1.8.0-linux-amd64.AppImage` / `.deb` | لینوکس / Linux |
+| `Naxlo-Rust-v1.8.0-macos-arm64.dmg` | مک (Apple Silicon، بدون امضا — راهنمای Gatekeeper در README) / macOS (unsigned, Gatekeeper guide in README) |
+| `Naxlo-android-v1.8.0-*.apk` | اندروید / Android |
 
-**Rust edition + Linux + macOS 🦀🐧🍎**
+همهٔ فایل‌ها با `.sha256` / `SHA256SUMS.txt` منتشر شده‌اند؛ به‌روزرسانی خودکار برنامه پس از دانلود، با یک‌بار بسته‌شدن و باز شدن مجدد نصب می‌شود. / Every asset ships with checksums; the silent self-update installs after one restart.
 
-- 🦀 **Rust/Tauri edition:** the same React UI now also ships on a **Rust** backend (Tauri v2, native webview — no Chromium):
-  - Add subscriptions by URL, fetch + Base64-decode, parse `vless://`/`trojan://`/`vmess://`, panel name/quota from the standard headers
-  - Connect/disconnect in **local-proxy mode** with the official Xray core (pinned `v26.10.31`, auto-download + digest verification)
-  - Single & batch latency tests, speed test, auto best-server pick, pins and the connected-exit warning dialog
-  - **AES-256-GCM** encrypted vault (random key file, `0600`) and full masking — secrets are, as always, **never logged**
-- 🐧 **Linux:** **AppImage** (no install) and **deb** (Debian/Ubuntu)
-- 🍎 **macOS:** **DMG** for Apple Silicon — **unsigned**; first launch via right-click → Open or `xattr -cr /Applications/naxlo.app`
-- 🪟 **Windows:** NSIS installer for the Rust edition alongside the Electron build
-- 🌐 **System proxy on all three OSes:** Windows (WinINET with exact backup/restore), macOS (`networksetup`) and Linux (`gsettings`)
-- 📝 **Lean scope for now:** TUN mode, tray, auto-start, app self-update and file import remain **Electron-only**; they will land in the Rust edition in later releases
-- 🤖 Android: versionName 1.7.0 (no functional change)
+> macOS (unsigned): `xattr -cr /Applications/naxlo.app` سپس اجرا کنید. / then open the app.

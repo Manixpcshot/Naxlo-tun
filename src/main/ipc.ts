@@ -7,6 +7,7 @@
  * exception and it is guarded by a user action.
  */
 import { BrowserWindow, app, clipboard, dialog, ipcMain, shell } from 'electron'
+import { join } from 'node:path'
 import { IPC, type LogEntry, type LString, type ServerView, type Settings } from '../shared/bridge'
 import { AppError, L, toLString } from '../shared/i18n'
 import { getState, patchState, setSubscriptionFetching, syncSubscriptions, toast, toServerView } from './state'
@@ -61,7 +62,7 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
     chrome: process.versions.chrome,
     protection: vaultEncryptionKind(),
     userData: app.getPath('userData'),
-    logsDir: `${app.getPath('userData')}\\logs`
+    logsDir: join(app.getPath('userData'), 'logs')
   }))
 
   handle(IPC.appUpdate, async () => {
@@ -93,14 +94,26 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
     patchState({ selectedServerId: id })
     return id
   })
-  handle(IPC.serversRemove, (id: string) => {
-    const servers = getVault().servers.filter((s) => s.id !== id)
-    updateVault({ servers })
+  handle(IPC.serversRemove, async (id: string) => {
+    const vault = getVault()
+    const target = vault.servers.find((s) => s.id === id)
+    if (target && manager.isConnected && getState().activeServerId === id) {
+      await manager.disconnect('server-removed')
+    }
+    const servers = vault.servers.filter((s) => s.id !== id)
+    const selectedServerId =
+      vault.selectedServerId === id
+        ? (servers.find((s) => s.supported)?.id ?? servers[0]?.id ?? null)
+        : vault.selectedServerId
+    updateVault({ servers, selectedServerId })
+    patchState({ selectedServerId })
     syncSubscriptionCounts()
     return servers.length
   })
-  handle(IPC.serversClear, () => {
+  handle(IPC.serversClear, async () => {
+    if (manager.isConnected) await manager.disconnect('servers-cleared')
     updateVault({ servers: [], selectedServerId: null })
+    patchState({ selectedServerId: null })
     syncSubscriptionCounts()
     return true
   })

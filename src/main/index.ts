@@ -7,7 +7,7 @@
  */
 import { app, BrowserWindow, dialog, globalShortcut } from 'electron'
 import { createMainWindow } from './window'
-import { destroyTray, initTray, rebuildMenu, showWindow } from './tray'
+import { destroyTray, initTray, rebuildMenu, setTrayWindow, showWindow } from './tray'
 import {
   bootstrapSettings,
   panicNow,
@@ -57,21 +57,9 @@ async function bootstrap(): Promise<void> {
   syncSubscriptionCounts()
 
   mainWindow = createMainWindow()
+  attachCloseGuard(mainWindow)
   registerIpc(() => mainWindow)
   initTray(mainWindow, () => void requestQuit())
-
-  mainWindow.on('close', (event) => {
-    if (runtime.quitting) return
-    if (manager.isConnected) {
-      event.preventDefault()
-      void confirmCloseWhileConnected()
-      return
-    }
-    if (getSettings().minimizeToTray) {
-      event.preventDefault()
-      mainWindow?.hide()
-    }
-  })
 
   await manager.init()
   manager.autoRefreshHandler = autoRefreshSubscription
@@ -177,6 +165,22 @@ async function requestQuit(): Promise<void> {
   await quit()
 }
 
+/** Close while connected must warn first; otherwise honour minimize-to-tray. */
+function attachCloseGuard(win: BrowserWindow): void {
+  win.on('close', (event) => {
+    if (runtime.quitting) return
+    if (manager.isConnected) {
+      event.preventDefault()
+      void confirmCloseWhileConnected()
+      return
+    }
+    if (getSettings().minimizeToTray) {
+      event.preventDefault()
+      win.hide()
+    }
+  })
+}
+
 async function confirmCloseWhileConnected(): Promise<void> {
   const win = mainWindow
   if (!win) return
@@ -221,6 +225,8 @@ app.whenReady().then(() => {
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       mainWindow = createMainWindow()
+      attachCloseGuard(mainWindow)
+      setTrayWindow(mainWindow)
     } else {
       showWindow()
     }

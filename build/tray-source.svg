@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <!-- Tray/taskbar variant: bolder strokes, no fine rings — legible at 16 px. -->
+  <defs>
+    <linearGradient id="tbeam" x1="22" y1="19" x2="42" y2="45" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8df1fb"/>
+      <stop offset="1" stop-color="#0fa8c9"/>
+    </linearGradient>
+  </defs>
+  <rect x="1" y="1" width="62" height="62" rx="14" fill="#0a0d13"/>
+  <rect x="2.5" y="2.5" width="59" height="59" rx="12.5" fill="none" stroke="#ffffff" stroke-opacity="0.08" stroke-width="1.5"/>
+  <path d="M22 45 V19 L42 45 V19" fill="none" stroke="#22d3ee" stroke-opacity="0.35" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M22 45 V19 L42 45 V19" fill="none" stroke="url(#tbeam)" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="22" cy="19" r="3.6" fill="#eafcff"/>
+  <circle cx="42" cy="45" r="3.6" fill="#eafcff"/>
+</svg>
