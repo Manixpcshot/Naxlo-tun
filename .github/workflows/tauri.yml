@@ -2,7 +2,7 @@ name: tauri
 
 on:
   push:
-    branches: [arena/9b2bfba6-naxlo-tun, main]
+    branches: [main]
     tags: ['v*']
   pull_request:
     paths:
