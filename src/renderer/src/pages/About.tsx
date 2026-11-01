@@ -55,7 +55,7 @@ export function About(): React.ReactElement {
             <Logo size={62} animated />
             <div>
               <div className="about-hero__name">naxlo</div>
-              <div className="mono about-hero__version">version {info?.version ?? '1.0.0'}</div>
+              <div className="mono about-hero__version">version {info?.version ?? '—'}</div>
             </div>
           </div>
 

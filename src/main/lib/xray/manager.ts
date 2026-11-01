@@ -29,6 +29,14 @@ class XrayManager {
   private handle: RunHandle | null = null
   private stopping = false
   private busy = false
+  /**
+   * Bumped on every disconnect/teardown so a connect() that is still awaiting
+   * slow steps (core download, port wait, probe) can notice it was cancelled
+   * and never resurrect a tunnel the user already asked to stop.
+   */
+  private generation = 0
+  /** Which connect() generation currently owns the `busy` flag. */
+  private busyOwner: number | null = null
   private activeServerId: string | null = null
   private core: CoreLocation | null = null
   private refreshTimer: NodeJS.Timeout | null = null
@@ -165,6 +173,9 @@ class XrayManager {
 
     this.busy = true
     this.stopping = false
+    const gen = ++this.generation
+    this.busyOwner = gen
+    const stale = (): boolean => gen !== this.generation
     try {
       registerSecret(server.credential, 'credential')
       registerSecret(server.pbk, 'pbk')
@@ -186,6 +197,10 @@ class XrayManager {
       setConnection('preparing')
 
       const core = await this.ensureCore()
+      if (stale()) {
+        log.info(SCOPE, 'connect cancelled while resolving the core')
+        return
+      }
       const settings = getSettings()
 
       if (await portInUse(settings.listenAddress, settings.socksPort)) {
@@ -215,6 +230,10 @@ class XrayManager {
           )
         }
         await ensureWintun(dirname(core.path))
+      }
+      if (stale()) {
+        log.info(SCOPE, 'connect cancelled during TUN preparation')
+        return
       }
 
       setConnection('starting')
@@ -248,11 +267,16 @@ class XrayManager {
           L('ایجاد پروکسی محلی ناموفق بود؛ پورت داخلی پاسخ نمی‌دهد', 'Local proxy failed to start — the inbound port is not responding')
         )
       }
+      if (stale()) {
+        log.info(SCOPE, 'connect cancelled while waiting for the inbound port')
+        await this.restoreProxyIfOurs()
+        return
+      }
 
       if (settings.applySystemProxy && settings.connectionMode !== 'tun') {
         try {
           await applySystemProxy(settings.listenAddress, settings.httpPort)
-          patchState({ systemProxyApplied: true })
+          if (!stale()) patchState({ systemProxyApplied: true })
         } catch (err) {
           log.warn(SCOPE, 'system proxy could not be applied — staying in manual mode', err)
           toast(
@@ -264,6 +288,11 @@ class XrayManager {
       }
 
       const probe = await requestThroughProxy(settings.listenAddress, settings.httpPort, settings.testUrl, 15000)
+      if (stale()) {
+        log.info(SCOPE, 'connect cancelled during the connection test')
+        await this.restoreProxyIfOurs()
+        return
+      }
       if (!probe.ok) {
         throw new AppError(
           probe.error
@@ -281,17 +310,27 @@ class XrayManager {
 
       void this.refreshIdentity()
     } catch (err) {
+      if (stale()) {
+        log.info(SCOPE, 'connect aborted after a newer disconnect — skipping failure UI')
+        return
+      }
       const message = err instanceof Error ? redact(err.message) : redact(err)
       log.error(SCOPE, 'connect failed', message)
       await this.cleanupAfterFailure(message)
       toast('error', 'اتصال برقرار نشد', message)
     } finally {
-      this.busy = false
+      if (this.busyOwner === gen) {
+        this.busyOwner = null
+        this.busy = false
+      }
     }
   }
 
   async disconnect(reason = 'user'): Promise<void> {
     this.stopping = true
+    this.generation += 1
+    this.busyOwner = null
+    this.busy = false
     this.stopLatencyProbe()
     const handle = this.handle
     this.handle = null
@@ -328,15 +367,33 @@ class XrayManager {
     })
     this.activeServerId = null
     this.stopping = false
-    this.busy = false
     setConnection('idle')
     log.info(SCOPE, `disconnected (${reason})`)
     if (reason === 'user') toast('info', L('اتصال قطع شد', 'Disconnected'))
   }
 
+  /**
+   * A cancelled connect may finish applying the system proxy *after* a
+   * disconnect already restored the user's settings — put them back again.
+   */
+  private async restoreProxyIfOurs(): Promise<void> {
+    try {
+      const proxy = await readSystemProxy()
+      const settings = getSettings()
+      if (proxy.applied && proxy.server === `${settings.listenAddress}:${settings.httpPort}`) {
+        await restoreSystemProxy()
+        patchState({ systemProxyApplied: false })
+      }
+    } catch (err) {
+      log.warn(SCOPE, 'stale-connect proxy rollback failed', err)
+    }
+  }
+
   /** Emergency teardown used on app quit. */
   async shutdown(): Promise<void> {
     this.stopping = true
+    this.generation += 1
+    this.busyOwner = null
     this.stopLatencyProbe()
     try {
       if (this.handle) {
@@ -355,6 +412,7 @@ class XrayManager {
 
   private async cleanupAfterFailure(message: string | import('../../../shared/i18n').LString): Promise<void> {
     this.stopping = true
+    this.stopLatencyProbe()
     const handle = this.handle
     this.handle = null
     if (handle) {
@@ -373,7 +431,18 @@ class XrayManager {
     } catch {
       /* ignore */
     }
-    patchState({ systemProxyApplied: false, startedAt: null, latencyMs: null, identity: null })
+    patchState({
+      systemProxyApplied: false,
+      startedAt: null,
+      latencyMs: null,
+      identity: null,
+      activeServerId: null,
+      activeSubscriptionId: null,
+      activeServerName: null,
+      activeServerAddressMasked: null
+    })
+    this.activeServerId = null
+    this.probeFailures = 0
     this.stopping = false
     setConnection('error', message)
   }
@@ -470,7 +539,9 @@ class XrayManager {
     const minutes = getSettings().autoRefreshMinutes
     if (!minutes || minutes <= 0) return
     this.refreshTimer = setInterval(() => {
-      if (!getVault().subscriptionUrl) return
+      // The multi-subscription vault (1.2.0+) keeps sources in `subscriptions`;
+      // the legacy single-URL field is null for every modern vault.
+      if (getVault().subscriptions.length === 0) return
       log.info(SCOPE, 'auto-refreshing subscription')
       void this.autoRefreshHandler?.()
     }, minutes * 60_000)

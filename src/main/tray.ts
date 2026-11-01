@@ -118,6 +118,11 @@ export function rebuildMenu(): void {
   tray.setToolTip(`Naxlo — ${labels[state.connection]}`)
 }
 
+/** Re-point the tray at a freshly created window (macOS activate). */
+export function setTrayWindow(win: BrowserWindow): void {
+  mainWindow = win
+}
+
 export function showWindow(): void {
   if (!mainWindow || mainWindow.isDestroyed()) return
   if (mainWindow.isMinimized()) mainWindow.restore()

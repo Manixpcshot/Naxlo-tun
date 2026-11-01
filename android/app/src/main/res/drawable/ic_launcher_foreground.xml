@@ -1,4 +1,22 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-    <path android:fillColor="#22d3ee" android:pathData="M54,26 L54,50 M40,34 a20,20 0 1,0 28,0" android:strokeColor="#22d3ee" android:strokeWidth="6" android:fillAlpha="0" />
-    <path android:fillColor="#22d3ee" android:pathData="M46,62 h16 v14 h-16 z" />
+    <!-- Naxlo "tunnel" mark: geometric N + light nodes + orbit ring. -->
+    <path
+        android:pathData="M54,54 m-24,0 a24,24 0 1,0 48,0 a24,24 0 1,0 -48,0"
+        android:strokeColor="#7deaf7"
+        android:strokeAlpha="0.28"
+        android:strokeWidth="1.6"
+        android:fillColor="#00000000" />
+    <path
+        android:pathData="M41,69 L41,39 L67,69 L67,39"
+        android:strokeColor="#22d3ee"
+        android:strokeWidth="7"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000" />
+    <path
+        android:pathData="M41,39 m-4.6,0 a4.6,4.6 0 1,0 9.2,0 a4.6,4.6 0 1,0 -9.2,0"
+        android:fillColor="#eafcff" />
+    <path
+        android:pathData="M67,69 m-4.6,0 a4.6,4.6 0 1,0 9.2,0 a4.6,4.6 0 1,0 -9.2,0"
+        android:fillColor="#eafcff" />
 </vector>

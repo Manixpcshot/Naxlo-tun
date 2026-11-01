@@ -73,6 +73,7 @@ export const TR: Record<MsgKey, string> = {
   testAll: 'Tüm gecikmeleri test et',
   clearList: 'Listeyi temizle',
   searchPlaceholder: 'Ad, protokol veya güvenlik ara…',
+  filterResults: '{total} yapılandırmadan {n} tanesi gösteriliyor',
   filterAll: 'Tümü',
   filterFast: 'En hızlı',
   sortBySpeed: 'Hıza göre sırala',

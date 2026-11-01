@@ -5,7 +5,7 @@
 import React, { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Titlebar } from './components/Titlebar'
-import { Sidebar, type PageId } from './components/Sidebar'
+import { Sidebar, PAGES, type PageId } from './components/Sidebar'
 import { StatusBar } from './components/StatusBar'
 import { Toasts } from './components/Toasts'
 import { Home } from './pages/Home'
@@ -16,7 +16,7 @@ import { Logs } from './pages/Logs'
 import { About } from './pages/About'
 import { useStore } from './lib/store'
 import { useI18n } from './lib/i18n'
-import { Spinner } from './components/Icon'
+import { Logo } from './components/Logo'
 
 export default function App(): React.ReactElement {
   const { ready, settings } = useStore()
@@ -25,7 +25,10 @@ export default function App(): React.ReactElement {
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent): void => {
-      if (!event.ctrlKey) return
+      if (!event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) return
+      // Never steal Ctrl+<digit> while the user is typing in a field.
+      const target = event.target as HTMLElement | null
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable)) return
       const key = event.key.toLowerCase()
       if (key === '1') setPage('home')
       else if (key === '2') setPage('servers')
@@ -44,6 +47,12 @@ export default function App(): React.ReactElement {
     return () => window.removeEventListener('naxlo:goto-subscription', handler)
   }, [])
 
+  /* Keep the OS window/taskbar title in sync with the active page. */
+  useEffect(() => {
+    const label = page === 'home' ? null : t(PAGES.find((entry) => entry.id === page)?.label ?? 'navHome')
+    document.title = label ? `Naxlo — ${label}` : 'Naxlo'
+  }, [page, t])
+
   const reduce = settings.reduceMotion
 
   return (
@@ -57,8 +66,14 @@ export default function App(): React.ReactElement {
         <main className="app__main">
           {!ready ? (
             <div className="boot">
-              <Spinner size={26} className="spinner--lg" />
-              <span>{t('boot')}</span>
+              <span className="boot__mark">
+                <Logo size={68} animated />
+              </span>
+              <span className="boot__word">naxlo</span>
+              <span className="boot__bar" aria-hidden="true">
+                <span />
+              </span>
+              <span className="boot__hint">{t('boot')}</span>
             </div>
           ) : (
             <AnimatePresence mode="wait" initial={false}>

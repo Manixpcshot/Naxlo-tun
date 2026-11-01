@@ -46,9 +46,14 @@ export function createMainWindow(options: WindowOptions = {}): BrowserWindow {
 
   win.on('closed', () => log.info(SCOPE, 'main window closed'))
 
-  // Never let the renderer open arbitrary windows.
+  // Never let the renderer open arbitrary windows — external navigation goes
+  // through the same curated allowlist as the `shell:open` bridge channel.
   win.webContents.setWindowOpenHandler(({ url }) => {
-    if (/^https?:\/\//i.test(url)) void shell.openExternal(url)
+    if (isAllowedExternalUrl(url)) {
+      void shell.openExternal(url)
+    } else {
+      log.warn(SCOPE, 'blocked window.open attempt')
+    }
     return { action: 'deny' }
   })
 

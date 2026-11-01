@@ -67,7 +67,7 @@ export function Servers(): React.ReactElement {
       list = [...list].sort((a, b) => (a.latencyMs ?? 1e9) - (b.latencyMs ?? 1e9))
     }
     return list
-  }, [servers, query, filter, sortFast])
+  }, [servers, query, filter, sortFast, country])
 
   const testOne = async (server: ServerView): Promise<void> => {
     setTestingId(server.id)
@@ -212,6 +212,12 @@ export function Servers(): React.ReactElement {
         <Button size="sm" variant={sortFast ? 'primary' : 'ghost'} icon="filter" onClick={() => setSortFast((v) => !v)} title={t('sortBySpeed')}>
           {t('sortBySpeed')}
         </Button>
+
+        {filtered.length !== servers.length ? (
+          <span className="badge badge--muted" title={t('filterResults', { n: fa(filtered.length), total: fa(servers.length) })}>
+            {t('filterResults', { n: fa(filtered.length), total: fa(servers.length) })}
+          </span>
+        ) : null}
       </div>
 
       {countries.length > 1 ? (

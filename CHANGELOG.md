@@ -6,6 +6,24 @@ All notable changes to Naxlo are documented here. Releases are cut per tag
 The format follows [Keep a Changelog](https://keepachangelog.com/) and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.8.0] - 2026-11-01
+
+### Added
+- **هویت بصری جدید:** نشان «تونل» بازطراحی شد — N هندسی به‌شکل پرتوی نور میان دو گره، حلقه‌های هم‌مرکز و کاشی تقریباً مشکی با عمق. همهٔ artefactها از یک master SVG ساخته می‌شوند: `scripts/make-icons.mjs` (آیکون نصب/taskbar، tray، favicon جدید، بنر گیت‌هاب و آییکون adaptive اندروید).
+- **New brand identity:** the mark was redrawn — a geometric N as a light beam between two nodes on concentric orbit rings, on a near-black tile with real depth. Every artefact now renders from one SVG master via `scripts/make-icons.mjs`: installer/taskbar icon, tray icon, a new favicon, the GitHub banner and the Android adaptive icon.
+- صفحهٔ بوت برندشده (نشان + wordmark + نوار پیشرفت)، عنوان پنجره بر اساس صفحهٔ فعال، و نشان تعداد نتایج هنگام فیلتر/جست‌وجوی سرورها. / Branded boot screen (mark + wordmark + progress shimmer), per-page window titles and a result-count badge while filtering servers.
+
+### Fixed
+- **به‌روزرسانی خودکار اشتراک هرگز اجرا نمی‌شد:** تایمر، فیلد legacy تک‌اشتراکی (قبل از ۱.۲.۰) را بررسی می‌کرد که در خزانه‌های جدید همیشه null است. / **Subscription auto-refresh never ran:** the timer checked the legacy single-URL field (pre-1.2.0) which is always null in modern vaults.
+- **فیلتر چیپ‌های کشور در صفحهٔ سرورها اعمال نمی‌شد** (وابستگی جامانده در useMemo). / **The country-chip filter never applied** (missing memo dependency).
+- **قطع اتصال هنگام اتصال در جریان** می‌توانست تونل zombie به‌جا بگذارد یا پروکسی سیستم را خراب کند؛ اکنون هر connect با شناسهٔ نسل لغو می‌شود و در همهٔ نقاط انتظار، پروکسی سیستم هم rollback می‌شود. / **Disconnecting mid-connect** could leave a zombie tunnel or a leftover system proxy; every connect now carries a generation token and rolls the system proxy back at every await point.
+- حذف/پاک‌کردن سرورها هنگام اتصال، اول اتصال را قطع می‌کند و انتخاب به اولین سرور پشتیبانی‌شدهٔ بعدی منتقل می‌شود. / Removing or clearing servers while connected disconnects first and moves the selection to the next supported server.
+- `window.open` در رندرر حالا از همان allowlist لینک‌های خارجی عبور می‌کند؛ بازگردانی پروکسی سیستم، AutoConfigURL (PAC) کاربر را هم برمی‌گرداند؛ حلقهٔ تلاش مجدد updater به ۳ بار محدود شد؛ در macOS پنجرهٔ بازسازی‌شده دوباره guard بستن و tray می‌گیرد. / Renderer `window.open` now passes through the same external-link allowlist; system-proxy restore also returns the user's AutoConfigURL (PAC); updater error retries are capped at 3; a recreated window on macOS re-attaches the close guard and tray.
+- میان‌برهای Ctrl+1..6 دیگر هنگام تایپ در فیلدها شلیک نمی‌شوند. / Ctrl+1..6 shortcuts no longer fire while typing in inputs.
+
+### Changed
+- اندروید: versionCode 1800 و versionName 1.8.0؛ پیش‌زمینهٔ آییکون adaptive با نشان جدید هم‌خانواده شد. / Android bumped to versionCode 1800 / versionName 1.8.0 with the adaptive icon foreground redrawn to the new mark.
+
 ## [1.7.0] - 2026-11-01
 
 ### Added

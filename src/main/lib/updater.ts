@@ -24,6 +24,9 @@ const SCOPE = 'updater'
 let initialised = false
 let installTimer: NodeJS.Timeout | null = null
 let retryScheduled = false
+/** Consecutive background retries after updater errors (bounded on purpose). */
+let retryCount = 0
+const MAX_RETRIES = 3
 
 export function initAutoUpdater(): void {
   if (initialised) return
@@ -47,6 +50,7 @@ export function initAutoUpdater(): void {
     })
 
     autoUpdater.on('update-available', (info: UpdateInfo) => {
+      retryCount = 0
       log.info(SCOPE, `update available: ${info.version}`)
       patchUpdate({ availableVersion: info.version, downloading: true, error: null })
       toast(
@@ -61,6 +65,7 @@ export function initAutoUpdater(): void {
 
     autoUpdater.on('update-not-available', () => {
       log.info(SCOPE, 'no update available')
+      retryCount = 0
       patchUpdate({ checking: false, downloading: false, progress: null })
     })
 
@@ -70,6 +75,7 @@ export function initAutoUpdater(): void {
 
     autoUpdater.on('update-downloaded', (info: UpdateInfo) => {
       log.info(SCOPE, `update downloaded: ${info.version}`)
+      retryCount = 0
       patchUpdate({
         checking: false,
         downloading: false,
@@ -96,10 +102,12 @@ export function initAutoUpdater(): void {
         progress: null,
         error: L('بررسی به‌روزرسانی ناموفق بود', 'Update check failed')
       })
-      // Transient network hiccups are common; retry once after a short delay
-      // so self-update needs no user action.
-      if (!retryScheduled) {
+      // Transient network hiccups are common; retry after a short delay so
+      // self-update needs no user action — but bound the loop so a broken
+      // feed cannot keep the network busy forever.
+      if (!retryScheduled && retryCount < MAX_RETRIES) {
         retryScheduled = true
+        retryCount += 1
         setTimeout(() => {
           retryScheduled = false
           void checkForUpdates()

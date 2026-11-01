@@ -127,6 +127,11 @@ npm run dev
 npm test
 npm run typecheck
 
+# بازسازی همهٔ آیکون‌ها (نصب/tray/favicon/بنر) از master SVG — نیازمند sharp و ImageMagick
+npm i --no-save sharp
+node scripts/make-icons.mjs
+npx tauri icon build/icon-source.png -o tauri/icons   # مجموعهٔ آیکون نسخهٔ Rust
+
 # بسته‌بندی نصب‌کنندهٔ ویندوز
 npm run dist:win
 
