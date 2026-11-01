@@ -11,6 +11,7 @@ import { useI18n, type MsgKey } from '../lib/i18n'
 import { fa, faDate, faRelative, formatBytes, subDaysLeft, subPercent, subRemaining, subUsed } from '../lib/format'
 import type { PageId } from '../components/Sidebar'
 import type { SubscriptionView } from '@shared/bridge'
+import { isTauri } from '../lib/platform'
 
 interface Props {
   onNavigate: (page: PageId) => void
@@ -148,9 +149,11 @@ export function Subscription({ onNavigate }: Props): React.ReactElement {
           <Button variant="primary" icon="plus" onClick={() => void add()} disabled={!url.trim()}>
             {t('subsAdd')}
           </Button>
-          <Button icon="folder" onClick={() => void importFile()}>
-            {t('subImportFile')}
-          </Button>
+          {!isTauri() ? (
+            <Button icon="folder" onClick={() => void importFile()}>
+              {t('subImportFile')}
+            </Button>
+          ) : null}
         </div>
       </Card>
 

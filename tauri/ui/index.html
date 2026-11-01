@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="referrer" content="no-referrer" />
+    <!--
+      No CSP meta tag here on purpose: the Tauri webview serves this page from
+      the tauri://localhost origin and `security.csp` is null in
+      tauri.conf.json, so the renderer can talk to the Rust backend and load
+      bundled assets without the Electron-specific `ipc:` allowlist.
+    -->
+    <title>Naxlo</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./main.tsx"></script>
+  </body>
+</html>

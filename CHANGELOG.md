@@ -6,6 +6,18 @@ All notable changes to Naxlo are documented here. Releases are cut per tag
 The format follows [Keep a Changelog](https://keepachangelog.com/) and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.7.0] - 2026-11-01
+
+### Added
+- **نسخهٔ Rust/Tauri (ویندوز، لینوکس، مک):** همان رابط React روی بک‌اند Rust (Tauri v2، WebView بومی) — اشتراک‌های URL با نام و سهمیه از هدرهای پنل، فهرست سرورها با ماسک کامل، اتصال/قطع پروکسی محلی با هستهٔ رسمی Xray (پین v26.10.31 + اعتبارسنجی digest + دانلود خودکار)، تست تأخیر تکی/گروهی، تست سرعت، انتخاب خودکار بهترین سرور، پروکسی سیستم روی هر سه سیستم‌عامل، خزانهٔ AES-256-GCM، هشدار خروج هنگام اتصال و خطاهای دوزبانه.
+- **خروجی‌های چندپلتفرمی:** `Naxlo-Rust-Setup-x.x.x.exe` (ویندوز NSIS)، `Naxlo-Rust-vx.x.x-linux-amd64.AppImage` و `.deb` (لینوکس) و `Naxlo-Rust-vx.x.x-macos-arm64.dmg` (مک، بدون امضا با راهنمای Gatekeeper) — همه با checksum در هر ریلیز.
+- **Rust/Tauri edition (Windows, Linux, macOS):** the same React UI on a Rust backend — URL subscriptions with panel name/quota headers, fully masked server list, local-proxy connect/disconnect with the official Xray core (pinned v26.10.31, digest-verified, auto-download), single/batch latency tests, speed test, auto server pick, system-proxy integration on all three OSes, AES-256-GCM vault, the connected-exit warning and bilingual errors. Lean scope for now: TUN mode, tray, auto-start, self-update and file import stay Electron-only.
+- CI: workflow جدید `tauri.yml` — کامپایل و تست Rust روی هر push/PR و ساخت AppImage/DEB/EXE/DMG روی هر تگ. / New `tauri.yml` workflow — Rust compile/test checks on every push/PR and AppImage/DEB/EXE/DMG bundles on every tag.
+
+### Changed
+- نوار عنوان با `data-tauri-drag-region` در هر دو نسخه کشیده می‌شود؛ کلیدهای TUN/tray/شروع خودکار/به‌روزرسانی/وارد کردن فایل در نسخهٔ Rust پنهان‌اند. / The titlebar drags in both editions; TUN/tray/auto-start/update/file-import controls are hidden in the Rust edition.
+- اندروید: versionCode 1700 و versionName 1.7.0 تا نام APKها با تگ یکی بماند. / Android bumped to versionCode 1700 / versionName 1.7.0 so tag-derived APK names match.
+
 ## [1.6.0] - 2026-10-31
 
 ### Added

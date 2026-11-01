@@ -18,3 +18,8 @@ secrets.*
 .tmp-tests
 tsconfig.*.tsbuildinfo
 .tmp-tests
+
+# Tauri (Rust edition)
+dist-tauri
+tauri/target
+tauri/gen

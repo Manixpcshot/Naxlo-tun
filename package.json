@@ -1,8 +1,8 @@
 {
   "name": "naxlo",
   "productName": "Naxlo",
-  "version": "1.6.0",
-  "description": "Naxlo — کلاینت فارسی‌زبان VLESS برای ویندوز بر پایهٔ Electron و Xray-core در حالت پروکسی محلی (بدون TUN/Wintun)",
+  "version": "1.7.0",
+  "description": "Naxlo — کلاینت فارسی‌زبان VLESS برای ویندوز، لینوکس و مک بر پایهٔ Electron و نسخهٔ Rust/Tauri با هستهٔ رسمی Xray",
   "author": {
     "name": "Naxlo Contributors",
     "email": "naxlo.app@users.noreply.github.com"
@@ -47,13 +47,17 @@
     "dist:win": "npm run build && electron-builder --win --x64",
     "pack:win": "npm run build && electron-builder --win --x64 --dir",
     "postinstall": "node scripts/postinstall.mjs",
-    "test": "node scripts/run-tests.mjs"
+    "test": "node scripts/run-tests.mjs",
+    "build:tauri-ui": "vite build --config tauri/vite.config.mts",
+    "dev:tauri-ui": "vite --config tauri/vite.config.mts"
   },
   "dependencies": {
     "electron-updater": "^6.8.9",
     "fflate": "^0.8.3"
   },
   "devDependencies": {
+    "@tauri-apps/api": "^2.12.4",
+    "@tauri-apps/cli": "^2.12.4",
     "@types/node": "^24.19.2",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",

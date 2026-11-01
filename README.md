@@ -4,24 +4,25 @@
 
 # naxlo
 
-**کلاینت فارسی‌زبان VLESS برای ویندوز — سبک، تاریک، با حالت TUN اختیاری**
+**کلاینت فارسی‌زبان VLESS برای ویندوز، لینوکس و مک — سبک، تاریک، با نسخهٔ Rust و حالت TUN اختیاری**
 
-Electron + React + Xray-core در حالت پروکسی محلی
+Electron + React (ویندوز) • **Rust + Tauri (ویندوز/لینوکس/مک)** • Xray-core در حالت پروکسی محلی
 
 [![release](https://img.shields.io/github/v/release/Manixpcshot/Naxlo-tun?style=flat-square&label=release&color=22d3ee)](https://github.com/Manixpcshot/Naxlo-tun/releases)
 [![license](https://img.shields.io/github/license/Manixpcshot/Naxlo-tun?style=flat-square&color=6c7686)](LICENSE)
-[![platform](https://img.shields.io/badge/platform-Windows%20x64-0a7ea4?style=flat-square)](https://github.com/Manixpcshot/Naxlo-tun/releases)
+[![platform](https://img.shields.io/badge/platform-Windows%20%E2%80%A2%20Linux%20%E2%80%A2%20macOS-0a7ea4?style=flat-square)](https://github.com/Manixpcshot/Naxlo-tun/releases)
 [![ci](https://img.shields.io/github/actions/workflow/status/Manixpcshot/Naxlo-tun/ci.yml?style=flat-square&label=CI)](https://github.com/Manixpcshot/Naxlo-tun/actions)
 
 </div>
 
 ---
 
-ناکسلو یک کارگیر (کلاینت) دسکتاپ برای ویندوز است: لینک اشتراک را می‌گیرید، فایل TXT را دریافت و Base64 آن را
+ناکسلو یک کارگیر (کلاینت) دسکتاپ است: لینک اشتراک را می‌گیرید، فایل TXT را دریافت و Base64 آن را
 بازگشایی می‌کند، کانفیگ‌های VLESS را در یک فهرست زیبا نشان می‌دهد و با یک کلیک، هستهٔ Xray را در **حالت پروکسی
 محلی** (SOCKS5 + HTTP روی `127.0.0.1`) اجرا می‌کند — بدون درایور و بدون دسترسی مدیر. از v1.6.0 یک **حالت TUN
 اختیاری** هم وجود دارد: تونل کل‌سیستمی با اینباند TUN داخلی خود Xray و درایور رسمی Wintun (یک‌بار تأیید UAC)، برای
-برنامه‌هایی که پروکسی ویندوز را نادیده می‌گیرند.
+برنامه‌هایی که پروکسی ویندوز را نادیده می‌گیرند. از **v1.7.0** دو نسخهٔ دسکتاپ منتشر می‌شود: نسخهٔ **Electron**
+(ویندوز، با تمام امکانات) و نسخهٔ **Rust/Tauri** (ویندوز + **لینوکس** + **مک**) با همان رابط کاربری React.
 
 ## ✨ ویژگی‌ها
 
@@ -86,6 +87,29 @@ Electron + React + Xray-core در حالت پروکسی محلی
 
 > حداقل نیازمندی: ویندوز ۱۰/۱۱ (x64). هیچ درایور یا سرویسی نصب نمی‌شود.
 
+### نسخهٔ Rust / Tauri (ویندوز، لینوکس، مک)
+
+- `Naxlo-Rust-Setup-x.x.x.exe` — نصب‌کنندهٔ ویندوز (NSIS، نصب بدون مدیر)
+- `Naxlo-Rust-vx.x.x-linux-amd64.AppImage` — لینوکس، قابل‌اجرا بدون نصب
+- `Naxlo-Rust-vx.x.x-linux-amd64.deb` — دبیان/اوبونتو (`sudo apt install ./Naxlo-Rust-….deb`)
+- `Naxlo-Rust-vx.x.x-macos-arm64.dmg` — مک (Apple Silicon، **بدون امضا**)
+
+> **مک (Gatekeeper):** چون DMG امضای Apple ندارد، بار اول برنامه را با **کلیک راست → Open** اجرا کنید یا پس از
+> کپی در Applications این دستور را بزنید: `xattr -cr /Applications/naxlo.app`
+
+## 🦀 نسخهٔ Rust (Tauri)
+
+از v1.7.0 همان رابط React روی یک بک‌اند **Rust** هم سوار است (Tauri v2 — WebView بومی، بدون Chromium):
+
+- اشتراک‌های URL (دریافت، بازگشایی Base64، تجزیهٔ vless/trojan/vmess، نام و سهمیه از هدرهای پنل)
+- اتصال/قطع در حالت پروکسی محلی با هستهٔ رسمی Xray (پین `v26.10.31`، اعتبارسنجی digest، دانلود خودکار)
+- پروکسی سیستم روی هر سه سیستم‌عامل (ویندوز: WinINET با پشتیبان‌گیری دقیق؛ مک: `networksetup`؛ لینوکس: `gsettings`)
+- خزانهٔ رمزنگاری‌شدهٔ AES-256-GCM (کلید تصادفی با دسترسی `0600`)، ماسک کامل مقادیر حساس، بدون ثبت در لاگ
+- تست تأخیر تکی/گروهی، تست سرعت، انتخاب خودکار بهترین سرور، هشدار خروج هنگام اتصال
+
+**فعلاً فقط در نسخهٔ Electron:** حالت TUN، tray، شروع خودکار، به‌روزرسانی خودکار برنامه و وارد کردن از فایل.
+این موارد در نسخه‌های بعدی به نسخهٔ Rust هم می‌آیند.
+
 ## 🛠️ ساخت از سورس
 
 ```bash
@@ -105,6 +129,10 @@ npm run typecheck
 
 # بسته‌بندی نصب‌کنندهٔ ویندوز
 npm run dist:win
+
+# نسخهٔ Rust/Tauri (نیاز به ابزار Rust؛ لینوکس: webkit2gtk-4.1 و…)
+npm run build:tauri-ui        # ساخت رابط مشترک در dist-tauri/
+cd tauri && npx tauri build   # خروجی‌ها در tauri/target/release/bundle/
 ```
 
 خروجی‌ها در پوشهٔ `release/` ساخته می‌شوند. ریلیزهای رسمی با برچسب `v*` توسط workflow داخلی
@@ -140,6 +168,11 @@ src/
 ├─ preload/         # پل contextBridge با تایپ‌های مشترک
 ├─ renderer/        # رابط کاربری React (RTL، تم مشکی، انیمیشن با motion)
 └─ shared/          # قراردادها و ماسک‌کننده‌های مشترک بین فرایندها
+
+tauri/              # نسخهٔ Rust — همان UI با بک‌اند Rust
+├─ src/             # parse/vault/runner/sysproxy/net/manager/commands…
+├─ ui/              # ورودی وب (shim.ts پل window.naxlo روی Tauri invoke)
+└─ tauri.conf.json
 ```
 
 ## 🤝 مشارکت
@@ -153,17 +186,19 @@ src/
 - **Xray-core:** MPL-2.0 (باینری رسمی، بدون تغییر)
 - **قلم وزیرمتن:** SIL OFL 1.1
 - **Electron / React:** MIT
+- **Tauri:** MIT یا Apache-2.0
 
 ---
 
 <div align="center">
 
-**English summary** — Naxlo is a Persian (RTL), dark-themed Windows desktop client for VLESS subscriptions built
-with Electron + React. It fetches a subscription TXT, decodes Base64, lists parsed configs, and runs the official
-Xray core as a **local proxy** (SOCKS5 + HTTP on loopback, optional WinINET system proxy) by default, with an
-optional **system-wide TUN mode** (Xray's built-in TUN inbound + the official, checksum-pinned Wintun driver, one-time
-UAC elevation). Closing while connected always asks first: disconnect, stay connected, or cancel. Secrets live in an
-encrypted vault, are masked in the UI and never logged. Installers are published on every tag via GitHub Actions with
-SHA-256 checksums.
+**English summary** — Naxlo is a Persian (RTL), dark-themed desktop client for VLESS subscriptions. Two editions
+ship from v1.7.0: the full **Electron + React** app (Windows: local proxy, optional system-wide TUN mode with the
+checksum-pinned Wintun driver, tray, auto-update) and a lean **Rust + Tauri** edition (Windows / Linux / macOS: same
+React UI on a Rust backend — URL subscriptions, local-proxy connect/disconnect with the official Xray core,
+system-proxy integration on all three OSes, AES-256-GCM encrypted vault). It fetches a subscription TXT, decodes
+Base64, lists parsed configs and runs Xray as a **local proxy** (SOCKS5 + HTTP on loopback). Closing while connected
+always asks first. Secrets live in an encrypted vault, are masked in the UI and never logged. Installers (EXE,
+AppImage, DEB, unsigned DMG, APKs) are published on every tag via GitHub Actions with SHA-256 checksums.
 
 </div>
