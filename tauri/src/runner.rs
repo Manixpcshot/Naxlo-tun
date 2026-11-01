@@ -64,9 +64,7 @@ pub fn start(app: AppHandle, core_path: &Path, config: &Value, base: &Path) -> s
     {
         use std::os::unix::process::CommandExt;
         // Own process group so the whole tree can be signalled at once.
-        unsafe {
-            cmd.process_group(0);
-        }
+        cmd.process_group(0);
     }
     #[cfg(windows)]
     {

@@ -607,6 +607,11 @@ pub async fn test_all(app: &AppHandle) -> u64 {
 
 /// 25s health-probe loop; three consecutive misses tear the connection down.
 fn spawn_latency_timer(app: &AppHandle, gen: u64) {
+    enum Tick {
+        Exit,
+        Refreshed(crate::models::AppState),
+        Failed(u32),
+    }
     let app2 = app.clone();
     tauri::async_runtime::spawn(async move {
         loop {
@@ -621,39 +626,47 @@ fn spawn_latency_timer(app: &AppHandle, gen: u64) {
             }
             let listen = listen_host(&settings);
             let probe = net::request_through_proxy(&listen, settings.http_port, &settings.test_url, 8000).await;
-            let mut g = core.lock();
-            if g.latency_gen != gen || g.runner.is_none() {
-                return;
-            }
-            if probe.ok {
-                g.probe_failures = 0;
-                g.state.latency_ms = Some(probe.ms);
-                let state = g.state.clone();
-                drop(g);
-                let _ = core.app.emit(STATE_EVENT, &state);
-            } else {
-                g.probe_failures += 1;
-                let failures = g.probe_failures;
-                drop(g);
-                core.log("warn", "connection", &format!("latency probe failed ({}/3)", failures));
-                if failures >= 3 {
-                    cleanup_after_failure(
-                        &app2,
-                        l(
-                            "اتصال قطع شد — پروکسی پاسخ نمی‌دهد",
-                            "Connection lost — the proxy stopped responding",
-                        ),
-                    )
-                    .await;
-                    core.toast(
-                        "error",
-                        l("اتصال قطع شد", "Connection dropped"),
-                        Some(l(
-                            "پروکسی به تست‌های پیاپی پاسخ نداد",
-                            "The proxy failed repeated health checks",
-                        )),
-                    );
-                    return;
+            // Decide under the lock, then act without it: no MutexGuard may be
+            // alive across an await point or the future stops being Send.
+            let tick = {
+                let mut g = core.lock();
+                if g.latency_gen != gen || g.runner.is_none() {
+                    Tick::Exit
+                } else if probe.ok {
+                    g.probe_failures = 0;
+                    g.state.latency_ms = Some(probe.ms);
+                    Tick::Refreshed(g.state.clone())
+                } else {
+                    g.probe_failures += 1;
+                    Tick::Failed(g.probe_failures)
+                }
+            };
+            match tick {
+                Tick::Exit => return,
+                Tick::Refreshed(state) => {
+                    let _ = core.app.emit(STATE_EVENT, &state);
+                }
+                Tick::Failed(failures) => {
+                    core.log("warn", "connection", &format!("latency probe failed ({}/3)", failures));
+                    if failures >= 3 {
+                        cleanup_after_failure(
+                            &app2,
+                            l(
+                                "اتصال قطع شد — پروکسی پاسخ نمی‌دهد",
+                                "Connection lost — the proxy stopped responding",
+                            ),
+                        )
+                        .await;
+                        core.toast(
+                            "error",
+                            l("اتصال قطع شد", "Connection dropped"),
+                            Some(l(
+                                "پروکسی به تست‌های پیاپی پاسخ نداد",
+                                "The proxy failed repeated health checks",
+                            )),
+                        );
+                        return;
+                    }
                 }
             }
         }

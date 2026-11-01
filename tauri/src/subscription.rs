@@ -125,7 +125,7 @@ async fn download(url: &str) -> Result<Downloaded, LString> {
                 "Fetching the subscription timed out",
             )
         })?
-        .map_err(friendly_fetch_error)?;
+        .map_err(|e| friendly_fetch_error(&e))?;
     let status = resp.status();
     if !status.is_success() {
         return Err(friendly_status_error(status.as_u16()));
@@ -148,7 +148,7 @@ async fn download(url: &str) -> Result<Downloaded, LString> {
                 "Fetching the subscription timed out",
             )
         })?
-        .map_err(friendly_fetch_error)?;
+        .map_err(|e| friendly_fetch_error(&e))?;
     let raw = String::from_utf8_lossy(&bytes).into_owned();
     let text = decode_payload(&raw, &content_type);
     if text.trim().is_empty() {

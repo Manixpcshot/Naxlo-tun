@@ -88,16 +88,20 @@ jobs:
           set -uo pipefail
           [ -f cargo-check.log ] || exit 0
           tail -c 300000 cargo-check.log > log-trim.txt
-          B64=$(base64 -w0 log-trim.txt 2>/dev/null || base64 log-trim.txt | tr -d '\n')
+          base64 -w0 log-trim.txt > log-b64.txt 2>/dev/null || base64 log-trim.txt | tr -d '\n' > log-b64.txt
           NAME="${{ runner.os }}-cargo-check.log"
+          MSG="ci: cargo check log run $GITHUB_RUN_NUMBER"
           SHA=$(gh api "repos/$GITHUB_REPOSITORY/contents/ci-logs/$NAME?ref=ci-logs" --jq .sha 2>/dev/null || true)
+          # jq --rawfile keeps the huge content off the command line (Windows
+          # has a 32K argument limit that broke the previous -f approach).
           if [ -n "$SHA" ]; then
-            gh api -X PUT "repos/$GITHUB_REPOSITORY/contents/ci-logs/$NAME" \
-              -f message="ci: cargo check log run $GITHUB_RUN_NUMBER" -f content="$B64" -f sha="$SHA" -f branch=ci-logs > /dev/null
+            jq -n --rawfile content log-b64.txt --arg message "$MSG" --arg sha "$SHA" \
+              '{message:$message, content:($content|gsub("[\r\n]";"")), branch:"ci-logs", sha:$sha}' > payload.json
           else
-            gh api -X PUT "repos/$GITHUB_REPOSITORY/contents/ci-logs/$NAME" \
-              -f message="ci: cargo check log run $GITHUB_RUN_NUMBER" -f content="$B64" -f branch=ci-logs > /dev/null
+            jq -n --rawfile content log-b64.txt --arg message "$MSG" \
+              '{message:$message, content:($content|gsub("[\r\n]";"")), branch:"ci-logs"}' > payload.json
           fi
+          gh api -X PUT "repos/$GITHUB_REPOSITORY/contents/ci-logs/$NAME" --input payload.json > /dev/null
           echo "published $NAME"
 
   # Tagged releases: build + publish AppImage/DEB (Linux), NSIS EXE (Windows)

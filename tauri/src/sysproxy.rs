@@ -15,6 +15,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::l10n::{l, LString};
 use crate::settings::set_owner_only;
+#[cfg(windows)]
 use crate::util::now_ms;
 
 #[derive(Clone, Debug)]

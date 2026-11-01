@@ -483,7 +483,7 @@ fn parse_vmess(raw: &str) -> Option<ParseResult> {
     } else {
         None
     };
-    let alpn = data.get("alpn").and_then(|v| v.as_str()).and_then(split_list);
+    let alpn = split_list(data.get("alpn").and_then(|v| v.as_str()));
     let fp = value_to_string(data.get("fp").filter(|v| !v.is_null()));
     let allow_insecure = matches!(data.get("allowInsecure"), Some(serde_json::Value::Bool(true)))
         || data.get("allowInsecure").and_then(|v| v.as_str()) == Some("true");
@@ -624,7 +624,6 @@ pub fn b64_decode_lenient(input: &str) -> Option<Vec<u8>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use base64::Engine as _;
 
     const VLESS_TLS_WS: &str = "vless://11111111-2222-3333-4444-555555555555@example.server.com:443?encryption=none&security=tls&sni=cdn.example.com&type=ws&host=cdn.example.com&path=%2Fvless&fp=chrome#TE-Test";
 
