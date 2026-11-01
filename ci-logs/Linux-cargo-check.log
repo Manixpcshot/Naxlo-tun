@@ -52,9 +52,9 @@
 [1m[94m278[0m [1m[94m|[0m pub fn purge_downloaded_cores(base: &Path) {
     [1m[94m|[0m        [1m[33m^^^^^^^^^^^^^^^^^^^^^^[0m
 
-[1m[33mwarning[0m: `naxlo` (lib test) generated 5 warnings (3 duplicates)
-[1m[33mwarning[0m: `naxlo` (lib) generated 5 warnings (2 duplicates)
-[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 13.05s
+[1m[33mwarning[0m: `naxlo` (lib test) generated 5 warnings
+[1m[33mwarning[0m: `naxlo` (lib) generated 5 warnings (5 duplicates)
+[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 15.37s
 [1m[92m   Compiling[0m naxlo v1.8.0 (/home/runner/work/Naxlo-tun/Naxlo-tun/tauri)
 [1m[33mwarning[0m[1m: function `err_str` is never used[0m
   [1m[94m--> [0msrc/l10n.rs:23:8
@@ -99,21 +99,21 @@
 
 [1m[33mwarning[0m: `naxlo` (lib test) generated 5 warnings (5 duplicates)
 [1m[33mwarning[0m: `naxlo` (lib) generated 5 warnings
-[1m[92m    Finished[0m `test` profile [unoptimized + debuginfo] target(s) in 9.95s
+[1m[92m    Finished[0m `test` profile [unoptimized + debuginfo] target(s) in 9.81s
 [1m[92m     Running[0m unittests src/lib.rs (target/debug/deps/naxlo_lib-19d1b5f9b442e033)
 
 running 11 tests
 test parse::tests::base64_detector_rejects_garbage ... ok
 test mask::tests::masks_like_the_ts_helpers ... ok
 test parse::tests::extract_links_handles_base64_payloads ... ok
-test parse::tests::parses_vless_tls_ws ... ok
+test parse::tests::parses_vmess_base64 ... ok
 test parse::tests::reality_without_pbk_is_unsupported ... ok
+test parse::tests::parses_vless_tls_ws ... ok
 test parse::tests::query_roundtrip_is_stable ... ok
 test submeta::tests::parses_profile_titles ... ok
-test parse::tests::parses_vmess_base64 ... ok
 test submeta::tests::parses_userinfo_header ... ok
-test xray_config::tests::builds_a_complete_config ... ok
 test xray_config::tests::iran_direct_adds_local_rules ... ok
+test xray_config::tests::builds_a_complete_config ... ok
 
 test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
