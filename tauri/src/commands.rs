@@ -400,9 +400,10 @@ pub async fn subscription_clear(app: AppHandle) -> Result<bool, String> {
 #[tauri::command]
 pub async fn subscription_import_file(
     _app: AppHandle,
-    _file_path: Option<String>,
-    _password: Option<String>,
+    file_path: Option<String>,
+    password: Option<String>,
 ) -> Result<FetchReport, String> {
+    let _ = (file_path, password);
     Err(err(l(
         "وارد کردن فایل در نسخهٔ Rust هنوز پشتیبانی نمی‌شود",
         "File import is not supported in the Rust edition yet",

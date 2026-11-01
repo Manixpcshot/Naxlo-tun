@@ -64,12 +64,41 @@ jobs:
 
       - name: cargo check (all targets)
         working-directory: tauri
-        run: cargo check --all-targets
+        shell: bash
+        run: |
+          set -o pipefail
+          cargo check --all-targets 2>&1 | tee ../cargo-check.log
 
       - name: cargo test
         if: matrix.platform == 'ubuntu-22.04'
         working-directory: tauri
-        run: cargo test
+        shell: bash
+        run: |
+          set -o pipefail
+          cargo test 2>&1 | tee -a ../cargo-check.log
+
+      # The sandbox cannot download Actions logs directly; push them to the
+      # ci-logs branch through the contents API so they can be read back.
+      - name: Publish cargo log to ci-logs branch
+        if: always()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          [ -f cargo-check.log ] || exit 0
+          tail -c 300000 cargo-check.log > log-trim.txt
+          B64=$(base64 -w0 log-trim.txt 2>/dev/null || base64 log-trim.txt | tr -d '\n')
+          NAME="${{ runner.os }}-cargo-check.log"
+          SHA=$(gh api "repos/$GITHUB_REPOSITORY/contents/ci-logs/$NAME?ref=ci-logs" --jq .sha 2>/dev/null || true)
+          if [ -n "$SHA" ]; then
+            gh api -X PUT "repos/$GITHUB_REPOSITORY/contents/ci-logs/$NAME" \
+              -f message="ci: cargo check log run $GITHUB_RUN_NUMBER" -f content="$B64" -f sha="$SHA" -f branch=ci-logs > /dev/null
+          else
+            gh api -X PUT "repos/$GITHUB_REPOSITORY/contents/ci-logs/$NAME" \
+              -f message="ci: cargo check log run $GITHUB_RUN_NUMBER" -f content="$B64" -f branch=ci-logs > /dev/null
+          fi
+          echo "published $NAME"
 
   # Tagged releases: build + publish AppImage/DEB (Linux), NSIS EXE (Windows)
   # and an unsigned DMG (macOS) to the GitHub release.

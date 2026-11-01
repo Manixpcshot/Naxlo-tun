@@ -430,7 +430,7 @@ fn value_to_string(value: Option<&serde_json::Value>) -> String {
 
 fn parse_vmess(raw: &str) -> Option<ParseResult> {
     let mut warnings: Vec<String> = Vec::new();
-    let body = raw.get("vmess://".len())?.trim();
+    let body = raw.get("vmess://".len()..)?.trim();
     let json = String::from_utf8_lossy(&b64_decode_lenient(body)?).into_owned();
     let data: serde_json::Value = serde_json::from_str(&json).ok()?;
 
@@ -624,6 +624,7 @@ pub fn b64_decode_lenient(input: &str) -> Option<Vec<u8>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use base64::Engine as _;
 
     const VLESS_TLS_WS: &str = "vless://11111111-2222-3333-4444-555555555555@example.server.com:443?encryption=none&security=tls&sni=cdn.example.com&type=ws&host=cdn.example.com&path=%2Fvless&fp=chrome#TE-Test";
 

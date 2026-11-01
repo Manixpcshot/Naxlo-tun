@@ -399,11 +399,12 @@ fn mac_apply(base: &Path, host: &str, port: u16) -> Result<(), LString> {
     write_backup(base, &backups);
     let port_str = port.to_string();
     for service in &services {
-        networksetup(&["-setwebproxy", service, host, &port_str])?;
-        networksetup(&["-setsecurewebproxy", service, host, &port_str])?;
+        let svc = service.as_str();
+        networksetup(&["-setwebproxy", svc, host, port_str.as_str()])?;
+        networksetup(&["-setsecurewebproxy", svc, host, port_str.as_str()])?;
         networksetup(&[
             "-setproxybypassdomains",
-            service,
+            svc,
             "localhost",
             "127.0.0.1",
             "10.*",
@@ -422,31 +423,24 @@ fn mac_restore(base: &Path) -> Result<(), LString> {
     let _ = fs::remove_file(backup_path(base));
     let Some(backups) = backups else {
         for service in mac_services() {
-            let _ = networksetup(&["-setwebproxystate", &service, "off"]);
-            let _ = networksetup(&["-setsecurewebproxystate", &service, "off"]);
+            let _ = networksetup(&["-setwebproxystate", service.as_str(), "off"]);
+            let _ = networksetup(&["-setsecurewebproxystate", service.as_str(), "off"]);
         }
         return Ok(());
     };
     for backup in backups {
+        let svc = backup.service.as_str();
         if backup.http_enabled && !backup.http_server.is_empty() {
-            let _ = networksetup(&[
-                "-setwebproxy",
-                &backup.service,
-                &backup.http_server,
-                &backup.http_port.to_string(),
-            ]);
+            let port = backup.http_port.to_string();
+            let _ = networksetup(&["-setwebproxy", svc, backup.http_server.as_str(), port.as_str()]);
         } else {
-            let _ = networksetup(&["-setwebproxystate", &backup.service, "off"]);
+            let _ = networksetup(&["-setwebproxystate", svc, "off"]);
         }
         if backup.https_enabled && !backup.https_server.is_empty() {
-            let _ = networksetup(&[
-                "-setsecurewebproxy",
-                &backup.service,
-                &backup.https_server,
-                &backup.https_port.to_string(),
-            ]);
+            let port = backup.https_port.to_string();
+            let _ = networksetup(&["-setsecurewebproxy", svc, backup.https_server.as_str(), port.as_str()]);
         } else {
-            let _ = networksetup(&["-setsecurewebproxystate", &backup.service, "off"]);
+            let _ = networksetup(&["-setsecurewebproxystate", svc, "off"]);
         }
     }
     Ok(())
