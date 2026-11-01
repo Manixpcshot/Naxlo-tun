@@ -52,6 +52,6 @@
 [1m[96m278[0m [1m[96m|[0m pub fn purge_downloaded_cores(base: &Path) {
     [1m[96m|[0m        [1m[93m^^^^^^^^^^^^^^^^^^^^^^[0m
 
-[1m[93mwarning[0m: `naxlo` (lib test) generated 5 warnings (4 duplicates)
-[1m[93mwarning[0m: `naxlo` (lib) generated 5 warnings (1 duplicate)
-[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 34.73s
+[1m[93mwarning[0m: `naxlo` (lib test) generated 5 warnings (1 duplicate)
+[1m[93mwarning[0m: `naxlo` (lib) generated 5 warnings (4 duplicates)
+[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 39.97s
