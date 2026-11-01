@@ -96,7 +96,7 @@ mod tests {
         assert_eq!(mask_middle("abcdefghijklmnop", 4, 4), "abcd••••••••mnop");
         assert_eq!(mask_middle("short", 4, 4), "•••••");
         assert_eq!(mask_address("1.2.3.4"), "1.2.••.••");
-        assert_eq!(mask_address("example.com"), "exa••••••••om");
+        assert_eq!(mask_address("example.com"), "exa•••••com");
         assert_eq!(mask_url("https://example.com/sub/abcdef").contains("•"), true);
     }
 }

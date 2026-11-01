@@ -665,7 +665,7 @@ mod tests {
         assert_eq!(s.port, 8443);
         assert_eq!(s.security, "tls");
         assert_eq!(s.network, "ws");
-        assert_eq!(s.sni.as_deref(), Some("h.example.com"));
+        assert_eq!(s.sni.as_deref(), Some("vmess.example.com"));
         assert_eq!(s.encryption.as_deref(), Some("auto"));
     }
 
