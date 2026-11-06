@@ -1,5 +1,5 @@
 [1m[92m    Updating[0m crates.io index
-[1m[92m     Locking[0m 506 packages to highest compatible versions
+[1m[92m     Locking[0m 520 packages to highest compatible versions
 [1m[92m      Adding[0m aes-gcm v0.10.3 [1m[33m(available: v0.11.1)[0m
 [1m[92m      Adding[0m base64 v0.22.1 [1m[33m(available: v0.23.1)[0m
 [1m[92m      Adding[0m generic-array v0.14.7 [1m[33m(available: v0.14.9)[0m
@@ -9,123 +9,203 @@
 [1m[92m      Adding[0m toml v0.8.2 [1m[33m(available: v0.8.23)[0m
 [1m[92m      Adding[0m toml_datetime v0.6.3 [1m[33m(available: v0.6.11)[0m
 [1m[92m      Adding[0m toml_edit v0.20.2 [1m[33m(available: v0.20.7)[0m
-[1m[92m      Adding[0m zip v2.6.1 [1m[33m(available: v9.2.1)[0m
-[1m[92m   Compiling[0m naxlo v1.8.0 (/home/runner/work/Naxlo-tun/Naxlo-tun/tauri)
-[1m[33mwarning[0m[1m: function `err_str` is never used[0m
-  [1m[94m--> [0msrc/l10n.rs:23:8
-   [1m[94m|[0m
-[1m[94m23[0m [1m[94m|[0m pub fn err_str(message: LString) -> String {
-   [1m[94m|[0m        [1m[33m^^^^^^^[0m
-   [1m[94m|[0m
-   [1m[94m= [0m[1mnote[0m: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
-
-[1m[33mwarning[0m[1m: field `status` is never read[0m
-  [1m[94m--> [0msrc/net.rs:16:9
-   [1m[94m|[0m
-[1m[94m14[0m [1m[94m|[0m pub struct ProbeResult {
-   [1m[94m|[0m            [1m[94m-----------[0m [1m[94mfield in this struct[0m
-[1m[94m15[0m [1m[94m|[0m     pub ok: bool,
-[1m[94m16[0m [1m[94m|[0m     pub status: u16,
-   [1m[94m|[0m         [1m[33m^^^^^^[0m
-
-[1m[33mwarning[0m[1m: field `status` is never read[0m
-  [1m[94m--> [0msrc/net.rs:25:9
-   [1m[94m|[0m
-[1m[94m21[0m [1m[94m|[0m pub struct Throughput {
-   [1m[94m|[0m            [1m[94m----------[0m [1m[94mfield in this struct[0m
-[1m[94m...[0m
-[1m[94m25[0m [1m[94m|[0m     pub status: u16,
-   [1m[94m|[0m         [1m[33m^^^^^^[0m
-
-[1m[33mwarning[0m[1m: method `is_alive` is never used[0m
-   [1m[94m--> [0msrc/runner.rs:152:12
+[1m[92m      Adding[0m zip v2.6.1 [1m[33m(available: v9.4.1)[0m
+[1m[92m Downloading[0m crates ...
+[1m[92m  Downloaded[0m cc v1.11.0
+[1m[92m  Downloaded[0m auto-launch v0.6.0
+[1m[92m  Downloaded[0m async-compression v0.4.52
+[1m[92m  Downloaded[0m constant_time_eq v0.3.1
+[1m[92m  Downloaded[0m compression-codecs v0.4.47
+[1m[92m  Downloaded[0m crc32fast v1.5.4
+[1m[92m  Downloaded[0m dirs v6.0.0
+[1m[92m  Downloaded[0m hmac v0.12.1
+[1m[92m  Downloaded[0m jiff-core v0.1.2
+[1m[92m  Downloaded[0m jiff v0.2.39
+[1m[92m  Downloaded[0m mime v0.3.18
+[1m[92m  Downloaded[0m nix v0.31.3
+[1m[92m  Downloaded[0m os_info v3.15.0
+[1m[92m  Downloaded[0m pbkdf2 v0.12.2
+[1m[92m  Downloaded[0m sha1 v0.10.7
+[1m[92m  Downloaded[0m tauri-plugin-autostart v2.7.0
+[1m[92m  Downloaded[0m toml v1.2.0+spec-1.1.0
+[1m[92m  Downloaded[0m toml_writer v1.2.0+spec-1.1.0
+[1m[92m  Downloaded[0m winnow v1.0.5
+[1m[92m  Downloaded[0m zeroize_derive v1.5.0
+[1m[92m   Compiling[0m libc v0.2.191
+[1m[92m   Compiling[0m cc v1.11.0
+[1m[92m   Compiling[0m winnow v1.0.5
+[1m[92m   Compiling[0m toml_parser v1.1.5+spec-1.1.0
+[1m[92m   Compiling[0m parking_lot_core v0.9.12
+[1m[92m   Compiling[0m parking_lot v0.12.5
+[1m[92m   Compiling[0m string_cache v0.9.0
+[1m[92m   Compiling[0m getrandom v0.4.3
+[1m[92m   Compiling[0m toml_writer v1.2.0+spec-1.1.0
+[1m[92m   Compiling[0m uuid v1.29.0
+[1m[92m   Compiling[0m toml v1.2.0+spec-1.1.0
+[1m[92m   Compiling[0m web_atoms v0.2.6
+[1m[92m   Compiling[0m crc32fast v1.5.4
+[1m[92m   Compiling[0m cfb v0.14.0
+[1m[92m   Compiling[0m markup5ever v0.39.0
+[1m[92m   Compiling[0m html5ever v0.39.0
+[1m[92m   Compiling[0m schemars v0.8.22
+[1m[92m    Checking[0m glib-sys v0.18.1
+[1m[92m   Compiling[0m infer v0.22.0
+[1m[92m    Checking[0m gobject-sys v0.18.0
+[1m[92m    Checking[0m gio-sys v0.18.1
+[1m[92m    Checking[0m pango-sys v0.18.0
+[1m[92m    Checking[0m cairo-sys-rs v0.18.2
+[1m[92m   Compiling[0m dom_query v0.28.0
+[1m[92m    Checking[0m getrandom v0.2.17
+[1m[92m    Checking[0m atk-sys v0.18.2
+[1m[92m    Checking[0m errno v0.3.14
+[1m[92m    Checking[0m gdk-pixbuf-sys v0.18.0
+[1m[92m    Checking[0m glib v0.18.5
+[1m[92m    Checking[0m gdk-sys v0.18.2
+[1m[92m   Compiling[0m dirs-sys v0.5.0
+[1m[92m    Checking[0m gtk-sys v0.18.2
+[1m[92m   Compiling[0m tauri-utils v2.10.2
+[1m[92m    Checking[0m signal-hook-registry v1.4.8
+[1m[92m    Checking[0m rand_core v0.6.4
+[1m[92m    Checking[0m mio v1.2.4
+[1m[92m    Checking[0m socket2 v0.6.5
+[1m[92m   Compiling[0m embed-resource v3.0.12
+[1m[92m    Checking[0m tokio v1.54.1
+[1m[92m   Compiling[0m tauri-winres v0.3.7
+[1m[92m    Checking[0m crypto-common v0.1.7
+[1m[92m    Checking[0m flate2 v1.1.10
+[1m[92m   Compiling[0m dirs v7.0.0
+[1m[92m   Compiling[0m cargo_toml v1.0.1
+[1m[92m    Checking[0m gio v0.18.4
+[1m[92m    Checking[0m cairo-rs v0.18.5
+[1m[92m    Checking[0m atk v0.18.2
+[1m[92m    Checking[0m javascriptcore-rs-sys v1.1.1
+[1m[92m    Checking[0m soup3-sys v0.5.0
+[1m[92m    Checking[0m x11 v2.21.0
+[1m[92m    Checking[0m gdkx11-sys v0.18.2
+[1m[92m    Checking[0m webkit2gtk-sys v2.0.2
+[1m[92m    Checking[0m javascriptcore-rs v1.1.2
+[1m[92m   Compiling[0m zeroize_derive v1.5.0
+[1m[92m   Compiling[0m tauri-plugin v2.7.2
+[1m[92m   Compiling[0m tauri-build v2.7.4
+[1m[92m    Checking[0m zeroize v1.9.1
+[1m[92m    Checking[0m png v0.18.1
+[1m[92m    Checking[0m x11-dl v2.21.0
+[1m[92m   Compiling[0m ring v0.17.14
+[1m[92m   Compiling[0m wayland-backend v0.3.17
+[1m[92m    Checking[0m libloading v0.7.4
+[1m[92m   Compiling[0m getrandom v0.3.4
+[1m[92m   Compiling[0m ico v0.6.0
+[1m[92m    Checking[0m dlopen2 v0.8.2
+[1m[92m    Checking[0m libappindicator-sys v0.9.0
+[1m[92m    Checking[0m gdk-pixbuf v0.18.5
+[1m[92m    Checking[0m pango v0.18.3
+[1m[92m   Compiling[0m tauri v2.12.5
+[1m[92m    Checking[0m soup3 v0.5.0
+[1m[92m    Checking[0m dbus v0.9.12
+[1m[92m    Checking[0m gdkwayland-sys v0.18.2
+[1m[92m   Compiling[0m tray-icon v0.25.1
+[1m[92m    Checking[0m gdk v0.18.2
+[1m[92m    Checking[0m image v0.25.10
+[1m[92m   Compiling[0m tauri-codegen v2.7.4
+[1m[92m    Checking[0m rustls-pki-types v1.15.1
+[1m[92m   Compiling[0m cfg_aliases v0.2.2
+[1m[92m   Compiling[0m nix v0.31.3
+[1m[92m    Checking[0m digest v0.10.7
+[1m[92m    Checking[0m wayland-client v0.31.15
+[1m[92m    Checking[0m gtk v0.18.2
+[1m[92m    Checking[0m gdkx11 v0.18.2
+[1m[92m   Compiling[0m tauri-macros v2.7.4
+[1m[92m   Compiling[0m tauri-plugin-fs v2.7.1
+[1m[92m    Checking[0m mime v0.3.18
+[1m[92m   Compiling[0m rustls v0.23.46
+[1m[92m    Checking[0m cipher v0.4.4
+[1m[92m    Checking[0m wayland-protocols v0.32.13
+[1m[92m    Checking[0m rustls-webpki v0.103.16
+[1m[92m    Checking[0m hyper v1.12.0
+[1m[92m    Checking[0m compression-codecs v0.4.47
+[1m[92m   Compiling[0m tauri-plugin-autostart v2.7.0
+[1m[92m   Compiling[0m tauri-plugin-dialog v2.8.4
+[1m[92m   Compiling[0m tauri-plugin-clipboard-manager v2.5.0
+[1m[92m    Checking[0m universal-hash v0.5.1
+[1m[92m    Checking[0m os_pipe v1.2.3
+[1m[92m    Checking[0m tokio-util v0.7.20
+[1m[92m    Checking[0m tower v0.5.3
+[1m[92m    Checking[0m wayland-protocols-wlr v0.3.12
+[1m[92m    Checking[0m tokio-rustls v0.26.6
+[1m[92m    Checking[0m polyval v0.6.2
+[1m[92m    Checking[0m hyper-util v0.1.21
+[1m[92m    Checking[0m os_info v3.15.0
+[1m[92m    Checking[0m async-compression v0.4.52
+[1m[92m    Checking[0m aes v0.8.4
+[1m[92m    Checking[0m wl-clipboard-rs v0.9.5
+[1m[92m    Checking[0m hmac v0.12.1
+[1m[92m    Checking[0m webpki-roots v1.0.11
+[1m[92m    Checking[0m dirs v6.0.0
+[1m[92m   Compiling[0m zip v2.6.1
+[1m[92m    Checking[0m zopfli v0.8.4
+[1m[92m    Checking[0m hyper-rustls v0.27.10
+[1m[92m    Checking[0m auto-launch v0.6.0
+[1m[92m    Checking[0m tower-http v0.6.11
+[1m[92m    Checking[0m pbkdf2 v0.12.2
+[1m[92m    Checking[0m arboard v3.7.0
+[1m[92m    Checking[0m ghash v0.5.1
+[1m[92m    Checking[0m rfd v0.17.2
+[1m[92m    Checking[0m ctr v0.9.2
+[1m[92m    Checking[0m sha1 v0.10.7
+[1m[92m   Compiling[0m naxlo v1.9.0 (/home/runner/work/Naxlo-tun/Naxlo-tun/tauri)
+[1m[92m    Checking[0m aead v0.5.2
+[1m[92m    Checking[0m constant_time_eq v0.3.1
+[1m[92m    Checking[0m reqwest v0.12.28
+[1m[92m    Checking[0m aes-gcm v0.10.3
+[1m[92m    Checking[0m sha2 v0.10.9
+[1m[92m    Checking[0m webkit2gtk v2.0.2
+[1m[92m    Checking[0m libappindicator v0.9.0
+[1m[92m    Checking[0m muda v0.20.0
+[1m[92m    Checking[0m tao v0.37.2
+[1m[92m    Checking[0m tauri-runtime v2.12.2
+[1m[92m    Checking[0m wry v0.57.1
+[1m[92m    Checking[0m tauri-runtime-wry v2.12.3
+[1m[91merror[E0599][0m[1m: no method named `to_string_lossy` found for enum `FilePath` in the current scope[0m
+   [1m[94m--> [0msrc/commands.rs:431:40
     [1m[94m|[0m
-[1m[94m129[0m [1m[94m|[0m impl RunnerHandle {
-    [1m[94m|[0m [1m[94m-----------------[0m [1m[94mmethod in this implementation[0m
-[1m[94m...[0m
-[1m[94m152[0m [1m[94m|[0m     pub fn is_alive(&self) -> bool {
-    [1m[94m|[0m            [1m[33m^^^^^^^^[0m
-
-[1m[33mwarning[0m[1m: function `purge_downloaded_cores` is never used[0m
-   [1m[94m--> [0msrc/xray_core.rs:278:8
+[1m[94m431[0m [1m[94m|[0m                 Ok(Some(path)) => path.to_string_lossy().into_owned(),
+    [1m[94m|[0m                                        [1m[91m^^^^^^^^^^^^^^^[0m
     [1m[94m|[0m
-[1m[94m278[0m [1m[94m|[0m pub fn purge_downloaded_cores(base: &Path) {
-    [1m[94m|[0m        [1m[33m^^^^^^^^^^^^^^^^^^^^^^[0m
-
-[1m[33mwarning[0m: `naxlo` (lib test) generated 5 warnings
-[1m[33mwarning[0m: `naxlo` (lib) generated 5 warnings (5 duplicates)
-[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 15.37s
-[1m[92m   Compiling[0m naxlo v1.8.0 (/home/runner/work/Naxlo-tun/Naxlo-tun/tauri)
-[1m[33mwarning[0m[1m: function `err_str` is never used[0m
-  [1m[94m--> [0msrc/l10n.rs:23:8
-   [1m[94m|[0m
-[1m[94m23[0m [1m[94m|[0m pub fn err_str(message: LString) -> String {
-   [1m[94m|[0m        [1m[33m^^^^^^^[0m
-   [1m[94m|[0m
-   [1m[94m= [0m[1mnote[0m: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
-
-[1m[33mwarning[0m[1m: field `status` is never read[0m
-  [1m[94m--> [0msrc/net.rs:16:9
-   [1m[94m|[0m
-[1m[94m14[0m [1m[94m|[0m pub struct ProbeResult {
-   [1m[94m|[0m            [1m[94m-----------[0m [1m[94mfield in this struct[0m
-[1m[94m15[0m [1m[94m|[0m     pub ok: bool,
-[1m[94m16[0m [1m[94m|[0m     pub status: u16,
-   [1m[94m|[0m         [1m[33m^^^^^^[0m
-
-[1m[33mwarning[0m[1m: field `status` is never read[0m
-  [1m[94m--> [0msrc/net.rs:25:9
-   [1m[94m|[0m
-[1m[94m21[0m [1m[94m|[0m pub struct Throughput {
-   [1m[94m|[0m            [1m[94m----------[0m [1m[94mfield in this struct[0m
-[1m[94m...[0m
-[1m[94m25[0m [1m[94m|[0m     pub status: u16,
-   [1m[94m|[0m         [1m[33m^^^^^^[0m
-
-[1m[33mwarning[0m[1m: method `is_alive` is never used[0m
-   [1m[94m--> [0msrc/runner.rs:152:12
+[1m[92mnote[0m: the method `to_string_lossy` exists on the type `PathBuf`
+   [1m[94m--> [0m/rustc/58cf8f9c35b355199727627d07ae34a4e2846d67/library/std/src/path.rs:2509:4
+[1m[96mhelp[0m: there is a method `to_string` with a similar name
     [1m[94m|[0m
-[1m[94m129[0m [1m[94m|[0m impl RunnerHandle {
-    [1m[94m|[0m [1m[94m-----------------[0m [1m[94mmethod in this implementation[0m
-[1m[94m...[0m
-[1m[94m152[0m [1m[94m|[0m     pub fn is_alive(&self) -> bool {
-    [1m[94m|[0m            [1m[33m^^^^^^^^[0m
-
-[1m[33mwarning[0m[1m: function `purge_downloaded_cores` is never used[0m
-   [1m[94m--> [0msrc/xray_core.rs:278:8
+[1m[94m431[0m [91m- [0m                Ok(Some(path)) => path.[91mto_string_lossy[0m().into_owned(),
+[1m[94m431[0m [92m+ [0m                Ok(Some(path)) => path.[92mto_string[0m().into_owned(),
     [1m[94m|[0m
-[1m[94m278[0m [1m[94m|[0m pub fn purge_downloaded_cores(base: &Path) {
-    [1m[94m|[0m        [1m[33m^^^^^^^^^^^^^^^^^^^^^^[0m
 
-[1m[33mwarning[0m: `naxlo` (lib test) generated 5 warnings (5 duplicates)
-[1m[33mwarning[0m: `naxlo` (lib) generated 5 warnings
-[1m[92m    Finished[0m `test` profile [unoptimized + debuginfo] target(s) in 9.81s
-[1m[92m     Running[0m unittests src/lib.rs (target/debug/deps/naxlo_lib-19d1b5f9b442e033)
+[1m[91merror[E0599][0m[1m: no method named `to_string_lossy` found for enum `FilePath` in the current scope[0m
+   [1m[94m--> [0msrc/commands.rs:565:25
+    [1m[94m|[0m
+[1m[94m565[0m [1m[94m|[0m     let path = path_buf.to_string_lossy().into_owned();
+    [1m[94m|[0m                         [1m[91m^^^^^^^^^^^^^^^[0m
+    [1m[94m|[0m
+[1m[92mnote[0m: the method `to_string_lossy` exists on the type `PathBuf`
+   [1m[94m--> [0m/rustc/58cf8f9c35b355199727627d07ae34a4e2846d67/library/std/src/path.rs:2509:4
+[1m[96mhelp[0m: there is a method `to_string` with a similar name
+    [1m[94m|[0m
+[1m[94m565[0m [91m- [0m    let path = path_buf.[91mto_string_lossy[0m().into_owned();
+[1m[94m565[0m [92m+ [0m    let path = path_buf.[92mto_string[0m().into_owned();
+    [1m[94m|[0m
 
-running 11 tests
-test parse::tests::base64_detector_rejects_garbage ... ok
-test mask::tests::masks_like_the_ts_helpers ... ok
-test parse::tests::extract_links_handles_base64_payloads ... ok
-test parse::tests::parses_vmess_base64 ... ok
-test parse::tests::reality_without_pbk_is_unsupported ... ok
-test parse::tests::parses_vless_tls_ws ... ok
-test parse::tests::query_roundtrip_is_stable ... ok
-test submeta::tests::parses_profile_titles ... ok
-test submeta::tests::parses_userinfo_header ... ok
-test xray_config::tests::iran_direct_adds_local_rules ... ok
-test xray_config::tests::builds_a_complete_config ... ok
+[1m[91merror[E0599][0m[1m: no method named `is_encrypted` found for struct `ZipFile<'a, R>` in the current scope[0m
+   [1m[94m--> [0msrc/subscription.rs:414:24
+    [1m[94m|[0m
+[1m[94m414[0m [1m[94m|[0m             .map(|f| f.is_encrypted())
+    [1m[94m|[0m                        [1m[91m^^^^^^^^^^^^[0m
+    [1m[94m|[0m
+[1m[96mhelp[0m: there is a method `encrypted` with a similar name
+    [1m[94m|[0m
+[1m[94m414[0m [91m- [0m            .map(|f| f.[91mis_encrypted[0m())
+[1m[94m414[0m [92m+ [0m            .map(|f| f.[92mencrypted[0m())
+    [1m[94m|[0m
 
-test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
-
-[1m[92m     Running[0m unittests src/main.rs (target/debug/deps/naxlo-7c6375b1c47fc4de)
-
-running 0 tests
-
-test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
-
-[1m[92m   Doc-tests[0m naxlo_lib
-
-running 0 tests
-
-test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
-
+[1mFor more information about this error, try `rustc --explain E0599`.[0m
+[1m[91merror[0m: could not compile `naxlo` (lib) due to 3 previous errors
+[1m[33mwarning[0m: build failed, waiting for other jobs to finish...
+[1m[91merror[0m: could not compile `naxlo` (lib test) due to 3 previous errors
