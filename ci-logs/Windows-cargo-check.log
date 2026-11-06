@@ -11,30 +11,47 @@
 [1m[92m      Adding[0m toml_edit v0.20.2 [1m[93m(available: v0.20.7)[0m
 [1m[92m      Adding[0m zip v2.6.1 [1m[93m(available: v9.4.1)[0m
 [1m[92m   Compiling[0m naxlo v1.10.0 (D:\a\Naxlo-tun\Naxlo-tun\tauri)
-[1m[91merror[E0597][0m[1m[97m: `core` does not live long enough[0m
-   [1m[96m--> [0msrc\commands.rs:502:8
-    [1m[96m|[0m
-[1m[96m501[0m [1m[96m|[0m     let core = core_of(&app)?;
-    [1m[96m|[0m         [1m[96m----[0m [1m[96mbinding `core` declared here[0m
-[1m[96m502[0m [1m[96m|[0m     Ok(core.lock().vault.stats.clone())
-    [1m[96m|[0m        [1m[91m^^^^[0m[1m[96m-------[0m
-    [1m[96m|[0m        [1m[96m|[0m
-    [1m[96m|[0m        [1m[91mborrowed value does not live long enough[0m
-    [1m[96m|[0m        [1m[96ma temporary with access to the borrow is created here ...[0m
-[1m[96m503[0m [1m[96m|[0m }
-    [1m[96m|[0m [1m[96m-[0m
-    [1m[96m|[0m [1m[96m|[0m
-    [1m[96m|[0m [1m[96m`core` dropped here while still borrowed[0m
-    [1m[96m|[0m [1m[96m... and the borrow might be used here, when that temporary is dropped and runs the `Drop` code for type `std::sync::MutexGuard`[0m
-    [1m[96m|[0m
-    [1m[96m= [0m[1m[97mnote[0m: the temporary is part of an expression at the end of a block;
-            consider forcing this temporary to be dropped sooner, before the block's local variables are dropped
-[1m[96mhelp[0m: for example, you could save the expression's value in a new local variable `x` and then make `x` be the expression at the end of the block
-    [1m[96m|[0m
-[1m[96m502[0m [1m[96m| [0m    [92mlet x = [0mOk(core.lock().vault.stats.clone())[92m; x[0m
-    [1m[96m|[0m     [92m+++++++[0m                                    [92m+++[0m
+[1m[93mwarning[0m[1m[97m: function `err_str` is never used[0m
+  [1m[96m--> [0msrc\l10n.rs:37:8
+   [1m[96m|[0m
+[1m[96m37[0m [1m[96m|[0m pub fn err_str(message: LString) -> String {
+   [1m[96m|[0m        [1m[93m^^^^^^^[0m
+   [1m[96m|[0m
+   [1m[96m= [0m[1m[97mnote[0m: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
 
-[1m[97mFor more information about this error, try `rustc --explain E0597`.[0m
-[1m[91merror[0m: could not compile `naxlo` (lib test) due to 1 previous error
-[1m[93mwarning[0m: build failed, waiting for other jobs to finish...
-[1m[91merror[0m: could not compile `naxlo` (lib) due to 1 previous error
+[1m[93mwarning[0m[1m[97m: field `status` is never read[0m
+  [1m[96m--> [0msrc\net.rs:16:9
+   [1m[96m|[0m
+[1m[96m14[0m [1m[96m|[0m pub struct ProbeResult {
+   [1m[96m|[0m            [1m[96m-----------[0m [1m[96mfield in this struct[0m
+[1m[96m15[0m [1m[96m|[0m     pub ok: bool,
+[1m[96m16[0m [1m[96m|[0m     pub status: u16,
+   [1m[96m|[0m         [1m[93m^^^^^^[0m
+
+[1m[93mwarning[0m[1m[97m: field `status` is never read[0m
+  [1m[96m--> [0msrc\net.rs:25:9
+   [1m[96m|[0m
+[1m[96m21[0m [1m[96m|[0m pub struct Throughput {
+   [1m[96m|[0m            [1m[96m----------[0m [1m[96mfield in this struct[0m
+[1m[96m...[0m
+[1m[96m25[0m [1m[96m|[0m     pub status: u16,
+   [1m[96m|[0m         [1m[93m^^^^^^[0m
+
+[1m[93mwarning[0m[1m[97m: method `is_alive` is never used[0m
+   [1m[96m--> [0msrc\runner.rs:152:12
+    [1m[96m|[0m
+[1m[96m129[0m [1m[96m|[0m impl RunnerHandle {
+    [1m[96m|[0m [1m[96m-----------------[0m [1m[96mmethod in this implementation[0m
+[1m[96m...[0m
+[1m[96m152[0m [1m[96m|[0m     pub fn is_alive(&self) -> bool {
+    [1m[96m|[0m            [1m[93m^^^^^^^^[0m
+
+[1m[93mwarning[0m[1m[97m: function `purge_downloaded_cores` is never used[0m
+   [1m[96m--> [0msrc\xray_core.rs:279:8
+    [1m[96m|[0m
+[1m[96m279[0m [1m[96m|[0m pub fn purge_downloaded_cores(base: &Path) {
+    [1m[96m|[0m        [1m[93m^^^^^^^^^^^^^^^^^^^^^^[0m
+
+[1m[93mwarning[0m: `naxlo` (lib test) generated 5 warnings (1 duplicate)
+[1m[93mwarning[0m: `naxlo` (lib) generated 5 warnings (4 duplicates)
+[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 38.26s
