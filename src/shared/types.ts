@@ -248,6 +248,32 @@ export interface Toast {
 }
 
 /** IPC channel names — kept in one place so main/preload/renderer stay in sync. */
+/** One recorded proxy session (desktop stats page). */
+export interface SessionStat {
+  serverId: string
+  serverName: string
+  country: string | null
+  mode: 'proxy' | 'tun'
+  startedAt: number
+  /** 0 while the session is still open (app running / crashed). */
+  endedAt: number
+  /** 'user' | 'failover' | 'failure' | 'app-exit' | … */
+  reason: string
+}
+
+/** One download-throughput measurement taken through the local proxy. */
+export interface SpeedSample {
+  at: number
+  mbps: number
+  ms: number
+}
+
+/** Usage statistics kept inside the encrypted vault. */
+export interface StatsPayload {
+  sessions: SessionStat[]
+  speed: SpeedSample[]
+}
+
 export const IPC = {
   stateGet: 'naxlo:state:get',
   stateChanged: 'naxlo:state:changed',
@@ -268,6 +294,8 @@ export const IPC = {
   subscriptionImportFile: 'naxlo:subscription:import-file',
   subscriptionRemove: 'naxlo:subscription:remove',
   speedTest: 'naxlo:speed:test',
+  statsGet: 'naxlo:stats:get',
+  statsClear: 'naxlo:stats:clear',
   connect: 'naxlo:connect',
   disconnect: 'naxlo:disconnect',
   settingsGet: 'naxlo:settings:get',

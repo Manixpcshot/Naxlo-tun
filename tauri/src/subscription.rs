@@ -6,7 +6,7 @@ use std::time::Duration;
 use tauri::{AppHandle, Manager};
 
 use crate::ids::stable_id;
-use crate::l10n::{l, LString};
+use crate::l10n::{l, lt, LString};
 use crate::mask::mask_url;
 use crate::models::{FetchReport, ServerConfig, StoredSubscription, SubUserinfo};
 use crate::parse::{extract_links, is_linkish, parse_proxy_link, try_decode_base64};
@@ -32,9 +32,10 @@ fn http_client() -> Result<reqwest::Client, LString> {
         .user_agent(USER_AGENT)
         .build()
         .map_err(|e| {
-            l(
+            lt(
                 &format!("ساخت کلاینت شبکه ناموفق: {}", e),
                 &format!("Failed to create an HTTP client: {}", e),
+                &format!("HTTP istemcisi oluşturulamadı: {}", e),
             )
         })
 }
@@ -65,17 +66,19 @@ fn friendly_fetch_error(err: &reqwest::Error) -> LString {
             "TLS error while contacting the subscription server",
         );
     }
-    l(
+    lt(
         &format!("دریافت اشتراک ناموفق بود: {}", err),
         &format!("Subscription fetch failed: {}", err),
+        &format!("Abonelik alımı başarısız: {}", err),
     )
 }
 
 fn friendly_status_error(status: u16) -> LString {
     match status {
-        401 | 403 => l(
+        401 | 403 => lt(
             &format!("دسترسی به اشتراک رد شد ({})", status),
             &format!("Subscription access denied ({})", status),
+            &format!("Abonelik erişimi reddedildi ({})", status),
         ),
         404 => l(
             "اشتراک پیدا نشد (۴۰۴)",
@@ -85,13 +88,15 @@ fn friendly_status_error(status: u16) -> LString {
             "سرور اشتراک درخواست‌ها را محدود کرده است (۴۲۹)",
             "Subscription server rate-limited the request (429)",
         ),
-        s if s >= 500 => l(
+        s if s >= 500 => lt(
             &format!("سرور اشتراک پاسخ خطا داد ({})", s),
             &format!("Subscription server error ({})", s),
+            &format!("Abonelik sunucu hatası ({})", s),
         ),
-        s => l(
+        s => lt(
             &format!("سرور اشتراک پاسخ غیرمنتظره داد ({})", s),
             &format!("Unexpected subscription response ({})", s),
+            &format!("Beklenmeyen abonelik yanıtı ({})", s),
         ),
     }
 }

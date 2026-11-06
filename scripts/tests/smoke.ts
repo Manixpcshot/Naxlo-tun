@@ -433,6 +433,90 @@ test('flag stylesheet selectors match the Flag component contract', () => {
   assert.ok(!/^\.flag-[a-z]{2}\{/m.test(css), 'class-based flag selectors are dead code')
 })
 
+/* ------------------------------------------------------------------ stats */
+
+test('stats: aggregation splits midnight-spanning sessions and ignores open ones', () => {
+  const { aggregateStats, dayKey, formatMinutes } = require('../../src/shared/stats') as typeof import('../../src/shared/stats')
+  const DAY = 86400000
+  const now = Date.now()
+  const today = new Date(now)
+  today.setHours(0, 0, 0, 0)
+  const t0 = today.getTime()
+  const sessions = [
+    {
+      serverId: 'srv-a', serverName: '🇩🇪 DE-1', country: null, mode: 'proxy' as const,
+      startedAt: t0 - 2 * DAY + 10 * 3600000, endedAt: t0 - 2 * DAY + 10 * 3600000 + 90 * 60000, reason: 'user'
+    },
+    {
+      serverId: 'srv-a', serverName: '🇩🇪 DE-1', country: null, mode: 'proxy' as const,
+      startedAt: t0 - 3 * 3600000, endedAt: t0 + 2 * 3600000, reason: 'user'
+    },
+    {
+      serverId: 'srv-b', serverName: '🇫🇷 FR-9', country: null, mode: 'proxy' as const,
+      startedAt: now, endedAt: 0, reason: ''
+    }
+  ]
+  const summary = aggregateStats(sessions, 14, now)
+  assert.equal(summary.totalSessions, 2, 'the open session must be ignored')
+  assert.equal(summary.totalMinutes, 390)
+  assert.equal(summary.avgMinutes, 195)
+  assert.equal(summary.daily.length, 14)
+  const byKey = new Map(summary.daily.map((d: { date: string; minutes: number }) => [d.date, d.minutes]))
+  assert.equal(byKey.get(dayKey(t0 - 2 * DAY)), 90)
+  assert.equal(byKey.get(dayKey(t0 - DAY)), 180, 'three hours before midnight land on the previous day')
+  assert.equal(byKey.get(dayKey(t0)), 120)
+  assert.equal(summary.topServers.length, 1)
+  assert.equal(summary.topServers[0].serverId, 'srv-a')
+  assert.equal(summary.topServers[0].sessions, 2)
+  assert.equal(formatMinutes(135), '2h 15m')
+  assert.equal(formatMinutes(60), '1h')
+  assert.equal(formatMinutes(45), '45m')
+})
+
+test('stats: speed samples are trimmed to the newest window', () => {
+  const { trimSpeedSamples } = require('../../src/shared/stats') as typeof import('../../src/shared/stats')
+  const samples = Array.from({ length: 130 }, (_, i) => ({ at: i + 1, mbps: i, ms: 10 }))
+  const trimmed = trimSpeedSamples(samples, 120)
+  assert.equal(trimmed.length, 120)
+  assert.equal(trimmed[0].at, 11)
+  assert.equal(trimmed[119].at, 130)
+})
+
+/* ------------------------------------------------------- turkish coverage */
+
+test('every static main-process L() string has a Turkish translation', () => {
+  const { TR_MAIN } = require('../../src/shared/i18n-tr-main') as typeof import('../../src/shared/i18n-tr-main')
+  const { readdirSync, statSync } = require('node:fs') as typeof import('node:fs')
+  const { join } = require('node:path') as typeof import('node:path')
+  const files: string[] = []
+  const walk = (dir: string): void => {
+    for (const entry of readdirSync(dir)) {
+      const full = join(dir, entry)
+      if (statSync(full).isDirectory()) walk(full)
+      else if (entry.endsWith('.ts')) files.push(full)
+    }
+  }
+  walk(resolve(process.cwd(), 'src/main'))
+  const missing: string[] = []
+  let checked = 0
+  for (const file of files) {
+    const src = readFileSync(file, 'utf8')
+    // L('fa', 'en') or L("fa", "en") with optional explicit third argument.
+    const pattern = /(?<![\w.])L\(\s*('([^'\\]|\\.)*'|"([^"\\]|\\.)*")\s*,\s*('([^'\\]|\\.)*'|"([^"\\]|\\.)*")\s*(,)?/g
+    for (const match of src.matchAll(pattern)) {
+      const enRaw = (match[4] ?? match[5] ?? '').trim()
+      const quote = enRaw[0]
+      const en = enRaw.slice(1, -1).replace(/\\(['"])/g, '$1')
+      if (quote === '`') continue
+      checked++
+      const hasThird = Boolean(match[6])
+      if (!hasThird && !(en in TR_MAIN)) missing.push(`${file}: ${en}`)
+    }
+  }
+  assert.ok(checked >= 70, `expected to scan most L() calls, saw ${checked}`)
+  assert.deepEqual(missing, [], 'strings without Turkish coverage')
+})
+
 /* ------------------------------------------------------------------ report */
 
 if (failures.length) {

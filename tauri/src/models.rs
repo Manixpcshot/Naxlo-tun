@@ -402,6 +402,39 @@ pub struct SpeedResult {
     pub ms: u64,
 }
 
+/// One recorded proxy session (stats page) — shape parity with Electron.
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase", default)]
+pub struct SessionStat {
+    pub server_id: String,
+    pub server_name: String,
+    pub country: Option<String>,
+    /// "proxy" (the Rust edition has no TUN mode yet).
+    pub mode: String,
+    pub started_at: i64,
+    /// 0 while the session is still open (app running / crashed).
+    pub ended_at: i64,
+    /// "user" | "failover" | "failure" | "app-exit" | "stale" | …
+    pub reason: String,
+}
+
+/// One download-throughput measurement taken through the local proxy.
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase", default)]
+pub struct SpeedSample {
+    pub at: i64,
+    pub mbps: f64,
+    pub ms: u64,
+}
+
+/// Usage statistics kept inside the encrypted vault.
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase", default)]
+pub struct StatsPayload {
+    pub sessions: Vec<SessionStat>,
+    pub speed: Vec<SpeedSample>,
+}
+
 /// Masked projection of a server config for the renderer (`toServerView`).
 pub fn to_server_view(server: &ServerConfig, reveal: bool, pinned: bool) -> ServerView {
     let mut view = ServerView {

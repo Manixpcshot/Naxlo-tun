@@ -72,7 +72,8 @@ export async function ensureGeoAssets(
       throw new AppError(
         L(
           `دریافت فایل مسیریابی ${target.file} ناموفق بود (${message})؛ بدون آن قوانین «ایران مستقیم» و «مسدودسازی تبلیغات» کار نمی‌کنند`,
-          `Downloading the routing data file ${target.file} failed (${message}); "Iran direct" and "block ads" rules need it`
+          `Downloading the routing data file ${target.file} failed (${message}); "Iran direct" and "block ads" rules need it`,
+          `Yönlendirme veri dosyası ${target.file} indirilemedi (${message}); "İran doğrudan" ve "reklam engelleme" kuralları bu dosyaya ihtiyaç duyar`
         )
       )
     } finally {

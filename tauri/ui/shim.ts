@@ -10,7 +10,7 @@
 import { invoke } from '@tauri-apps/api/core'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
 import type { AppInfo, AppUpdateInfo, CoreUpdateInfo, FetchReportView, NaxloApi } from '../../src/shared/api'
-import type { AppState, CoreStatus, LogEntry, ServerView, Settings, Toast } from '../../src/shared/bridge'
+import type { AppState, CoreStatus, LogEntry, ServerView, Settings, StatsPayload, Toast } from '../../src/shared/bridge'
 
 type LString = { fa: string; en: string }
 
@@ -92,6 +92,11 @@ const api: NaxloApi = {
 
   speed: {
     test: () => call<{ mbps: number; bytes: number; ms: number }>('speed_test')
+  },
+
+  stats: {
+    get: () => call<StatsPayload>('stats_get'),
+    clear: () => call<StatsPayload>('stats_clear')
   },
 
   connection: {

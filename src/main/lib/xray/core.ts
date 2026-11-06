@@ -176,7 +176,7 @@ export async function downloadCore(
     throw new AppError(
       /abort/i.test(message)
         ? L('دانلود هستهٔ Xray به دلیل پایان مهلت لغو شد', 'Xray core download timed out')
-        : L(`دانلود هستهٔ Xray ناموفق بود (${message})`, `Xray core download failed (${message})`)
+        : L(`دانلود هستهٔ Xray ناموفق بود (${message})`, `Xray core download failed (${message})`, `Xray çekirdeği indirilemedi (${message})`)
     )
   } finally {
     clearTimeout(timer)

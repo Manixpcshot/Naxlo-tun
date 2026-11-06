@@ -17,6 +17,7 @@ import {
 } from './ipc'
 import { initLogger, log, closeLogger } from './lib/logger'
 import { loadVault, getVault, updateVault } from './lib/secretStore'
+import { recoverStats, endSessionIfActive } from './lib/stats'
 import { getSettings } from './lib/settings'
 import { patchState, setConnection, setSubscriptionFetching, subscribeToState, syncSubscriptions } from './state'
 import { manager } from './lib/xray/manager'
@@ -55,6 +56,7 @@ async function bootstrap(): Promise<void> {
 
   const settings = bootstrapSettings()
   loadVault()
+  recoverStats()
   syncSubscriptionCounts()
 
   mainWindow = createMainWindow()
@@ -171,6 +173,7 @@ async function cleanup(): Promise<void> {
 async function quit(): Promise<void> {
   runtime.quitting = true
   await cleanup()
+  endSessionIfActive('app-exit')
   app.exit(0)
 }
 

@@ -20,6 +20,29 @@ export const MESSAGES = {
   navHome: { fa: 'اتصال', en: 'Connect' },
   navServers: { fa: 'سرورها', en: 'Servers' },
   navSubscription: { fa: 'اشتراک', en: 'Subscription' },
+  navStats: { fa: 'آمار', en: 'Stats' },
+
+  /* ---------------- stats ---------------- */
+  statsTitle: { fa: 'آمار مصرف', en: 'Usage statistics' },
+  statsDesc: {
+    fa: 'مدت اتصال، تعداد نشست‌ها و سرورهای پراستفاده — همه روی همین دستگاه و رمزنگاری‌شده.',
+    en: 'Connection time, session counts and your most-used servers — all stored encrypted on this device.'
+  },
+  statsTotalTime: { fa: 'مجموع اتصال', en: 'Total time connected' },
+  statsSessions: { fa: 'نشست‌ها', en: 'Sessions' },
+  statsAvgSession: { fa: 'میانگین هر نشست', en: 'Average session' },
+  statsBestSpeed: { fa: 'بهترین سرعت', en: 'Best speed' },
+  statsDailyTitle: { fa: '۱۴ روز گذشته', en: 'Last 14 days' },
+  statsTopServers: { fa: 'سرورهای پراستفاده', en: 'Most-used servers' },
+  statsSpeedTitle: { fa: 'تاریخچهٔ تست سرعت', en: 'Speed test history' },
+  statsSpeedLast: { fa: 'آخرین تست', en: 'Last test' },
+  statsEmpty: {
+    fa: 'هنوز نشستی ثبت نشده؛ بعد از اولین اتصال این صفحه زنده می‌شود.',
+    en: 'No sessions recorded yet — connect once and this page comes alive.'
+  },
+  statsClear: { fa: 'پاک‌کردن آمار', en: 'Clear stats' },
+  statsCleared: { fa: 'آمار پاک شد', en: 'Statistics cleared' },
+  statsNoSpeed: { fa: 'تست سرعتی ثبت نشده است.', en: 'No speed tests recorded yet.' },
   navSettings: { fa: 'تنظیمات', en: 'Settings' },
   navLogs: { fa: 'گزارش‌ها', en: 'Logs' },
   navAbout: { fa: 'درباره', en: 'About' },

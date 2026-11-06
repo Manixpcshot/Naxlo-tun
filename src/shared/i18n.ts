@@ -8,12 +8,23 @@
 
 export type Lang = 'fa' | 'en' | 'tr'
 
+import { TR_MAIN } from './i18n-tr-main'
+
 export interface LString {
   fa: string
   en: string
+  /** Turkish variant; optional — the renderer falls back to English. */
+  tr?: string
 }
 
-export const L = (fa: string, en: string): LString => ({ fa, en })
+/**
+ * Wrap a main-process string. Static English texts are matched against the
+ * generated Turkish table; interpolated strings should pass `tr` explicitly.
+ */
+export const L = (fa: string, en: string, tr?: string): LString => {
+  const value = tr ?? TR_MAIN[en]
+  return value ? { fa, en, tr: value } : { fa, en }
+}
 
 export function isLString(value: unknown): value is LString {
   return (
@@ -27,8 +38,8 @@ export function isLString(value: unknown): value is LString {
 export function pickL(value: string | LString | null | undefined, lang: Lang): string {
   if (value === null || value === undefined) return ''
   if (typeof value === 'string') return value
-  // Main-process payloads are fa/en; Turkish falls back to English.
-  return lang === 'tr' ? value.en : value[lang]
+  // Turkish falls back to English when no translation is registered.
+  return lang === 'tr' ? (value.tr ?? value.en) : value[lang]
 }
 
 /** Error with a bilingual message; `message` stays Persian for legacy paths. */

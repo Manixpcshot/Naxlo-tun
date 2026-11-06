@@ -53,7 +53,8 @@ export async function ensureWintun(coreDir: string): Promise<string> {
     throw new AppError(
       L(
         `دانلود درایور Wintun ناموفق بود (${message})`,
-        `Wintun driver download failed (${message})`
+        `Wintun driver download failed (${message})`,
+        `Wintun sürücüsü indirilemedi (${message})`
       )
     )
   } finally {
@@ -81,7 +82,7 @@ export async function ensureWintun(coreDir: string): Promise<string> {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     throw new AppError(
-      L(`استخراج درایور Wintun ناموفق بود (${message})`, `Wintun driver extraction failed (${message})`)
+      L(`استخراج درایور Wintun ناموفق بود (${message})`, `Wintun driver extraction failed (${message})`, `Wintun sürücüsü çıkarılamadı (${message})`)
     )
   }
   return dest

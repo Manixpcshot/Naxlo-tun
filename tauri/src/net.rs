@@ -7,7 +7,7 @@ use std::time::{Duration, Instant};
 use futures_util::StreamExt;
 use serde_json::Value;
 
-use crate::l10n::{l, LString};
+use crate::l10n::{l, lt, LString};
 use crate::models::PublicIdentity;
 use crate::util::now_ms;
 
@@ -27,14 +27,14 @@ pub struct Throughput {
 
 fn proxy_client(host: &str, port: u16, timeout: Option<Duration>) -> Result<reqwest::Client, LString> {
     let proxy = reqwest::Proxy::http(format!("http://{}:{}", host, port))
-        .map_err(|e| l(&format!("ساخت پروکسی ناموفق: {}", e), &format!("Failed to build a proxy: {}", e)))?;
+        .map_err(|e| lt(&format!("ساخت پروکسی ناموفق: {}", e), &format!("Failed to build a proxy: {}", e), &format!("Proxy oluşturulamadı: {}", e)))?;
     let mut builder = reqwest::Client::builder().proxy(proxy).user_agent("naxlo/1.0");
     if let Some(t) = timeout {
         builder = builder.timeout(t);
     }
     builder
         .build()
-        .map_err(|e| l(&format!("ساخت کلاینت شبکه ناموفق: {}", e), &format!("Failed to create an HTTP client: {}", e)))
+        .map_err(|e| lt(&format!("ساخت کلاینت شبکه ناموفق: {}", e), &format!("Failed to create an HTTP client: {}", e), &format!("HTTP istemcisi oluşturulamadı: {}", e)))
 }
 
 /// TCP connect latency probe; `None` on failure/timeout (mirrors `tcpPing`).
@@ -88,9 +88,10 @@ pub async fn request_through_proxy(host: &str, port: u16, url: &str, timeout_ms:
             let message = if e.is_timeout() {
                 l("مهلت تست اتصال تمام شد", "Connection test timed out")
             } else {
-                l(
+                lt(
                     &format!("تست اتصال ناموفق بود: {}", e),
                     &format!("Connection test failed: {}", e),
+                    &format!("Bağlantı testi başarısız: {}", e),
                 )
             };
             ProbeResult { ok: false, status: 0, ms: started.elapsed().as_millis() as u64, error: Some(message) }

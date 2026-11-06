@@ -13,7 +13,7 @@ use aes_gcm::{Aes256Gcm, Key, Nonce};
 use base64::{engine::general_purpose::STANDARD as B64, Engine as _};
 use serde::{Deserialize, Serialize};
 
-use crate::models::{ServerConfig, StoredSubscription};
+use crate::models::{ServerConfig, StatsPayload, StoredSubscription};
 use crate::settings::set_owner_only;
 
 const VAULT_VERSION: u32 = 2;
@@ -30,6 +30,8 @@ pub struct VaultPayload {
     pub selected_server_id: Option<String>,
     pub last_connected_at: Option<i64>,
     pub last_updated_at: Option<i64>,
+    /// Usage statistics (sessions + speed samples); capped, non-secret.
+    pub stats: StatsPayload,
 }
 
 #[derive(Serialize, Deserialize)]

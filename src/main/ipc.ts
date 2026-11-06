@@ -17,6 +17,7 @@ import { log, getLogs, clearLogs, onLog, setLogLevel } from './lib/logger'
 import { redact, registerSecret, clearSecrets } from './lib/redact'
 import { refreshFileSubscription, refreshSubscription, subscriptionIdFor, type FetchReport } from './lib/subscription'
 import { measureThroughput } from './lib/net'
+import { clearStats, getStats, recordSpeed } from './lib/stats'
 import { manager } from './lib/xray/manager'
 import { restoreSystemProxy } from './lib/systemProxy'
 import { pickBestServer } from './lib/autoselect'
@@ -236,14 +237,19 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
     for (const target of targets) {
       const result = await measureThroughput('127.0.0.1', state.httpPort, target)
       if (result.ok && result.ms > 0) {
-        const mbps = (result.bytes * 8) / result.ms / 1000
-        return { mbps: Math.round(mbps * 10) / 10, bytes: result.bytes, ms: result.ms }
+        const mbps = Math.round(((result.bytes * 8) / result.ms / 1000) * 10) / 10
+        recordSpeed(mbps, result.ms)
+        return { mbps, bytes: result.bytes, ms: result.ms }
       }
     }
     throw new AppError(
       L('تست سرعت ناموفق بود؛ سرورهای اندازه‌گیری در دسترس نیستند', 'Speed test failed — measurement servers are unreachable')
     )
   })
+
+  handle(IPC.statsGet, async () => getStats())
+
+  handle(IPC.statsClear, async () => clearStats())
 
   handle(IPC.subscriptionClear, async () => {
     if (manager.isConnected) await manager.disconnect('subscription-cleared')
@@ -284,7 +290,7 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
       const best = pickBestServer(getVault().servers)
       if (!best) throw new AppError(L('سرور پشتیبانی‌شده‌ای برای انتخاب خودکار وجود ندارد', 'No supported server is available for auto selection'))
       log.info(SCOPE, `auto selection picked ${best.name}`)
-      toast('info', L(`انتخاب خودکار: ${best.name}`, `Auto-picked: ${best.name}`))
+      toast('info', L(`انتخاب خودکار: ${best.name}`, `Auto-picked: ${best.name}`, `Otomatik seçildi: ${best.name}`))
       target = best.id
     }
     await manager.connect(target)

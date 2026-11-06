@@ -14,7 +14,7 @@ use crate::l10n::LString;
 use crate::mask::mask_url;
 use crate::models::{
     to_server_view, AppState, CoreLocation, CoreStatus, LastError, LogEntry, ServerView,
-    SubscriptionView, Toast, UpdateState,
+    SessionStat, SpeedSample, SubscriptionView, Toast, UpdateState,
 };
 use crate::settings::Settings;
 use crate::util::{file_name_of, now_ms, rand_hex};
@@ -135,6 +135,7 @@ impl AppCore {
     /// reconciliation (off-thread — PowerShell can be slow) and auto-refresh.
     pub fn bootstrap(&self) {
         crate::runner::cleanup_stale_configs(&self.base_dir);
+        self.recover_stats();
         self.refresh_core_status();
         let app = self.app.clone();
         std::thread::spawn(move || {
@@ -354,6 +355,95 @@ impl AppCore {
 
     pub fn is_connected(&self) -> bool {
         self.lock().runner.is_some()
+    }
+
+    /* ------------------------------------------------------------ stats */
+
+    /// Close sessions left open by a previous crash/kill (bootstrap).
+    pub fn recover_stats(&self) {
+        let touched = {
+            let mut g = self.lock();
+            let mut touched = false;
+            for session in g.vault.stats.sessions.iter_mut() {
+                if !(session.ended_at > session.started_at) {
+                    session.ended_at = session.started_at;
+                    session.reason = "stale".to_string();
+                    touched = true;
+                }
+            }
+            touched
+        };
+        if touched {
+            self.log("info", "stats", "closed stale sessions from a previous run");
+            self.save_vault();
+        }
+    }
+
+    /// Open a session record (stored with `ended_at = 0` until it closes).
+    pub fn begin_session(&self, server_id: &str, server_name: &str, mode: &str) {
+        {
+            let mut g = self.lock();
+            g.vault.stats.sessions.push(SessionStat {
+                server_id: server_id.to_string(),
+                server_name: server_name.to_string(),
+                country: None,
+                mode: mode.to_string(),
+                started_at: now_ms(),
+                ended_at: 0,
+                reason: String::new(),
+            });
+            cap_sessions(&mut g.vault.stats.sessions);
+        }
+        self.save_vault();
+    }
+
+    /// Close the open session (if any) with the given reason.
+    pub fn end_session(&self, reason: &str) {
+        let touched = {
+            let mut g = self.lock();
+            let ended_at = now_ms();
+            let open = g
+                .vault
+                .stats
+                .sessions
+                .iter_mut()
+                .rev()
+                .find(|s| !(s.ended_at > s.started_at));
+            match open {
+                Some(session) => {
+                    session.ended_at = ended_at;
+                    session.reason = reason.to_string();
+                    true
+                }
+                None => false,
+            }
+        };
+        if touched {
+            self.save_vault();
+        }
+    }
+
+    /// Append a speed-test sample (capped, newest kept).
+    pub fn record_speed(&self, mbps: f64, ms: u64) {
+        {
+            let mut g = self.lock();
+            g.vault.stats.speed.push(SpeedSample { at: now_ms(), mbps, ms });
+            if g.vault.stats.speed.len() > SPEED_CAP {
+                let drop = g.vault.stats.speed.len() - SPEED_CAP;
+                g.vault.stats.speed.drain(0..drop);
+            }
+        }
+        self.save_vault();
+    }
+}
+
+const SESSION_CAP: usize = 400;
+const SPEED_CAP: usize = 120;
+
+fn cap_sessions(sessions: &mut Vec<SessionStat>) {
+    if sessions.len() > SESSION_CAP {
+        let drop = sessions.len() - SESSION_CAP;
+        sessions.drain(0..drop);
     }
 }
 

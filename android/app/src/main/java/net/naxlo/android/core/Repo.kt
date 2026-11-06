@@ -37,6 +37,7 @@ object AppState {
     fun setConnection(value: ConnectionState, error: String? = null) {
         _connection.value = value
         _error.value = error
+        Repo.refreshTile()
     }
 
     fun setLatency(value: Long?) {
@@ -49,6 +50,15 @@ object AppState {
 
     fun bumpRevision() {
         _revision.value += 1
+    }
+}
+
+/** Keep the Quick Settings tile in sync with the tunnel state. */
+internal fun refreshTileNow(context: Context?) {
+    if (context == null) return
+    try {
+        net.naxlo.android.vpn.NaxloTileService.requestRefresh(context)
+    } catch (_: Exception) {
     }
 }
 
@@ -67,6 +77,11 @@ object Repo {
     fun init(context: Context) {
         appContext = context.applicationContext
         state = Vault.load()
+    }
+
+    /** Best-effort Quick Settings tile refresh (safe before init). */
+    fun refreshTile() {
+        if (::appContext.isInitialized) refreshTileNow(appContext)
     }
 
     fun update(transform: (VaultState) -> VaultState) {

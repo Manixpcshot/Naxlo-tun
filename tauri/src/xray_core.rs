@@ -9,7 +9,7 @@ use futures_util::StreamExt;
 use serde_json::Value;
 use sha2::{Digest, Sha256, Sha512};
 
-use crate::l10n::{l, LString};
+use crate::l10n::{l, lt, LString};
 use crate::models::CoreLocation;
 
 /// Pinned core release — same pin as the Electron edition (`PINNED_XRAY_VERSION`).
@@ -44,7 +44,7 @@ fn http_client() -> Result<reqwest::Client, LString> {
     reqwest::Client::builder()
         .user_agent("naxlo")
         .build()
-        .map_err(|e| l(&format!("ساخت کلاینت شبکه ناموفق: {}", e), &format!("Failed to create an HTTP client: {}", e)))
+        .map_err(|e| lt(&format!("ساخت کلاینت شبکه ناموفق: {}", e), &format!("Failed to create an HTTP client: {}", e), &format!("HTTP istemcisi oluşturulamadı: {}", e)))
 }
 
 /// Locate a usable core: user override first, then the managed download dir.
@@ -125,11 +125,12 @@ where
             .get(&url)
             .send()
             .await
-            .map_err(|e| l(&format!("دریافت هستهٔ Xray ناموفق بود: {}", e), &format!("Failed to download the Xray core: {}", e)))?;
+            .map_err(|e| lt(&format!("دریافت هستهٔ Xray ناموفق بود: {}", e), &format!("Failed to download the Xray core: {}", e), &format!("Xray çekirdeği indirilemedi: {}", e)))?;
         if !resp.status().is_success() {
-            return Err(l(
+            return Err(lt(
                 &format!("خطای HTTP {} هنگام دریافت هستهٔ Xray", resp.status().as_u16()),
                 &format!("HTTP {} while downloading the Xray core", resp.status().as_u16()),
+                &format!("Xray çekirdeği indirilirken HTTP {} hatası", resp.status().as_u16()),
             ));
         }
         let total = resp.content_length();
@@ -137,7 +138,7 @@ where
         let mut buf: Vec<u8> = Vec::new();
         while let Some(chunk) = stream.next().await {
             let chunk = chunk
-                .map_err(|e| l(&format!("دریافت هستهٔ Xray قطع شد: {}", e), &format!("Xray core download interrupted: {}", e)))?;
+                .map_err(|e| lt(&format!("دریافت هستهٔ Xray قطع شد: {}", e), &format!("Xray core download interrupted: {}", e), &format!("Xray çekirdeği indirmesi kesintiye uğradı: {}", e)))?;
             buf.extend_from_slice(&chunk);
             on_progress(buf.len(), total);
         }
@@ -161,7 +162,7 @@ where
         let _ = fs::remove_dir_all(&dest);
     }
     fs::create_dir_all(&dest)
-        .map_err(|e| l(&format!("ساخت پوشهٔ هسته ناموفق: {}", e), &format!("Failed to create the core directory: {}", e)))?;
+        .map_err(|e| lt(&format!("ساخت پوشهٔ هسته ناموفق: {}", e), &format!("Failed to create the core directory: {}", e), &format!("Çekirdek dizini oluşturulamadı: {}", e)))?;
     extract(&bytes, &dest)?;
 
     let exe = dest.join(executable_name());
@@ -245,7 +246,7 @@ fn extract(bytes: &[u8], dest: &Path) -> Result<(), LString> {
     for i in 0..archive.len() {
         let mut file = archive
             .by_index(i)
-            .map_err(|e| l(&format!("خواندن آرشیو ناموفق: {}", e), &format!("Failed to read the archive: {}", e)))?;
+            .map_err(|e| lt(&format!("خواندن آرشیو ناموفق: {}", e), &format!("Failed to read the archive: {}", e), &format!("Arşiv okunamadı: {}", e)))?;
         let Some(name) = file.enclosed_name() else { continue };
         let out = dest.join(&name);
         if !out.starts_with(dest) {
@@ -257,13 +258,13 @@ fn extract(bytes: &[u8], dest: &Path) -> Result<(), LString> {
         }
         if let Some(parent) = out.parent() {
             fs::create_dir_all(parent)
-                .map_err(|e| l(&format!("ساخت پوشه ناموفق: {}", e), &format!("Failed to create a directory: {}", e)))?;
+                .map_err(|e| lt(&format!("ساخت پوشه ناموفق: {}", e), &format!("Failed to create a directory: {}", e), &format!("Dizin oluşturulamadı: {}", e)))?;
         }
         let mut buf = Vec::new();
         file.read_to_end(&mut buf)
-            .map_err(|e| l(&format!("استخراج ناموفق: {}", e), &format!("Extraction failed: {}", e)))?;
+            .map_err(|e| lt(&format!("استخراج ناموفق: {}", e), &format!("Extraction failed: {}", e), &format!("Çıkarma işlemi başarısız: {}", e)))?;
         fs::write(&out, &buf)
-            .map_err(|e| l(&format!("نوشتن فایل ناموفق: {}", e), &format!("Failed to write a file: {}", e)))?;
+            .map_err(|e| lt(&format!("نوشتن فایل ناموفق: {}", e), &format!("Failed to write a file: {}", e), &format!("Dosya yazılamadı: {}", e)))?;
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
