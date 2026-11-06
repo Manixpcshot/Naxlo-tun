@@ -37,7 +37,14 @@ type Envelope<T> = { ok: true; data: T } | { ok: false; error: LString }
 const ok = <T>(data: T): Envelope<T> => ({ ok: true, data })
 const fail = (error: unknown): Envelope<never> => {
   const localized = toLString(error)
-  return { ok: false, error: { fa: redact(localized.fa), en: redact(localized.en) } }
+  return {
+    ok: false,
+    error: {
+      fa: redact(localized.fa),
+      en: redact(localized.en),
+      ...(localized.tr ? { tr: redact(localized.tr) } : {})
+    }
+  }
 }
 
 function handle<T>(channel: string, fn: (...args: any[]) => Promise<T> | T): void {

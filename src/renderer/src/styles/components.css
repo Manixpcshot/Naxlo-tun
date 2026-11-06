@@ -2120,3 +2120,9 @@ html[dir='ltr'] .logline {
   gap: 8px;
   flex-wrap: wrap;
 }
+
+/* The speed sparkline must never overflow its card on narrow windows. */
+.speedwrap svg {
+  max-width: 100%;
+  height: auto;
+}

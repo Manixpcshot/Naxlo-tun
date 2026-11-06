@@ -6,7 +6,7 @@
  */
 import React, { createContext, useCallback, useContext, useEffect, useMemo } from 'react'
 import type { LString, Lang } from '@shared/i18n'
-import { isLString } from '@shared/i18n'
+import { pickL } from '@shared/i18n'
 import { setFormatLocale } from './format'
 import { TR } from './i18n-tr'
 import { useStore } from './store'
@@ -529,11 +529,10 @@ export function I18nProvider({ children }: { children: React.ReactNode }): React
     [lang]
   )
 
-  const pick = useCallback((value: string | LString | null | undefined): string => {
-    if (value === null || value === undefined) return ''
-    if (isLString(value)) return lang === 'tr' ? value.en : value[lang]
-    return value
-  }, [lang])
+  const pick = useCallback(
+    (value: string | LString | null | undefined): string => pickL(value, lang),
+    [lang]
+  )
 
   const setLang = useCallback(
     (next: Lang) => {

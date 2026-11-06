@@ -634,6 +634,7 @@ fn spawn_latency_timer(app: &AppHandle, gen: u64) {
             if !alive {
                 return;
             }
+            core.touch_active_session();
             let listen = listen_host(&settings);
             let probe = net::request_through_proxy(&listen, settings.http_port, &settings.test_url, 8000).await;
             // Decide under the lock, then act without it: no MutexGuard may be

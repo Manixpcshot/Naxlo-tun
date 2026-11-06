@@ -477,6 +477,7 @@ class XrayManager {
         this.stopLatencyProbe()
         return
       }
+      stats.touchActiveSession()
       const settings = getSettings()
       void requestThroughProxy(settings.listenAddress, settings.httpPort, settings.testUrl, 8000).then((probe) => {
         if (!this.handle) return
