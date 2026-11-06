@@ -411,7 +411,7 @@ pub fn read_config_file(path: &str, password: Option<&str>) -> Result<String, Fi
             .ok_or_else(|| FileError::Message(l("آرشیو خالی بود", "The archive was empty")))?;
         let encrypted = archive
             .by_index(pick)
-            .map(|f| f.is_encrypted())
+            .map(|f| f.encrypted())
             .unwrap_or(true);
         let mut file = match (encrypted, password) {
             (false, _) => archive

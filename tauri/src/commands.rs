@@ -428,7 +428,7 @@ pub async fn subscription_import_file(
                     let _ = tx.send(picked);
                 });
             match rx.await {
-                Ok(Some(path)) => path.to_string_lossy().into_owned(),
+                Ok(Some(path)) => path.to_string(),
                 _ => {
                     return Ok(FetchReport {
                         ok: false,
@@ -562,7 +562,7 @@ pub async fn core_pick(app: AppHandle) -> Result<CoreStatus, String> {
     let Some(path_buf) = picked else {
         return Ok(core.snapshot_state().core);
     };
-    let path = path_buf.to_string_lossy().into_owned();
+    let path = path_buf.to_string();
     if crate::xray_core::read_version(std::path::Path::new(&path)).is_none() {
         return Err(err(l(
             "فایل انتخاب‌شده یک هستهٔ Xray معتبر نیست",
