@@ -6,6 +6,20 @@ All notable changes to Naxlo are documented here. Releases are cut per tag
 The format follows [Keep a Changelog](https://keepachangelog.com/) and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.10.0] - 2026-11-06
+
+### Added
+- **صفحهٔ آمار مصرف (هر دو نسخهٔ دسکتاپ):** نمودار میله‌ای ۱۴ روزهٔ مدت اتصال (با تقسیم درست نشست‌های شبانه‌روز)، جمع کل زمان اتصال، تعداد نشست‌ها، میانگین هر نشست، سرورهای پراستفاده با پرچم کشور و نمودار تاریخچهٔ تست سرعت. نشست‌ها از لحظهٔ اتصال در خزانهٔ رمزنگاری‌شده ثبت می‌شوند (فقط نام سرور و زمان — هرگز آدرس یا اعتبارنامه)، با بستن برنامه یا crash هم نشست‌های باز بسته می‌شوند و دکمهٔ «پاک‌کردن آمار» همه‌چیز را صفر می‌کند.
+- **کاشی Quick Settings اندروید:** اتصال/قطع یک‌ضربی تونل از پنل سریع اندروید بدون باز کردن برنامه؛ وضعیت کاشی زنده است (متصل = فعال با نام سرور)، و در نبود مجوز VPN یا سرور، برنامه را باز می‌کند.
+- **ترکی کامل در پیام‌های بومی:** رشته‌های سمت main در الکترون و `l10n.rs` در نسخهٔ Rust حالا `LString.tr` دارند — خطاها، toastها، منوی tray و هشدار خروج در هر دو نسخه سه‌زبانه‌اند (پیش‌تر کاربران ترکی انگلیسی می‌دیدند). یک تست smoke پوشش ترجمهٔ همهٔ رشته‌های ثابت را گارانتی می‌کند.
+- **Usage statistics page (both desktop editions):** an animated 14-day connection-time chart (midnight-spanning sessions split correctly), totals/averages, most-used servers with country flags and a speed-test history sparkline. Sessions are recorded in the encrypted vault at connect time (server name + timestamps only — never addresses or credentials), open sessions are closed after crashes/quits, and a clear button resets everything.
+- **Android Quick Settings tile:** one-tap tunnel connect/disconnect without opening the app, with a live tile state (active + server name when connected) and a graceful fallback to the app when the VPN permission or a server is missing.
+- **Full Turkish for native messages:** main-process strings (Electron) and `l10n.rs` (Rust) now carry `LString.tr` — errors, toasts, the tray menu and the exit warning are trilingual in both editions (Turkish users previously fell back to English). A smoke test guards the translation coverage.
+
+### Changed
+- میان‌برهای Ctrl+1..7 برای هفت صفحه (آمار = Ctrl+4). / Page hotkeys are now Ctrl+1..7 (stats = Ctrl+4).
+- اندروید: versionCode 2000 و versionName 1.10.0. / Android bumped to versionCode 2000 / versionName 1.10.0.
+
 ## [1.9.0] - 2026-11-06
 
 ### Fixed

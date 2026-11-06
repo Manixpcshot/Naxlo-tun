@@ -11,6 +11,7 @@ import { Toasts } from './components/Toasts'
 import { Home } from './pages/Home'
 import { Servers } from './pages/Servers'
 import { Subscription } from './pages/Subscription'
+import { Stats } from './pages/Stats'
 import { Settings } from './pages/Settings'
 import { Logs } from './pages/Logs'
 import { About } from './pages/About'
@@ -33,9 +34,10 @@ export default function App(): React.ReactElement {
       if (key === '1') setPage('home')
       else if (key === '2') setPage('servers')
       else if (key === '3') setPage('subscription')
-      else if (key === '4') setPage('settings')
-      else if (key === '5') setPage('logs')
-      else if (key === '6') setPage('about')
+      else if (key === '4') setPage('stats')
+      else if (key === '5') setPage('settings')
+      else if (key === '6') setPage('logs')
+      else if (key === '7') setPage('about')
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -94,6 +96,7 @@ export default function App(): React.ReactElement {
                 {page === 'home' ? <Home onNavigate={setPage} /> : null}
                 {page === 'servers' ? <Servers /> : null}
                 {page === 'subscription' ? <Subscription onNavigate={setPage} /> : null}
+                {page === 'stats' ? <Stats /> : null}
                 {page === 'settings' ? <Settings /> : null}
                 {page === 'logs' ? <Logs /> : null}
                 {page === 'about' ? <About /> : null}

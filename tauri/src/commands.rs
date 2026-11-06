@@ -10,7 +10,7 @@ use tauri::{AppHandle, Manager};
 use tauri_plugin_clipboard_manager::ClipboardExt;
 use tauri_plugin_dialog::DialogExt;
 
-use crate::l10n::{l, LString};
+use crate::l10n::{l, lt, LString};
 use crate::manager;
 use crate::models::{
     to_server_view, AppInfo, AppUpdateInfo, CoreStatus, CoreUpdateInfo, FetchReport, LogEntry,
@@ -233,7 +233,7 @@ pub async fn clipboard_write_link(app: AppHandle, server_id: String) -> Result<b
     };
     app.clipboard()
         .write_text(raw)
-        .map_err(|e| err(l(&format!("کپی در کلیپ‌بورد ناموفق: {}", e), &format!("Clipboard write failed: {}", e))))?;
+        .map_err(|e| err(lt(&format!("کپی در کلیپ‌بورد ناموفق: {}", e), &format!("Clipboard write failed: {}", e), &format!("Panoya kopyalanamadı: {}", e))))?;
     core.log("info", "clipboard", "a config link was copied to the clipboard (contents not logged)");
     Ok(true)
 }
@@ -472,6 +472,7 @@ pub async fn speed_test(app: AppHandle) -> Result<SpeedResult, String> {
         if result.ok && result.ms > 0 {
             let mbps = (result.bytes as f64) * 8.0 / (result.ms as f64) / 1000.0;
             let mbps = (mbps * 10.0).round() / 10.0;
+            core.record_speed(mbps, result.ms);
             return Ok(SpeedResult { mbps, bytes: result.bytes, ms: result.ms });
         }
     }
@@ -491,6 +492,26 @@ pub async fn connect(app: AppHandle, server_id: Option<String>) -> Result<String
 #[tauri::command]
 pub async fn disconnect(app: AppHandle) -> Result<String, String> {
     Ok(manager::do_disconnect(&app, "user").await)
+}
+
+/* ------------------------------------------------------------------ stats */
+
+#[tauri::command]
+pub async fn stats_get(app: AppHandle) -> Result<crate::models::StatsPayload, String> {
+    let core = core_of(&app)?;
+    Ok(core.lock().vault.stats.clone())
+}
+
+#[tauri::command]
+pub async fn stats_clear(app: AppHandle) -> Result<crate::models::StatsPayload, String> {
+    let core = core_of(&app)?;
+    {
+        let mut g = core.lock();
+        g.vault.stats = crate::models::StatsPayload::default();
+    }
+    core.save_vault();
+    core.log("info", "stats", "usage statistics cleared");
+    Ok(crate::models::StatsPayload::default())
 }
 
 /* ---------------------------------------------------------------- settings */
@@ -615,7 +636,7 @@ pub async fn logs_clear(app: AppHandle) -> Result<bool, String> {
 pub async fn window_minimize(app: AppHandle) -> Result<bool, String> {
     main_window(&app)?
         .minimize()
-        .map_err(|e| err(l(&format!("کمینه‌کردن پنجره ناموفق: {}", e), "Failed to minimize the window")))?;
+        .map_err(|e| err(lt(&format!("کمینه‌کردن پنجره ناموفق: {}", e), "Failed to minimize the window", "Pencere simge durumuna alınamadı")))?;
     Ok(true)
 }
 

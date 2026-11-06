@@ -60,6 +60,11 @@ const api: NaxloApi = {
     test: () => invoke(IPC.speedTest)
   },
 
+  stats: {
+    get: () => invoke(IPC.statsGet),
+    clear: () => invoke(IPC.statsClear)
+  },
+
   connection: {
     connect: (serverId) => invoke(IPC.connect, serverId),
     disconnect: () => invoke(IPC.disconnect),

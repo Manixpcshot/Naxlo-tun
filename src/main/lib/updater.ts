@@ -58,7 +58,8 @@ export function initAutoUpdater(): void {
         L('نسخهٔ جدید پیدا شد', 'Update found'),
         L(
           `نسخهٔ ${info.version} در حال دانلود است…`,
-          `Version ${info.version} is downloading in the background…`
+          `Version ${info.version} is downloading in the background…`,
+          `${info.version} sürümü arka planda indiriliyor…`
         )
       )
     })
@@ -88,7 +89,8 @@ export function initAutoUpdater(): void {
         L('به‌روزرسانی آمادهٔ نصب است', 'Update ready to install'),
         L(
           `نسخهٔ ${info.version} دانلود شد؛ برنامه یک‌بار بسته و با نسخهٔ جدید اجرا می‌شود.`,
-          `Version ${info.version} downloaded. Naxlo will restart once to install it.`
+          `Version ${info.version} downloaded. Naxlo will restart once to install it.`,
+          `${info.version} sürümü indirildi. Naxlo kurulum için bir kez yeniden başlayacak.`
         )
       )
       if (getSettings().autoUpdate) scheduleInstall(6000)

@@ -13,23 +13,30 @@ use crate::state::AppCore;
 
 pub const TRAY_ID: &str = "naxlo-tray";
 
-fn is_fa(app: &AppHandle) -> bool {
+fn lang(app: &AppHandle) -> String {
     app.try_state::<AppCore>()
-        .map(|core| core.lock().settings.language == "fa")
-        .unwrap_or(false)
+        .map(|core| core.lock().settings.language.clone())
+        .unwrap_or_else(|| "en".to_string())
 }
 
+/// [status, connect, disconnect, open, quit]
 fn labels(app: &AppHandle) -> Vec<&'static str> {
-    if is_fa(app) {
-        vec![
+    match lang(app).as_str() {
+        "fa" => vec![
             "وضعیت",
             "متصل شو",
             "قطع کن",
             "باز کردن naxlo",
             "خروج",
-        ]
-    } else {
-        vec!["Status", "Connect", "Disconnect", "Open naxlo", "Quit"]
+        ],
+        "tr" => vec![
+            "Durum",
+            "Bağlan",
+            "Bağlantıyı kes",
+            "naxlo'yu aç",
+            "Çıkış",
+        ],
+        _ => vec!["Status", "Connect", "Disconnect", "Open naxlo", "Quit"],
     }
 }
 
@@ -134,15 +141,17 @@ pub fn refresh(app: &AppHandle) {
     if let Ok(menu) = build_menu(app) {
         let _ = tray.set_menu(Some(menu));
     }
-    let fa = is_fa(app);
     let connected = app
         .try_state::<AppCore>()
         .map(|core| core.lock().runner.is_some())
         .unwrap_or(false);
-    let status = if connected {
-        if fa { "متصل" } else { "Connected" }
-    } else {
-        if fa { "قطع" } else { "Not connected" }
+    let status = match (lang(app).as_str(), connected) {
+        ("fa", true) => "متصل",
+        ("fa", false) => "قطع",
+        ("tr", true) => "Bağlı",
+        ("tr", false) => "Bağlı değil",
+        (_, true) => "Connected",
+        (_, false) => "Not connected",
     };
     let _ = tray.set_tooltip(Some(&format!("naxlo — {}", status)));
 }

@@ -5,7 +5,7 @@ use std::time::Duration;
 
 use tauri::{AppHandle, Emitter, Manager};
 
-use crate::l10n::{l, LString};
+use crate::l10n::{l, lt, LString};
 use crate::mask::mask_address;
 use crate::models::{CoreLocation, ServerConfig};
 use crate::net;
@@ -138,9 +138,10 @@ pub async fn do_connect(app: &AppHandle, server_id: Option<String>) -> Result<St
                 core.log("info", "connect", "auto selection picked the best server");
                 core.toast(
                     "info",
-                    l(
+                    lt(
                         &format!("انتخاب خودکار: {}", name),
                         &format!("Auto-picked: {}", name),
+                        &format!("Otomatik seçildi: {}", name),
                     ),
                     None,
                 );
@@ -161,9 +162,10 @@ pub async fn do_connect(app: &AppHandle, server_id: Option<String>) -> Result<St
             if net::port_in_use(&listen, settings.socks_port).await {
                 fail_connect(
                     app,
-                    l(
+                    lt(
                         &format!("پورت {} توسط برنامهٔ دیگری اشغال شده است", settings.socks_port),
                         &format!("Port {} is already in use by another app", settings.socks_port),
+                        &format!("{} portu başka bir uygulama tarafından kullanılıyor", settings.socks_port),
                     ),
                 )
                 .await;
@@ -172,9 +174,10 @@ pub async fn do_connect(app: &AppHandle, server_id: Option<String>) -> Result<St
             if net::port_in_use(&listen, settings.http_port).await {
                 fail_connect(
                     app,
-                    l(
+                    lt(
                         &format!("پورت {} توسط برنامهٔ دیگری اشغال شده است", settings.http_port),
                         &format!("Port {} is already in use by another app", settings.http_port),
+                        &format!("{} portu başka bir uygulama tarafından kullanılıyor", settings.http_port),
                     ),
                 )
                 .await;
@@ -198,9 +201,10 @@ pub async fn do_connect(app: &AppHandle, server_id: Option<String>) -> Result<St
                 Err(e) => {
                     fail_connect(
                         app,
-                        l(
+                        lt(
                             &format!("اجرای هستهٔ Xray ناموفق بود: {}", e),
                             &format!("Failed to start the Xray core: {}", e),
+                            &format!("Xray çekirdeği başlatılamadı: {}", e),
                         ),
                     )
                     .await;
@@ -268,11 +272,13 @@ pub async fn do_connect(app: &AppHandle, server_id: Option<String>) -> Result<St
                 g.latency_gen
             };
             core.save_vault();
+            core.begin_session(&server.id, &server.name, "proxy");
             spawn_latency_timer(app, gen);
             core.toast(
                 "success",
                 l("اتصال برقرار شد", "Connected"),
-                Some(l(
+                Some(lt(
+                    &format!("{} • {}ms", server.name, probe.ms),
                     &format!("{} • {}ms", server.name, probe.ms),
                     &format!("{} • {}ms", server.name, probe.ms),
                 )),
@@ -332,6 +338,7 @@ pub async fn do_disconnect(app: &AppHandle, reason: &str) -> String {
         g.state.active_server_name = None;
         g.state.active_server_address_masked = None;
     }
+    core.end_session(reason);
     core.set_connection("idle", None);
     core.log("info", "connection", &format!("disconnected ({})", reason));
     if reason == "user" {
@@ -384,6 +391,7 @@ pub async fn cleanup_after_failure(app: &AppHandle, message: LString) {
         g.state.latency_ms = None;
         g.state.identity = None;
     }
+    core.end_session("failure");
     core.set_connection("error", Some(message.into()));
     core.log("error", "connection", "connection failed — state cleaned up");
 }
@@ -400,9 +408,10 @@ pub fn on_core_exited(app: &AppHandle, code: Option<i32>) {
     tauri::async_runtime::spawn(async move {
         cleanup_after_failure(
             &app2,
-            l(
+            lt(
                 &format!("هستهٔ Xray به شکل غیرمنتظره بسته شد (کد {})", desc),
                 &format!("The Xray core exited unexpectedly (code {})", desc),
+                &format!("Xray çekirdeği beklenmedik şekilde kapandı (kod {})", desc),
             ),
         )
         .await;
@@ -596,9 +605,10 @@ pub async fn test_all(app: &AppHandle) -> u64 {
     core.toast(
         "success",
         l("تست سرورها تمام شد", "Server test finished"),
-        Some(l(
+        Some(lt(
             &format!("{} از {} سرور در دسترس بود", reachable, results.len()),
             &format!("{} of {} servers were reachable", reachable, results.len()),
+            &format!("{} / {} sunucuya ulaşılabildi", reachable, results.len()),
         )),
     );
     core.bump_servers();
@@ -674,6 +684,7 @@ fn spawn_latency_timer(app: &AppHandle, gen: u64) {
                                 Some(LString {
                                     fa: format!("اتصال فعلی پاسخ نمی‌دهد؛ در حال امتحان «{}»", next_name),
                                     en: format!("The current server stopped responding; trying \"{}\"", next_name),
+                                    tr: Some(format!("Geçerli sunucu yanıt vermeyi durdurdu; \"{}\" deneniyor", next_name)),
                                 }),
                             );
                             cleanup_after_failure(
@@ -802,21 +813,25 @@ pub fn guarded_close(app: &AppHandle, allow_tray_hide: bool) {
         return;
     }
     core.log("info", "window", "close requested while connected — showing the exit warning");
-    let fa = lang == "fa";
-    let (title, body, ok, cancel) = if fa {
-        (
+    let (title, body, ok, cancel) = match lang.as_str() {
+        "fa" => (
             "اتصال هنوز برقرار است!",
             "پروکسی ناکسلو فعال است. قبل از بستن برنامه آن را خاموش کنیم؟",
             "خاموش کن و ببند",
             "لغو",
-        )
-    } else {
-        (
+        ),
+        "tr" => (
+            "Hâlâ bağlısınız!",
+            "Naxlo proxy'si hâlâ etkin. Kapatmadan önce kapatılsın mı?",
+            "Bağlantıyı kes ve kapat",
+            "İptal",
+        ),
+        _ => (
             "You are still connected!",
             "The Naxlo proxy is still active. Turn it off before closing?",
             "Disconnect and close",
             "Cancel",
-        )
+        ),
     };
     let app2 = app.clone();
     app.dialog()
@@ -845,6 +860,7 @@ pub fn cleanup_sync(app: &AppHandle) {
     };
     if let Some(handle) = handle {
         handle.stop("shutdown");
+        core.end_session("app-exit");
     }
     if applied {
         let _ = sysproxy::restore(&base);

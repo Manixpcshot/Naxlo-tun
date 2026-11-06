@@ -9,12 +9,13 @@ import { useStore } from '../lib/store'
 import { useI18n, type MsgKey } from '../lib/i18n'
 import { fa } from '../lib/format'
 
-export type PageId = 'home' | 'servers' | 'subscription' | 'settings' | 'logs' | 'about'
+export type PageId = 'home' | 'servers' | 'subscription' | 'stats' | 'settings' | 'logs' | 'about'
 
 export const PAGES: Array<{ id: PageId; label: MsgKey; icon: IconName }> = [
   { id: 'home', label: 'navHome', icon: 'bolt' },
   { id: 'servers', label: 'navServers', icon: 'servers' },
   { id: 'subscription', label: 'navSubscription', icon: 'subscription' },
+  { id: 'stats', label: 'navStats', icon: 'activity' },
   { id: 'settings', label: 'navSettings', icon: 'settings' },
   { id: 'logs', label: 'navLogs', icon: 'logs' },
   { id: 'about', label: 'navAbout', icon: 'info' }

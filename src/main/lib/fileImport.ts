@@ -240,14 +240,14 @@ function extractEntry(buf: Buffer, entry: CentralEntry, password?: string | null
       )
     } else {
       throw new AppError(
-        L(`فشرده‌سازی زیپ پشتیبانی نمی‌شود (method ${entry.method})`, `Unsupported zip compression (method ${entry.method})`)
+        L(`فشرده‌سازی زیپ پشتیبانی نمی‌شود (method ${entry.method})`, `Unsupported zip compression (method ${entry.method})`, `Desteklenmeyen zip sıkıştırması (yöntem ${entry.method})`)
       )
     }
   } catch (err) {
     if (err instanceof AppError) throw err
     const message = err instanceof Error ? err.message : String(err)
     if ((entry.flags & 0x1) === 1) throw new FilePasswordWrong(message)
-    throw new AppError(L(`باز کردن آرشیو ناموفق بود: ${message}`, `Could not open the archive: ${message}`))
+    throw new AppError(L(`باز کردن آرشیو ناموفق بود: ${message}`, `Could not open the archive: ${message}`, `Arşiv açılamadı: ${message}`))
   }
 
   if (crc32Buf(data) !== entry.crc) {

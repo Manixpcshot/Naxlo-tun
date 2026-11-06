@@ -11,6 +11,7 @@ import type {
   LogEntry,
   ServerView,
   Settings,
+  StatsPayload,
   Toast
 } from './types'
 
@@ -87,6 +88,12 @@ export interface NaxloApi {
   speed: {
     /** Download-throughput measurement through the local proxy (Mbps). */
     test(): Promise<{ mbps: number; bytes: number; ms: number }>
+  }
+
+  stats: {
+    /** Usage statistics from the encrypted vault (sessions + speed samples). */
+    get(): Promise<StatsPayload>
+    clear(): Promise<StatsPayload>
   }
 
   connection: {

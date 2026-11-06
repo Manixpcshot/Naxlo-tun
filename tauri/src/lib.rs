@@ -87,6 +87,8 @@ pub fn run() {
             commands::subscription_clear,
             commands::subscription_import_file,
             commands::speed_test,
+            commands::stats_get,
+            commands::stats_clear,
             commands::connect,
             commands::disconnect,
             commands::settings_get,

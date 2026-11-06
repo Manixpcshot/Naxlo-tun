@@ -33,7 +33,7 @@ import { networkInterfaces, hostname, userInfo } from 'node:os'
 import { log } from './logger'
 import { registerSecret } from './redact'
 import { bumpServers } from '../state'
-import type { ServerConfig, StoredSubscription } from '../../shared/types'
+import type { ServerConfig, StatsPayload, StoredSubscription } from '../../shared/types'
 import { stableId } from './ids'
 
 const SCOPE = 'vault'
@@ -51,6 +51,8 @@ export interface VaultPayload {
   selectedServerId: string | null
   lastConnectedAt: number | null
   lastUpdatedAt: number | null
+  /** Usage statistics (sessions + speed samples); capped, non-secret. */
+  stats: StatsPayload
 }
 
 type Alg = 'safeStorage' | 'aes-256-gcm'
@@ -71,7 +73,8 @@ let payload: VaultPayload = {
   pinned: [],
   selectedServerId: null,
   lastConnectedAt: null,
-  lastUpdatedAt: null
+  lastUpdatedAt: null,
+  stats: { sessions: [], speed: [] }
 }
 
 let filePath = ''
@@ -206,6 +209,20 @@ function migrateLegacySubscription(): void {
   log.info(SCOPE, 'migrated legacy single-subscription vault to the multi-subscription list')
 }
 
+/** Defensive merge for vaults written before the stats section existed. */
+function sanitizeStats(value: unknown): StatsPayload {
+  const raw = (value ?? {}) as Partial<StatsPayload>
+  const sessions = Array.isArray(raw.sessions)
+    ? raw.sessions.filter(
+        (s) => s && typeof s.serverId === 'string' && typeof s.startedAt === 'number'
+      )
+    : []
+  const speed = Array.isArray(raw.speed)
+    ? raw.speed.filter((s) => s && typeof s.at === 'number' && typeof s.mbps === 'number')
+    : []
+  return { sessions, speed }
+}
+
 export function loadVault(): VaultPayload {
   try {
     if (existsSync(file())) {
@@ -225,7 +242,8 @@ export function loadVault(): VaultPayload {
           pinned: Array.isArray(data.pinned) ? (data.pinned as string[]) : [],
           selectedServerId: data.selectedServerId ?? null,
           lastConnectedAt: data.lastConnectedAt ?? null,
-          lastUpdatedAt: data.lastUpdatedAt ?? null
+          lastUpdatedAt: data.lastUpdatedAt ?? null,
+          stats: sanitizeStats(data.stats)
         }
       } else {
         log.warn(SCOPE, 'vault could not be decrypted; starting empty')
@@ -304,6 +322,9 @@ export function persistNow(): void {
 }
 
 export function wipeVault(): void {
+  // Usage stats are historical (non-secret) and survive a subscription wipe;
+  // the stats page has its own explicit clear action.
+  const stats = payload.stats
   payload = {
     subscriptionUrl: null,
     subscriptionName: null,
@@ -312,7 +333,8 @@ export function wipeVault(): void {
     pinned: [],
     selectedServerId: null,
     lastConnectedAt: null,
-    lastUpdatedAt: null
+    lastUpdatedAt: null,
+    stats
   }
   try {
     if (existsSync(file())) rmSync(file())

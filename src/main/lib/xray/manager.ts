@@ -22,6 +22,7 @@ import { cleanupStaleConfigs, startCore, type RunHandle } from './runner'
 import { fetchIdentityThroughProxy, requestThroughProxy, tcpPing, waitForPort } from '../net'
 import { applySystemProxy, readSystemProxy, restoreSystemProxy } from '../systemProxy'
 import { getState, patchCore, patchState, setConnection, toast } from '../../state'
+import * as stats from '../stats'
 import { maskAddress, PINNED_XRAY_VERSION, type ServerConfig } from '../../../shared/bridge'
 import { AppError, L, toLString } from '../../../shared/i18n'
 
@@ -115,7 +116,7 @@ class XrayManager {
       toast(
         'success',
         L('هستهٔ Xray آماده است', 'Xray core is ready'),
-        L(`نسخهٔ ${version ?? PINNED_XRAY_VERSION}`, `Version ${version ?? PINNED_XRAY_VERSION}`)
+        L(`نسخهٔ ${version ?? PINNED_XRAY_VERSION}`, `Version ${version ?? PINNED_XRAY_VERSION}`, `Sürüm ${version ?? PINNED_XRAY_VERSION}`)
       )
       return this.core
     } catch (err) {
@@ -222,7 +223,8 @@ class XrayManager {
         throw new AppError(
           L(
             `پورت ${settings.socksPort} توسط برنامهٔ دیگری اشغال شده است`,
-            `Port ${settings.socksPort} is already used by another application`
+            `Port ${settings.socksPort} is already used by another application`,
+            `${settings.socksPort} portu başka bir uygulama tarafından kullanılıyor`
           )
         )
       }
@@ -230,7 +232,8 @@ class XrayManager {
         throw new AppError(
           L(
             `پورت ${settings.httpPort} توسط برنامهٔ دیگری اشغال شده است`,
-            `Port ${settings.httpPort} is already used by another application`
+            `Port ${settings.httpPort} is already used by another application`,
+            `${settings.httpPort} portu başka bir uygulama tarafından kullanılıyor`
           )
         )
       }
@@ -271,7 +274,8 @@ class XrayManager {
         await this.cleanupAfterFailure(
           L(
             `هستهٔ Xray به شکل غیرمنتظره بسته شد (کد ${code ?? signal ?? 'نامشخص'})`,
-            `The Xray core exited unexpectedly (code ${code ?? signal ?? 'unknown'})`
+            `The Xray core exited unexpectedly (code ${code ?? signal ?? 'unknown'})`,
+            `Xray çekirdeği beklenmedik şekilde kapandı (kod ${code ?? signal ?? 'bilinmiyor'})`
           )
         )
       })
@@ -311,17 +315,18 @@ class XrayManager {
       if (!probe.ok) {
         throw new AppError(
           probe.error
-            ? L(`تست اتصال ناموفق: ${probe.error}`, `Connection test failed: ${probe.error}`)
-            : L(`تست اتصال ناموفق (کد ${probe.status})`, `Connection test failed (status ${probe.status})`)
+            ? L(`تست اتصال ناموفق: ${probe.error}`, `Connection test failed: ${probe.error}`, `Bağlantı testi başarısız: ${probe.error}`)
+            : L(`تست اتصال ناموفق (کد ${probe.status})`, `Connection test failed (status ${probe.status})`, `Bağlantı testi başarısız (durum ${probe.status})`)
         )
       }
 
       patchState({ startedAt: Date.now(), latencyMs: probe.ms })
       setConnection('connected')
       updateVault({ lastConnectedAt: Date.now() })
+      stats.beginSession(server.id, server.name, settings.connectionMode)
       this.startLatencyProbe()
       log.info(SCOPE, `connected to ${server.name} in ${probe.ms}ms`)
-      toast('success', L('اتصال برقرار شد', 'Connected'), L(`${server.name} • ${probe.ms}ms`, `${server.name} • ${probe.ms}ms`))
+      toast('success', L('اتصال برقرار شد', 'Connected'), L(`${server.name} • ${probe.ms}ms`, `${server.name} • ${probe.ms}ms`, `${server.name} • ${probe.ms}ms`))
 
       void this.refreshIdentity()
     } catch (err) {
@@ -382,6 +387,7 @@ class XrayManager {
     })
     this.activeServerId = null
     this.stopping = false
+    stats.endSession(reason)
     setConnection('idle')
     log.info(SCOPE, `disconnected (${reason})`)
     if (reason === 'user') toast('info', L('اتصال قطع شد', 'Disconnected'))
@@ -459,6 +465,7 @@ class XrayManager {
     this.activeServerId = null
     this.probeFailures = 0
     this.stopping = false
+    stats.endSession('failure')
     setConnection('error', message)
   }
 
@@ -531,7 +538,7 @@ class XrayManager {
     toast(
       'success',
       L('تست تأخیر انجام شد', 'Latency test finished'),
-      L(`${servers.length} سرور بررسی شد`, `${servers.length} servers tested`)
+      L(`${servers.length} سرور بررسی شد`, `${servers.length} servers tested`, `${servers.length} sunucu test edildi`)
     )
     return servers.length
   }

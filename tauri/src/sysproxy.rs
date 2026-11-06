@@ -13,7 +13,7 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-use crate::l10n::{l, LString};
+use crate::l10n::{l, lt, LString};
 use crate::settings::set_owner_only;
 #[cfg(windows)]
 use crate::util::now_ms;
@@ -170,9 +170,10 @@ fn run_powershell(script: &str) -> Result<(i32, String), LString> {
         .creation_flags(CREATE_NO_WINDOW)
         .output()
         .map_err(|e| {
-            l(
+            lt(
                 &format!("اجرای PowerShell ناموفق: {}", e),
                 &format!("Failed to run PowerShell: {}", e),
+                &format!("PowerShell çalıştırılamadı: {}", e),
             )
         })?;
     Ok((out.status.code().unwrap_or(-1), String::from_utf8_lossy(&out.stdout).into_owned()))
@@ -326,9 +327,10 @@ fn networksetup(args: &[&str]) -> Result<String, LString> {
         .args(args)
         .output()
         .map_err(|e| {
-            l(
+            lt(
                 &format!("اجرای networksetup ناموفق: {}", e),
                 &format!("Failed to run networksetup: {}", e),
+                &format!("networksetup çalıştırılamadı: {}", e),
             )
         })?;
     if !out.status.success() {
@@ -467,9 +469,10 @@ fn gsettings(args: &[&str]) -> Result<String, LString> {
         .args(args)
         .output()
         .map_err(|e| {
-            l(
+            lt(
                 &format!("اجرای gsettings ناموفق: {}", e),
                 &format!("Failed to run gsettings: {}", e),
+                &format!("gsettings çalıştırılamadı: {}", e),
             )
         })?;
     if !out.status.success() {

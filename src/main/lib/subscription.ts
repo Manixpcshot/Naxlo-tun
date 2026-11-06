@@ -309,7 +309,7 @@ function friendlyFetchError(message: string): LString {
   if (/HTTP 429/i.test(message)) return L('درخواست‌های بیش از حد؛ کمی بعد دوباره تلاش کنید', 'Too many requests — try again in a moment')
   if (/HTTP 5\d\d/.test(message)) return L('خطای سمت سرور اشتراک', 'Subscription server error (5xx)')
   if (/certificate|SSL|TLS/i.test(message)) return L('خطای گواهی/رمزنگاری در اتصال به سرور اشتراک', 'Certificate/TLS error while contacting the subscription server')
-  return L(`دریافت اشتراک ناموفق بود: ${message}`, `Subscription fetch failed: ${message}`)
+  return L(`دریافت اشتراک ناموفق بود: ${message}`, `Subscription fetch failed: ${message}`, `Abonelik alımı başarısız: ${message}`)
 }
 
 /** Parse a locally supplied payload (file import / paste). */

@@ -37,6 +37,7 @@ Electron + React (ویندوز) • **Rust + Tauri (ویندوز/لینوکس/م
 | 🚪 خروج ایمن | هشدار سه‌گزینه‌ای هنگام بستن برنامه در حالت اتصال: «خاموش کن و ببند»، «متصل بمان و ببند» یا «لغو» (دسکتاپ و اندروید) |
 | 🧠 هسته | دانلود خودکار Xray-core از مخزن رسمی + اعتبارسنجی SHA-512 + امکان انتخاب فایل دلخواه |
 | 🔒 حریم خصوصی | خزانهٔ رمزنگاری‌شده (DPAPI)، نمایش پوشیدهٔ همهٔ مقادیر حساس، و **عدم ثبت هرگز** آن‌ها در لاگ |
+| 📊 آمار | صفحهٔ آمار مصرف: نمودار ۱۴ روزهٔ مدت اتصال، تعداد نشست‌ها، سرورهای پراستفاده با پرچم کشورها و تاریخچهٔ تست سرعت — داخل همان خزانهٔ رمزنگاری‌شده |
 | 🌙 طراحی | تم مشکی با یک رنگ تأکیدی، رابط کاملاً راست‌چین با قلم وزیرمتن و انیمیشن‌های نرم |
 
 ## 🧭 ناکسلو چگونه کار می‌کند؟
@@ -107,6 +108,7 @@ Electron + React (ویندوز) • **Rust + Tauri (ویندوز/لینوکس/م
 - خزانهٔ رمزنگاری‌شدهٔ AES-256-GCM (کلید تصادفی با دسترسی `0600`)، ماسک کامل مقادیر حساس، بدون ثبت در لاگ
 - تست تأخیر تکی/گروهی، تست سرعت، انتخاب خودکار بهترین سرور، هشدار خروج هنگام اتصال
 - tray سیستم (وضعیت زنده، اتصال/قطع سریع، خروج با guard)، شروع خودکار با OS، failover خودکار پس از سه بار شکست پروب سلامت
+- پیام‌های خطا، toastها، منوی tray و هشدار خروج **سه‌زبانه** (فارسی/انگلیسی/ترکی) — مانند رندرر
 - وارد کردن فایل کانفیگ (`txt/json/conf/sub` خام یا Base64 و ZIP رمزدار ZipCrypto/AES) و انتخاب دستی فایل اجرایی هسته
 
 **فعلاً فقط در نسخهٔ Electron:** حالت TUN و به‌روزرسانی خودکارِ خاموش برنامه.
@@ -203,7 +205,9 @@ ship from v1.7.0: the full **Electron + React** app (Windows: local proxy, optio
 checksum-pinned Wintun driver, tray, auto-update) and a **Rust + Tauri** edition (Windows / Linux / macOS: same
 React UI on a Rust backend — URL and local-file subscriptions including password-protected ZIPs, local-proxy
 connect/disconnect with the official Xray core, system-proxy integration on all three OSes, AES-256-GCM encrypted
-vault, system tray, OS auto-start and auto-failover; TUN mode and silent self-update stay Electron-only).
+vault, system tray, OS auto-start, auto-failover and trilingual (fa/en/tr) native messages; TUN mode and silent
+self-update stay Electron-only). Both editions got a **usage statistics page** (daily connection-time chart, session
+counts, most-used servers, speed-test history) and Android gained a **Quick Settings tile** for one-tap connect.
 It fetches a subscription TXT, decodes
 Base64, lists parsed configs and runs Xray as a **local proxy** (SOCKS5 + HTTP on loopback). Closing while connected
 always asks first. Secrets live in an encrypted vault, are masked in the UI and never logged. Installers (EXE,
