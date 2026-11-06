@@ -10,150 +10,31 @@
 [1m[92m      Adding[0m toml_datetime v0.6.3 [1m[93m(available: v0.6.11)[0m
 [1m[92m      Adding[0m toml_edit v0.20.2 [1m[93m(available: v0.20.7)[0m
 [1m[92m      Adding[0m zip v2.6.1 [1m[93m(available: v9.4.1)[0m
-[1m[92m Downloading[0m crates ...
-[1m[92m  Downloaded[0m async-compression v0.4.52
-[1m[92m  Downloaded[0m auto-launch v0.6.0
-[1m[92m  Downloaded[0m cc v1.11.0
-[1m[92m  Downloaded[0m compression-codecs v0.4.47
-[1m[92m  Downloaded[0m constant_time_eq v0.3.1
-[1m[92m  Downloaded[0m crc32fast v1.5.4
-[1m[92m  Downloaded[0m hmac v0.12.1
-[1m[92m  Downloaded[0m jiff v0.2.39
-[1m[92m  Downloaded[0m jiff-core v0.1.2
-[1m[92m  Downloaded[0m mime v0.3.18
-[1m[92m  Downloaded[0m os_info v3.15.0
-[1m[92m  Downloaded[0m pbkdf2 v0.12.2
-[1m[92m  Downloaded[0m sha1 v0.10.7
-[1m[92m  Downloaded[0m tauri-plugin-autostart v2.7.0
-[1m[92m  Downloaded[0m toml v1.2.0+spec-1.1.0
-[1m[92m  Downloaded[0m toml_writer v1.2.0+spec-1.1.0
-[1m[92m  Downloaded[0m windows-registry v0.6.1
-[1m[92m  Downloaded[0m winnow v1.0.5
-[1m[92m  Downloaded[0m zeroize_derive v1.5.0
-[1m[92m    Checking[0m windows-sys v0.61.2
-[1m[92m   Compiling[0m cc v1.11.0
-[1m[92m   Compiling[0m winnow v1.0.5
-[1m[92m   Compiling[0m toml_writer v1.2.0+spec-1.1.0
-[1m[92m   Compiling[0m toml_parser v1.1.5+spec-1.1.0
-[1m[92m   Compiling[0m crc32fast v1.5.4
-[1m[92m   Compiling[0m toml v1.2.0+spec-1.1.0
-[1m[92m   Compiling[0m vswhom-sys v0.1.3
-[1m[92m    Checking[0m windows-result v0.4.1
-[1m[92m    Checking[0m windows-core v0.62.2
-[1m[92m    Checking[0m socket2 v0.6.5
-[1m[92m   Compiling[0m tauri-utils v2.10.2
-[1m[92m    Checking[0m mio v1.2.4
-[1m[92m    Checking[0m tokio v1.54.1
-[1m[92m   Compiling[0m cargo_toml v1.0.1
-[1m[92m    Checking[0m flate2 v1.1.10
-[1m[92m    Checking[0m windows-future v0.3.2
-[1m[92m   Compiling[0m tauri-plugin v2.7.2
-[1m[92m    Checking[0m windows-numerics v0.3.1
-[1m[92m    Checking[0m windows-collections v0.3.2
-[1m[92m    Checking[0m windows v0.62.2
-[1m[92m    Checking[0m winapi-util v0.1.11
-[1m[92m    Checking[0m same-file v1.0.6
-[1m[92m   Compiling[0m zeroize_derive v1.5.0
-[1m[92m   Compiling[0m vswhom v0.1.0
-[1m[92m   Compiling[0m embed-resource v3.0.12
-[1m[92m    Checking[0m zeroize v1.9.1
-[1m[92m   Compiling[0m png v0.18.1
-[1m[92m   Compiling[0m tauri-winres v0.3.7
-[1m[92m    Checking[0m walkdir v2.5.0
-[1m[92m   Compiling[0m tauri-build v2.7.4
-[1m[92m   Compiling[0m ring v0.17.14
-[1m[92m   Compiling[0m getrandom v0.3.4
-[1m[92m   Compiling[0m ico v0.6.0
-[1m[92m   Compiling[0m tauri v2.12.5
-[1m[92m   Compiling[0m tray-icon v0.25.1
-[1m[92m    Checking[0m image v0.25.10
-[1m[92m    Checking[0m dirs-sys v0.5.0
-[1m[92m    Checking[0m muda v0.20.0
-[1m[92m   Compiling[0m tauri-codegen v2.7.4
-[1m[92m    Checking[0m rustls-pki-types v1.15.1
-[1m[92m    Checking[0m softbuffer v0.4.8
-[1m[92m    Checking[0m digest v0.10.7
-[1m[92m    Checking[0m dirs v7.0.0
-[1m[92m   Compiling[0m tauri-plugin-fs v2.7.1
-[1m[92m    Checking[0m window-vibrancy v0.8.1
-[1m[92m    Checking[0m mime v0.3.18
-[1m[92m   Compiling[0m rustls v0.23.46
-[1m[92m    Checking[0m rustls-webpki v0.103.16
-[1m[92m   Compiling[0m tauri-macros v2.7.4
-[1m[92m    Checking[0m hyper v1.12.0
-[1m[92m    Checking[0m compression-codecs v0.4.47
-[1m[92m   Compiling[0m tauri-plugin-clipboard-manager v2.5.0
-[1m[92m   Compiling[0m tauri-plugin-autostart v2.7.0
-[1m[92m   Compiling[0m tauri-plugin-dialog v2.8.4
-[1m[92m    Checking[0m hyper-util v0.1.21
-[1m[92m    Checking[0m tokio-util v0.7.20
-[1m[92m    Checking[0m tower v0.5.3
-[1m[92m    Checking[0m tokio-rustls v0.26.6
-[1m[92m    Checking[0m async-compression v0.4.52
-[1m[92m    Checking[0m hmac v0.12.1
-[1m[92m    Checking[0m webpki-roots v1.0.11
-[1m[92m    Checking[0m os_info v3.15.0
-[1m[92m    Checking[0m windows-registry v0.6.1
-[1m[92m   Compiling[0m zip v2.6.1
-[1m[92m    Checking[0m zopfli v0.8.4
-[1m[92m    Checking[0m tower-http v0.6.11
-[1m[92m    Checking[0m auto-launch v0.6.0
-[1m[92m    Checking[0m pbkdf2 v0.12.2
-[1m[92m    Checking[0m hyper-rustls v0.27.10
-[1m[92m    Checking[0m rfd v0.17.2
-[1m[92m    Checking[0m arboard v3.7.0
-[1m[92m    Checking[0m sha1 v0.10.7
-[1m[92m   Compiling[0m naxlo v1.9.0 (D:\a\Naxlo-tun\Naxlo-tun\tauri)
-[1m[92m    Checking[0m constant_time_eq v0.3.1
-[1m[92m    Checking[0m reqwest v0.12.28
-[1m[92m    Checking[0m sha2 v0.10.9
-[1m[92m    Checking[0m webview2-com-sys v0.39.1
-[1m[92m    Checking[0m tao v0.37.2
-[1m[92m    Checking[0m webview2-com v0.39.1
-[1m[92m    Checking[0m wry v0.57.1
-[1m[92m    Checking[0m tauri-runtime v2.12.2
-[1m[92m    Checking[0m tauri-runtime-wry v2.12.3
-[1m[93mwarning[0m[1m[97m: function `err_str` is never used[0m
-  [1m[96m--> [0msrc\l10n.rs:23:8
-   [1m[96m|[0m
-[1m[96m23[0m [1m[96m|[0m pub fn err_str(message: LString) -> String {
-   [1m[96m|[0m        [1m[93m^^^^^^^[0m
-   [1m[96m|[0m
-   [1m[96m= [0m[1m[97mnote[0m: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
-
-[1m[93mwarning[0m[1m[97m: field `status` is never read[0m
-  [1m[96m--> [0msrc\net.rs:16:9
-   [1m[96m|[0m
-[1m[96m14[0m [1m[96m|[0m pub struct ProbeResult {
-   [1m[96m|[0m            [1m[96m-----------[0m [1m[96mfield in this struct[0m
-[1m[96m15[0m [1m[96m|[0m     pub ok: bool,
-[1m[96m16[0m [1m[96m|[0m     pub status: u16,
-   [1m[96m|[0m         [1m[93m^^^^^^[0m
-
-[1m[93mwarning[0m[1m[97m: field `status` is never read[0m
-  [1m[96m--> [0msrc\net.rs:25:9
-   [1m[96m|[0m
-[1m[96m21[0m [1m[96m|[0m pub struct Throughput {
-   [1m[96m|[0m            [1m[96m----------[0m [1m[96mfield in this struct[0m
-[1m[96m...[0m
-[1m[96m25[0m [1m[96m|[0m     pub status: u16,
-   [1m[96m|[0m         [1m[93m^^^^^^[0m
-
-[1m[93mwarning[0m[1m[97m: method `is_alive` is never used[0m
-   [1m[96m--> [0msrc\runner.rs:152:12
+[1m[92m   Compiling[0m naxlo v1.10.0 (D:\a\Naxlo-tun\Naxlo-tun\tauri)
+[1m[91merror[E0597][0m[1m[97m: `core` does not live long enough[0m
+   [1m[96m--> [0msrc\commands.rs:502:8
     [1m[96m|[0m
-[1m[96m129[0m [1m[96m|[0m impl RunnerHandle {
-    [1m[96m|[0m [1m[96m-----------------[0m [1m[96mmethod in this implementation[0m
-[1m[96m...[0m
-[1m[96m152[0m [1m[96m|[0m     pub fn is_alive(&self) -> bool {
-    [1m[96m|[0m            [1m[93m^^^^^^^^[0m
-
-[1m[93mwarning[0m[1m[97m: function `purge_downloaded_cores` is never used[0m
-   [1m[96m--> [0msrc\xray_core.rs:278:8
+[1m[96m501[0m [1m[96m|[0m     let core = core_of(&app)?;
+    [1m[96m|[0m         [1m[96m----[0m [1m[96mbinding `core` declared here[0m
+[1m[96m502[0m [1m[96m|[0m     Ok(core.lock().vault.stats.clone())
+    [1m[96m|[0m        [1m[91m^^^^[0m[1m[96m-------[0m
+    [1m[96m|[0m        [1m[96m|[0m
+    [1m[96m|[0m        [1m[91mborrowed value does not live long enough[0m
+    [1m[96m|[0m        [1m[96ma temporary with access to the borrow is created here ...[0m
+[1m[96m503[0m [1m[96m|[0m }
+    [1m[96m|[0m [1m[96m-[0m
+    [1m[96m|[0m [1m[96m|[0m
+    [1m[96m|[0m [1m[96m`core` dropped here while still borrowed[0m
+    [1m[96m|[0m [1m[96m... and the borrow might be used here, when that temporary is dropped and runs the `Drop` code for type `std::sync::MutexGuard`[0m
     [1m[96m|[0m
-[1m[96m278[0m [1m[96m|[0m pub fn purge_downloaded_cores(base: &Path) {
-    [1m[96m|[0m        [1m[93m^^^^^^^^^^^^^^^^^^^^^^[0m
+    [1m[96m= [0m[1m[97mnote[0m: the temporary is part of an expression at the end of a block;
+            consider forcing this temporary to be dropped sooner, before the block's local variables are dropped
+[1m[96mhelp[0m: for example, you could save the expression's value in a new local variable `x` and then make `x` be the expression at the end of the block
+    [1m[96m|[0m
+[1m[96m502[0m [1m[96m| [0m    [92mlet x = [0mOk(core.lock().vault.stats.clone())[92m; x[0m
+    [1m[96m|[0m     [92m+++++++[0m                                    [92m+++[0m
 
-[1m[93mwarning[0m: `naxlo` (lib) generated 5 warnings
-[1m[93mwarning[0m: `naxlo` (lib test) generated 5 warnings (5 duplicates)
-[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 1m 22s
+[1m[97mFor more information about this error, try `rustc --explain E0597`.[0m
+[1m[91merror[0m: could not compile `naxlo` (lib test) due to 1 previous error
+[1m[93mwarning[0m: build failed, waiting for other jobs to finish...
+[1m[91merror[0m: could not compile `naxlo` (lib) due to 1 previous error
