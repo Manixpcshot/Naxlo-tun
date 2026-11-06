@@ -11,15 +11,15 @@
 [1m[92m      Adding[0m toml_edit v0.20.2 [1m[33m(available: v0.20.7)[0m
 [1m[92m      Adding[0m zip v2.6.1 [1m[33m(available: v9.4.1)[0m
 [1m[92m Downloading[0m crates ...
-[1m[92m  Downloaded[0m cc v1.11.1
 [1m[92m  Downloaded[0m brotli-decompressor v6.3.0
+[1m[92m  Downloaded[0m cc v1.11.1
 [1m[92m  Downloaded[0m flate2 v1.1.11
 [1m[92m  Downloaded[0m serde_spanned v1.1.3
 [1m[92m  Downloaded[0m toml v1.2.1+spec-1.1.0
 [1m[92m  Downloaded[0m toml_datetime v1.1.3+spec-1.1.0
 [1m[92m   Compiling[0m cc v1.11.1
-[1m[92m   Compiling[0m serde_spanned v1.1.3
 [1m[92m   Compiling[0m toml_datetime v1.1.3+spec-1.1.0
+[1m[92m   Compiling[0m serde_spanned v1.1.3
 [1m[92m   Compiling[0m brotli-decompressor v6.3.0
 [1m[92m    Checking[0m flate2 v1.1.11
 [1m[92m   Compiling[0m toml v1.2.1+spec-1.1.0
@@ -35,29 +35,29 @@
 [1m[92m    Checking[0m image v0.25.10
 [1m[92m    Checking[0m tray-icon v0.25.1
 [1m[92m    Checking[0m wayland-client v0.31.15
-[1m[92m    Checking[0m tauri-runtime v2.12.2
-[1m[92m    Checking[0m tauri-runtime-wry v2.12.3
 [1m[92m   Compiling[0m rustls v0.23.46
 [1m[92m    Checking[0m wayland-protocols v0.32.13
-[1m[92m    Checking[0m compression-codecs v0.4.47
-[1m[92m    Checking[0m async-compression v0.4.52
 [1m[92m    Checking[0m rustls-webpki v0.103.16
+[1m[92m    Checking[0m compression-codecs v0.4.47
+[1m[92m    Checking[0m tauri-runtime v2.12.2
+[1m[92m    Checking[0m tauri-runtime-wry v2.12.3
+[1m[92m    Checking[0m async-compression v0.4.52
 [1m[92m    Checking[0m tower-http v0.6.11
 [1m[92m    Checking[0m zip v2.6.1
+[1m[92m    Checking[0m wayland-protocols-wlr v0.3.12
 [1m[92m    Checking[0m tokio-rustls v0.26.6
 [1m[92m    Checking[0m hyper-rustls v0.27.10
+[1m[92m    Checking[0m reqwest v0.12.28
 [1m[92m   Compiling[0m tauri-plugin v2.7.2
 [1m[92m   Compiling[0m tauri-build v2.7.4
 [1m[92m   Compiling[0m tauri-codegen v2.7.4
-[1m[92m    Checking[0m wayland-protocols-wlr v0.3.12
 [1m[92m    Checking[0m wl-clipboard-rs v0.9.5
-[1m[92m    Checking[0m reqwest v0.12.28
 [1m[92m    Checking[0m arboard v3.7.0
 [1m[92m   Compiling[0m tauri v2.12.5
 [1m[92m   Compiling[0m tauri-plugin-fs v2.7.1
 [1m[92m   Compiling[0m tauri-macros v2.7.4
-[1m[92m   Compiling[0m tauri-plugin-dialog v2.8.4
 [1m[92m   Compiling[0m tauri-plugin-autostart v2.7.0
+[1m[92m   Compiling[0m tauri-plugin-dialog v2.8.4
 [1m[92m   Compiling[0m tauri-plugin-clipboard-manager v2.5.0
 [1m[92m   Compiling[0m naxlo v1.11.0 (/home/runner/work/Naxlo-tun/Naxlo-tun/tauri)
 [1m[33mwarning[0m[1m: function `err_str` is never used[0m
@@ -103,17 +103,17 @@
 
 [1m[33mwarning[0m: `naxlo` (lib) generated 5 warnings
 [1m[33mwarning[0m: `naxlo` (lib test) generated 5 warnings (5 duplicates)
-[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 27.45s
+[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 27.32s
 [1m[92m   Compiling[0m brotli-decompressor v6.3.0
-[1m[92m   Compiling[0m serde_spanned v1.1.3
 [1m[92m   Compiling[0m toml_datetime v1.1.3+spec-1.1.0
+[1m[92m   Compiling[0m serde_spanned v1.1.3
 [1m[92m   Compiling[0m flate2 v1.1.11
 [1m[92m   Compiling[0m toml v1.2.1+spec-1.1.0
 [1m[92m   Compiling[0m png v0.18.1
 [1m[92m   Compiling[0m brotli v9.1.1
 [1m[92m   Compiling[0m embed-resource v3.0.12
-[1m[92m   Compiling[0m cargo_toml v1.0.1
 [1m[92m   Compiling[0m tauri-winres v0.3.7
+[1m[92m   Compiling[0m cargo_toml v1.0.1
 [1m[92m   Compiling[0m image v0.25.10
 [1m[92m   Compiling[0m ico v0.6.0
 [1m[92m   Compiling[0m wayland-backend v0.3.17
@@ -125,15 +125,97 @@
 [1m[92m   Compiling[0m wayland-protocols v0.32.13
 [1m[92m   Compiling[0m compression-codecs v0.4.47
 [1m[92m   Compiling[0m rustls v0.23.46
-[1m[92m   Compiling[0m tauri-plugin v2.7.2
 [1m[92m   Compiling[0m tauri-build v2.7.4
+[1m[92m   Compiling[0m tauri-plugin v2.7.2
 [1m[92m   Compiling[0m tauri-codegen v2.7.4
 [1m[92m   Compiling[0m tauri-runtime v2.12.2
 [1m[92m   Compiling[0m wayland-protocols-wlr v0.3.12
 [1m[92m   Compiling[0m tauri-runtime-wry v2.12.3
-[1m[92m   Compiling[0m tokio-rustls v0.26.6
 [1m[92m   Compiling[0m wl-clipboard-rs v0.9.5
+[1m[92m   Compiling[0m tokio-rustls v0.26.6
 [1m[92m   Compiling[0m async-compression v0.4.52
 [1m[92m   Compiling[0m hyper-rustls v0.27.10
 [1m[92m   Compiling[0m tower-http v0.6.11
 [1m[92m   Compiling[0m arboard v3.7.0
+[1m[92m   Compiling[0m reqwest v0.12.28
+[1m[92m   Compiling[0m zip v2.6.1
+[1m[92m   Compiling[0m tauri v2.12.5
+[1m[92m   Compiling[0m tauri-macros v2.7.4
+[1m[92m   Compiling[0m tauri-plugin-fs v2.7.1
+[1m[92m   Compiling[0m tauri-plugin-dialog v2.8.4
+[1m[92m   Compiling[0m tauri-plugin-autostart v2.7.0
+[1m[92m   Compiling[0m tauri-plugin-clipboard-manager v2.5.0
+[1m[92m   Compiling[0m naxlo v1.11.0 (/home/runner/work/Naxlo-tun/Naxlo-tun/tauri)
+[1m[33mwarning[0m[1m: function `err_str` is never used[0m
+  [1m[94m--> [0msrc/l10n.rs:37:8
+   [1m[94m|[0m
+[1m[94m37[0m [1m[94m|[0m pub fn err_str(message: LString) -> String {
+   [1m[94m|[0m        [1m[33m^^^^^^^[0m
+   [1m[94m|[0m
+   [1m[94m= [0m[1mnote[0m: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+[1m[33mwarning[0m[1m: field `status` is never read[0m
+  [1m[94m--> [0msrc/net.rs:16:9
+   [1m[94m|[0m
+[1m[94m14[0m [1m[94m|[0m pub struct ProbeResult {
+   [1m[94m|[0m            [1m[94m-----------[0m [1m[94mfield in this struct[0m
+[1m[94m15[0m [1m[94m|[0m     pub ok: bool,
+[1m[94m16[0m [1m[94m|[0m     pub status: u16,
+   [1m[94m|[0m         [1m[33m^^^^^^[0m
+
+[1m[33mwarning[0m[1m: field `status` is never read[0m
+  [1m[94m--> [0msrc/net.rs:25:9
+   [1m[94m|[0m
+[1m[94m21[0m [1m[94m|[0m pub struct Throughput {
+   [1m[94m|[0m            [1m[94m----------[0m [1m[94mfield in this struct[0m
+[1m[94m...[0m
+[1m[94m25[0m [1m[94m|[0m     pub status: u16,
+   [1m[94m|[0m         [1m[33m^^^^^^[0m
+
+[1m[33mwarning[0m[1m: method `is_alive` is never used[0m
+   [1m[94m--> [0msrc/runner.rs:152:12
+    [1m[94m|[0m
+[1m[94m129[0m [1m[94m|[0m impl RunnerHandle {
+    [1m[94m|[0m [1m[94m-----------------[0m [1m[94mmethod in this implementation[0m
+[1m[94m...[0m
+[1m[94m152[0m [1m[94m|[0m     pub fn is_alive(&self) -> bool {
+    [1m[94m|[0m            [1m[33m^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: function `purge_downloaded_cores` is never used[0m
+   [1m[94m--> [0msrc/xray_core.rs:279:8
+    [1m[94m|[0m
+[1m[94m279[0m [1m[94m|[0m pub fn purge_downloaded_cores(base: &Path) {
+    [1m[94m|[0m        [1m[33m^^^^^^^^^^^^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m: `naxlo` (lib test) generated 5 warnings (5 duplicates)
+[1m[33mwarning[0m: `naxlo` (lib) generated 5 warnings
+[1m[92m    Finished[0m `test` profile [unoptimized + debuginfo] target(s) in 39.84s
+[1m[92m     Running[0m unittests src/lib.rs (target/debug/deps/naxlo_lib-a15e46438d4e8e70)
+
+running 11 tests
+test parse::tests::base64_detector_rejects_garbage ... ok
+test mask::tests::masks_like_the_ts_helpers ... ok
+test parse::tests::extract_links_handles_base64_payloads ... ok
+test parse::tests::query_roundtrip_is_stable ... ok
+test parse::tests::parses_vless_tls_ws ... ok
+test parse::tests::parses_vmess_base64 ... ok
+test parse::tests::reality_without_pbk_is_unsupported ... ok
+test submeta::tests::parses_profile_titles ... ok
+test submeta::tests::parses_userinfo_header ... ok
+test xray_config::tests::builds_a_complete_config ... ok
+test xray_config::tests::iran_direct_adds_local_rules ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+[1m[92m     Running[0m unittests src/main.rs (target/debug/deps/naxlo-ee1a79561aea380a)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+[1m[92m   Doc-tests[0m naxlo_lib
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
