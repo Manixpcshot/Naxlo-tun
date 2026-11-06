@@ -6,6 +6,21 @@ All notable changes to Naxlo are documented here. Releases are cut per tag
 The format follows [Keep a Changelog](https://keepachangelog.com/) and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.11.0] - 2026-11-06
+
+### Added
+- **وب‌سایت رسمی روی vpn.naxlo.ir (پوشهٔ `website/`):** سایت استاتیک مخصوص cPanel هم‌طراح با اپ (تقریباً مشکی با تأکید فیروزه‌ای، وزیرمتن، راست‌به‌چپ) با کلید زبان فارسی/انگلیسی، favicon و آیکن‌های PWA/OG، کارت‌های دانلود که خودکار از API انتشارهای گیت‌هاب پر می‌شوند، صفحهٔ تست سرعت در مرورگر و فایل اندازه‌گیری `speedtest.bin` (۱۰ مگابایت تصادفی، بدون فشرده‌سازی و بدون کش طبق `.htaccess`). همان محتوا به‌صورت `naxlo-website.zip` برای آپلود در cPanel/Google Drive آماده شده است.
+- **Official website on vpn.naxlo.ir (`website/` folder):** a cPanel-ready static site in the app's own design language (near-black, single cyan accent, Vazirmatn, RTL) with a Persian/English switch, favicon + PWA/OG assets, download cards auto-filled from the GitHub releases API, an in-browser speed-test page and the `speedtest.bin` measurement file (10 MB of random bytes, never compressed or cached per `.htaccess`). The same content ships as `naxlo-website.zip` for cPanel / Google Drive upload.
+- **تست سرعت در مرورگر:** صفحهٔ `speedtest.html` با گیج زنده همان فایل اندازه‌گیری را استریم می‌کند — اگر اپ متصل باشد، خود تونل سنجیده می‌شود. / **In-browser speed test:** `speedtest.html` streams the same measurement file with a live gauge — with the app connected, you measure the tunnel itself.
+
+### Fixed
+- **تست سرعت کار نمی‌کرد:** هدف‌های قبلی در بسیاری از مسیرها مرده یا مسدود بودند (`proof.ovh.net` سال‌هاست خاموش است). اکنون نخستین هدف فایل اندازه‌گیری خود پروژه روی `vpn.naxlo.ir/speedtest.bin` است (با query ضد‌کش)، سپس Cloudflare و آینهٔ tele2؛ هر دو نسخهٔ Electron و Rust. / **The speed test failed:** the old targets are dead or blocked on many routes (`proof.ovh.net` has been down for years). The primary target is now the project's own measurement file at `vpn.naxlo.ir/speedtest.bin` (cache-busted), then Cloudflare and a tele2 mirror; both the Electron and Rust editions.
+- **حالت TUN «متصل ولی بدون اینترنت»:** پرس‌وجوهای DNS که فیلترهای WFP به داخل تونل هل می‌دهند قبلاً با قاعدهٔ catch-all به forwarder سرور می‌رفتند — بسیاری از سرورها UDP:53 را بی‌صدا دور می‌اندازند و تونل عملاً مرده بود. اکنون یک outbound از نوع `dns` + قاعدهٔ پورت ۵۳ از اینباند TUN، پاسخ‌ها را داخل خود Xray می‌سازد (DoH رمزنگاری‌شده از داخل پروکسی) و `queryStrategy: UseIPv4` جواب‌های AAAA را از آداپتر فقط-IPv4 دور نگه می‌دارد تا اتصال‌ها روی مسیر دست‌نیافتنی IPv6 هنگ نکنند. / **TUN "connected but no internet":** DNS queries pushed into the tunnel by the WFP filters used to ride the catch-all rule to the server's UDP forwarder — many servers silently drop UDP:53, leaving a dead tunnel. A `dns` outbound plus a port-53 rule from the TUN inbound now answers them inside Xray (encrypted DoH through the proxy), and `queryStrategy: UseIPv4` keeps AAAA answers away from the IPv4-only adapter so connections no longer stall on an unreachable IPv6 route.
+
+### Changed
+- **آیکون جدید پر جزئیات (نسخهٔ ۲):** سپر محافظ + حلقه‌های مداری با ماهواره + صورت‌های فلکی + ذره‌های داده روی پرتو N؛ همهٔ Artefactها بازسازی شدند (ico/icns/png، tray، بنر گیت‌هاب، ست تائوری، پیش‌زمینهٔ adaptive اندروید، favicon سایت). / **New detailed icon (v2):** a protective shield + orbit rings with satellites + constellations + data particles on the N beam; every artefact regenerated (ico/icns/png, tray, GitHub banner, Tauri set, Android adaptive foreground, site favicon).
+- اندروید: versionCode 2100 و versionName 1.11.0. / Android bumped to versionCode 2100 / versionName 1.11.0.
+
 ## [1.10.1] - 2026-11-06
 
 ### Fixed

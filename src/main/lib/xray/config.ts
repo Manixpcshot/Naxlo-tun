@@ -93,6 +93,18 @@ export function buildXrayConfig({ server, settings }: BuildOptions): Json {
 
   const outbounds: Json[] = [buildOutbound(server, settings), directOutbound(), blockOutbound()]
 
+  if (settings.connectionMode === 'tun') {
+    // In-TUN DNS: the WFP leak filters push every system query into the
+    // tunnel, so without a DNS path of our own those queries would ride the
+    // catch-all rule to the server's UDP forwarder — which many servers
+    // silently drop, leaving the tunnel "connected but dead". A `dns`
+    // outbound answers them inside Xray instead, resolving over DoH that
+    // travels through the proxy (encrypted, no cleartext leak).
+    // UseIPv4 also keeps AAAA answers away from the IPv4-only adapter, which
+    // otherwise stalls connections that try the (unreachable) IPv6 route.
+    outbounds.splice(1, 0, { tag: 'naxlo-dns', protocol: 'dns' })
+  }
+
   return {
     log: {
       // Access logs would contain destinations; keep them off and stay quiet.
@@ -102,9 +114,24 @@ export function buildXrayConfig({ server, settings }: BuildOptions): Json {
       dnsLog: false,
       maskAddress: 'quarter'
     },
+    dns:
+      settings.connectionMode === 'tun'
+        ? {
+            tag: 'naxlo-dns-resolver',
+            queryStrategy: 'UseIPv4',
+            servers: [
+              // Literal-IP DoH: no bootstrap resolution, no loop. Routed via
+              // the proxy outbound, so queries stay inside the tunnel.
+              'https://1.1.1.1/dns-query',
+              'https://8.8.8.8/dns-query',
+              // Last-resort plain query if DoH is blocked outright.
+              '1.1.1.1'
+            ]
+          }
+        : undefined,
     inbounds,
     outbounds,
-    routing: buildRouting(settings.routeMode, settings.blockAds),
+    routing: buildRouting(settings.routeMode, settings.blockAds, settings.connectionMode === 'tun'),
     policy: {
       levels: {
         '8': {
@@ -335,8 +362,20 @@ function blockOutbound(): Json {
   }
 }
 
-function buildRouting(mode: RouteMode, blockAds: boolean): Json {
+function buildRouting(mode: RouteMode, blockAds: boolean, tun = false): Json {
   const rules: Json[] = []
+
+  if (tun) {
+    // Wire-format DNS arriving from the tunnel is answered by our own `dns`
+    // outbound (see buildXrayConfig) instead of being shipped to the server's
+    // UDP forwarder. Must precede every domain/rule based match.
+    rules.push({
+      type: 'field',
+      inboundTag: ['naxlo-tun'],
+      port: 53,
+      outboundTag: 'naxlo-dns'
+    })
+  }
 
   if (blockAds) {
     rules.push({

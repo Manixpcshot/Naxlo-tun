@@ -76,6 +76,13 @@ Electron + React (ویندوز) • **Rust + Tauri (ویندوز/لینوکس/م
 - هستهٔ Xray از ریلیز رسمی دانلود و با digest منتشرشده (SHA-512) اعتبارسنجی می‌شود.
 - برنامه به دسترسی مدیر نیاز ندارد؛ فقط کلیدهای `HKCU` را برای پروکسی ویندوز می‌نویسد.
 
+## 🌐 وب‌سایت رسمی / Official website
+
+- نشانی: **https://vpn.naxlo.ir** — سایت استاتیک آمادهٔ cPanel هم‌طراح با اپ (تاریکِ تقریباً مشکی، تأکید فیروزه‌ای، وزیرمتن، راست‌به‌چپ، کلید فا/EN).
+- صفحهٔ دانلود با کارت‌هایی که خودکار از API انتشارهای گیت‌هاب پر می‌شوند، صفحهٔ تست سرعت در مرورگر، و فایل اندازه‌گیری `/speedtest.bin` که خود اپ‌ها برای «تست سرعت» از آن استفاده می‌کنند.
+- منبع سایت در پوشهٔ `website/` است (همراه `.htaccess` مخصوص cPanel و راهنمای استقرار در `website/README.md`)؛ زیپ آمادهٔ انتشار هم با هر ریلیز ساخته می‌شود.
+- **https://vpn.naxlo.ir** — a cPanel-ready static site in the app's design language (near-black, cyan accent, Vazirmatn, RTL, fa/EN switch). It hosts auto-updating download cards, an in-browser speed test and the `/speedtest.bin` measurement file the apps use for their speed test. Source lives in `website/` (with a cPanel `.htaccess` and a deploy guide in `website/README.md`).
+
 ## 📦 نصب
 
 از [صفحهٔ ریلیزها](https://github.com/Manixpcshot/Naxlo-tun/releases) یکی از دو خروجی را دریافت کنید:
@@ -183,9 +190,16 @@ tauri/              # نسخهٔ Rust — همان UI با بک‌اند Rust
 └─ tauri.conf.json
 ```
 
+website/            # وب‌سایت رسمی vpn.naxlo.ir — استاتیک و آمادهٔ cPanel
+├─ index.html       # صفحهٔ فرود (فا/EN، کارت‌های دانلود خودکار، توضیح VPN)
+├─ speedtest.html   # تست سرعت در مرورگر (گیج زنده)
+├─ speedtest.bin    # فایل اندازه‌گیری ۱۰ مگابایتی که اپ‌ها استفاده می‌کنند
+└─ .htaccess        # تنظیمات Apache/cPanel (کش، gzip، هدرها، no-store برای bin)
+```
+
 ## 🤝 مشارکت
 
-ایssue‌ها و Pull Request‌ها خوش‌آمدند. پیش از ارسال، `npm run typecheck` و `npm test` را اجرا کنید و
+Issue‌ها و Pull Request‌ها خوش‌آمدند. پیش از ارسال، `npm run typecheck` و `npm test` را اجرا کنید و
 [CONTRIBUTING.md](CONTRIBUTING.md) و [SECURITY.md](SECURITY.md) را بخوانید.
 
 ## 📜 پروانه‌ها

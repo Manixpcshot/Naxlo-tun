@@ -237,9 +237,13 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
       throw new AppError(L('برای تست سرعت ابتدا متصل شوید', 'Connect first to run a speed test'))
     }
     const state = getState()
+    // Our own measurement file first (hosted on the project site, always
+    // reachable, never rate-limited), then public mirrors. The cache-busting
+    // query keeps repeated tests honest against any CDN/edge cache.
     const targets = [
+      `https://vpn.naxlo.ir/speedtest.bin?r=${Date.now()}`,
       'https://speed.cloudflare.com/__down?bytes=16000000',
-      'https://proof.ovh.net/files/10Mb.dat'
+      'https://speedtest.tele2.net/10MB.zip'
     ]
     for (const target of targets) {
       const result = await measureThroughput('127.0.0.1', state.httpPort, target)

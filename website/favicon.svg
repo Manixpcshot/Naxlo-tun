@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Favicon mini-mark — kept in sync with build/icon-source.svg (v2: shield + orbit + beam) -->
+  <defs>
+    <linearGradient id="fb" x1="22" y1="19" x2="42" y2="45" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#a5f3fc"/>
+      <stop offset="0.5" stop-color="#22d3ee"/>
+      <stop offset="1" stop-color="#0891b2"/>
+    </linearGradient>
+    <linearGradient id="fsh" x1="32" y1="10" x2="32" y2="54" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7deaf7" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#0891b2" stop-opacity="0.14"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="15" fill="#07090d"/>
+  <rect x="3.5" y="3.5" width="57" height="57" rx="13.5" fill="none" stroke="#ffffff" stroke-opacity="0.08" stroke-width="1.6"/>
+  <!-- shield -->
+  <path d="M32 10.5 L48.5 16.4 V32.2 C48.5 42.6 41.4 49.6 32 53 C22.6 49.6 15.5 42.6 15.5 32.2 V16.4 Z" fill="none" stroke="url(#fsh)" stroke-width="1.8" stroke-linejoin="round"/>
+  <!-- orbit ring -->
+  <circle cx="32" cy="32" r="21.5" fill="none" stroke="#7deaf7" stroke-opacity="0.18" stroke-width="1.1"/>
+  <!-- beam -->
+  <path d="M22 44V20l20 24V20" fill="none" stroke="#22d3ee" stroke-opacity="0.3" stroke-width="8.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M22 44V20l20 24V20" fill="none" stroke="url(#fb)" stroke-width="5.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- particles -->
+  <circle cx="28" cy="27.2" r="1.5" fill="#ffffff" opacity="0.85"/>
+  <circle cx="34.5" cy="35" r="1.2" fill="#ffffff" opacity="0.6"/>
+  <!-- nodes -->
+  <circle cx="22" cy="20" r="3.4" fill="#f2feff"/>
+  <circle cx="42" cy="44" r="3.4" fill="#f2feff"/>
+</svg>
