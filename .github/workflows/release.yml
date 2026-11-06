@@ -63,6 +63,26 @@ jobs:
           fi
           gh release upload "$TAG" release/*.exe release/latest.yml --clobber
 
+  website-zip:
+    name: Attach website deployment zip
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Zip the static site (cPanel-ready, hidden files included)
+        run: |
+          cd website
+          zip -r ../naxlo-website.zip .
+          cd ..
+          ls -la naxlo-website.zip
+
+      - name: Upload to the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "${GITHUB_REF_NAME}" naxlo-website.zip --repo "${GITHUB_REPOSITORY}" --clobber
+
   checksums:
     name: Publish SHA-256 checksums
     runs-on: ubuntu-latest
