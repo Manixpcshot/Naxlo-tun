@@ -45,5 +45,6 @@
 
 ## 🧾 یادداشت‌ها / Notes
 
+- `naxlo-website.zip` (کل سایت آمادهٔ cPanel) به‌صورت asset روی همین انتشار و همچنین در گوگل‌درایو موجود است. / `naxlo-website.zip` (the full cPanel-ready site) ships as an asset of this release and on Google Drive.
 - اندروید: versionCode 2100 / versionName 1.11.0. / Android: versionCode 2100 / versionName 1.11.0.
 - تست‌ها: ۳۴ تست smoke سبز (شامل گارانتی‌های جدید کانفیگ TUN/DNS). / 34 smoke tests green (including new TUN/DNS config guarantees).
