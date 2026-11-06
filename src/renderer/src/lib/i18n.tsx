@@ -492,8 +492,8 @@ export const MESSAGES = {
 
   /* ---------------- misc ---------------- */
   boot: { fa: 'در حال آماده‌سازی ناکسلو…', en: 'Preparing Naxlo…' },
-  reveal: { fa: 'نمایش مقدار واقعی', en: 'Reveal real value' },
-  hide: { fa: 'پنهان کردن', en: 'Hide' }
+  reveal: { fa: 'نمایش مقدار واقعی', en: 'Reveal real value', tr: 'Gerçek değeri göster' },
+  hide: { fa: 'پنهان کردن', en: 'Hide', tr: 'Gizle' }
 } as const
 
 interface I18nShape {

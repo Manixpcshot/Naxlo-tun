@@ -4,6 +4,7 @@
 import React, { useEffect, useId, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { Icon, Spinner, type IconName } from './Icon'
+import { useI18n } from '../lib/i18n'
 
 /* ---------------------------------------------------------------- Button */
 
@@ -291,6 +292,7 @@ export function Reveal({
   revealed?: string
   mono?: boolean
 }): React.ReactElement {
+  const { t } = useI18n()
   const [visible, setVisible] = useState(false)
   const id = useId()
   const shown = visible && revealed ? revealed : masked
@@ -300,7 +302,7 @@ export function Reveal({
       role="button"
       tabIndex={0}
       id={id}
-      title={visible ? 'پنهان کردن' : 'نمایش مقدار واقعی'}
+      title={visible ? t('hide') : t('reveal')}
       onClick={() => {
         setVisible((v) => !v)
         if (!visible && !revealed) onReveal()

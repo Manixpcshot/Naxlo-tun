@@ -6,6 +6,17 @@ All notable changes to Naxlo are documented here. Releases are cut per tag
 The format follows [Keep a Changelog](https://keepachangelog.com/) and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.11.1] - 2026-11-06
+
+### Fixed
+- **رابط انگلیسی دیگر متن فارسی ندارد:** tooltip نمایش/پنهان کردن مقدار پوشیده (`Reveal`) و عنوان پیش‌فرض توست خطا («خطا») سخت‌کد فارسی بودند و در حالت انگلیسی/ترکی هم فارسی می‌ماندند؛ اکنون از دیکشنری سه‌زبانه می‌آیند (`reveal`/`hide` ترکی هم گرفتند و عنوان پیش‌فرض `L('خطا','Error','Hata')` شد).
+- **The English UI no longer shows Persian strings:** the reveal/hide tooltip of masked values and the default error-toast title were hard-coded Persian and stayed Persian in English/Turkish mode; both now come from the trilingual dictionary (`reveal`/`hide` gained Turkish, default title is `L('خطا','Error','Hata')`).
+- **وب‌سایت در حالت انگلیسی کاملاً انگلیسی شد:** شمارهٔ قدم‌های «سه قدم تا اتصال» (۱/۲/۳) و کل صفحهٔ ۴۰۴ فارسی می‌ماندند؛ اکنون شماره‌ها کلید i18n دارند و ۴۰۴ دوزبانه شد (با کلید زبان). عنوان و meta description هر سه صفحه هم با زبان عوض می‌شوند (پیش‌تر فقط متن بدنه عوض می‌شد و عدد/عنوان فارسی می‌ماند).
+- **The website is fully English in EN mode:** the step numerals (۱/۲/۳) and the whole 404 page stayed Persian; numerals now have i18n keys and 404 is bilingual (with the language switch). Page titles and meta descriptions also switch with the language (previously only body text switched, leaving Persian titles/numerals behind).
+
+### Changed
+- اندروید: versionCode 2101 و versionName 1.11.1. / Android bumped to versionCode 2101 / versionName 1.11.1.
+
 ## [1.11.0] - 2026-11-06
 
 ### Added
