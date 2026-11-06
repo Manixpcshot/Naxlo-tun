@@ -343,6 +343,17 @@ pub struct FetchReport {
     pub title: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub userinfo: Option<SubUserinfo>,
+    /// Encrypted archive: the UI must ask for its password (file import).
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub need_password: bool,
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub wrong_password: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub file_path: Option<String>,
+}
+
+fn is_false(value: &bool) -> bool {
+    !*value
 }
 
 #[derive(Clone, Debug)]

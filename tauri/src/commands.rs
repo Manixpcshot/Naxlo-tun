@@ -8,6 +8,7 @@ use std::collections::HashMap;
 
 use tauri::{AppHandle, Manager};
 use tauri_plugin_clipboard_manager::ClipboardExt;
+use tauri_plugin_dialog::DialogExt;
 
 use crate::l10n::{l, LString};
 use crate::manager;
@@ -133,6 +134,14 @@ pub async fn servers_select(app: AppHandle, id: String) -> Result<String, String
 #[tauri::command]
 pub async fn servers_remove(app: AppHandle, id: String) -> Result<usize, String> {
     let core = core_of(&app)?;
+    // Parity with Electron: removing the active server disconnects first.
+    let drop_active = {
+        let g = core.lock();
+        g.runner.is_some() && g.active_server_id.as_deref() == Some(id.as_str())
+    };
+    if drop_active {
+        manager::do_disconnect(&app, "server-removed").await;
+    }
     let remaining = {
         let mut g = core.lock();
         g.vault.servers.retain(|s| s.id != id);
@@ -152,6 +161,9 @@ pub async fn servers_remove(app: AppHandle, id: String) -> Result<usize, String>
 #[tauri::command]
 pub async fn servers_clear(app: AppHandle) -> Result<bool, String> {
     let core = core_of(&app)?;
+    if core.is_connected() {
+        manager::do_disconnect(&app, "servers-cleared").await;
+    }
     {
         let mut g = core.lock();
         g.vault.servers.clear();
@@ -399,15 +411,46 @@ pub async fn subscription_clear(app: AppHandle) -> Result<bool, String> {
 
 #[tauri::command]
 pub async fn subscription_import_file(
-    _app: AppHandle,
+    app: AppHandle,
     file_path: Option<String>,
     password: Option<String>,
 ) -> Result<FetchReport, String> {
-    let _ = (file_path, password);
-    Err(err(l(
-        "وارد کردن فایل در نسخهٔ Rust هنوز پشتیبانی نمی‌شود",
-        "File import is not supported in the Rust edition yet",
-    )))
+    let path = match file_path {
+        Some(path) => path,
+        None => {
+            // Native picker (tauri-plugin-dialog); cancelled → empty report.
+            let (tx, rx) = tokio::sync::oneshot::channel();
+            app.dialog()
+                .file()
+                .set_title("انتخاب فایل کانفیگ")
+                .add_filter("Config / archive", &["txt", "text", "conf", "json", "sub", "zip"])
+                .pick_file(move |picked| {
+                    let _ = tx.send(picked);
+                });
+            match rx.await {
+                Ok(Some(path)) => path.to_string_lossy().into_owned(),
+                _ => {
+                    return Ok(FetchReport {
+                        ok: false,
+                        total: 0,
+                        supported: 0,
+                        merged: 0,
+                        error: None,
+                        warnings: Vec::new(),
+                        subscription_id: None,
+                        title: None,
+                        userinfo: None,
+                        need_password: false,
+                        wrong_password: false,
+                        file_path: None,
+                    })
+                }
+            }
+        }
+    };
+    crate::subscription::refresh_file_subscription(&app, &path, password.as_deref())
+        .await
+        .map_err(err)
 }
 
 #[tauri::command]
@@ -469,6 +512,23 @@ pub async fn settings_set(app: AppHandle, patch: serde_json::Value) -> Result<Se
         g.settings.clone()
     };
     core.save_settings_now();
+    // Keep the OS autostart entry in sync with the setting.
+    {
+        use tauri_plugin_autostart::ManagerExt;
+        let autolaunch = app.autolaunch();
+        let result = if next.auto_start {
+            autolaunch.enable()
+        } else {
+            autolaunch.disable()
+        };
+        if let Err(e) = result {
+            core.log(
+                "warn",
+                "settings",
+                &format!("autostart toggle failed: {}", e),
+            );
+        }
+    }
     core.emit_state();
     manager::schedule_auto_refresh(&app);
     core.log("info", "settings", "settings updated");
@@ -485,11 +545,38 @@ pub async fn core_ensure(app: AppHandle) -> Result<CoreStatus, String> {
 }
 
 #[tauri::command]
-pub async fn core_pick(_app: AppHandle) -> Result<CoreStatus, String> {
-    Err(err(l(
-        "انتخاب دستی هسته در نسخهٔ Rust پشتیبانی نمی‌شود",
-        "Picking a custom core is not supported in the Rust edition yet",
-    )))
+pub async fn core_pick(app: AppHandle) -> Result<CoreStatus, String> {
+    let core = core_of(&app)?;
+    let (tx, rx) = tokio::sync::oneshot::channel();
+    // No extension filter: core binaries are `xray.exe` on Windows but often
+    // extension-less executables on Linux/macOS.
+    app.dialog()
+        .file()
+        .set_title("انتخاب فایل اجرایی Xray")
+        .pick_file(move |picked| {
+            let _ = tx.send(picked);
+        });
+    let picked = rx
+        .await
+        .map_err(|_| err(l("گفت‌وگو ناموفق بود", "The dialog failed")))?;
+    let Some(path_buf) = picked else {
+        return Ok(core.snapshot_state().core);
+    };
+    let path = path_buf.to_string_lossy().into_owned();
+    if crate::xray_core::read_version(std::path::Path::new(&path)).is_none() {
+        return Err(err(l(
+            "فایل انتخاب‌شده یک هستهٔ Xray معتبر نیست",
+            "The selected file is not a valid Xray core",
+        )));
+    }
+    {
+        let mut g = core.lock();
+        g.settings.core_path = Some(path.clone());
+    }
+    core.save_settings_now();
+    crate::manager::ensure_core(&app).await.map_err(err)?;
+    core.log("info", "core", &format!("custom core registered: {}", path));
+    Ok(core.snapshot_state().core)
 }
 
 #[tauri::command]

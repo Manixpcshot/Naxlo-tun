@@ -6,6 +6,26 @@ All notable changes to Naxlo are documented here. Releases are cut per tag
 The format follows [Keep a Changelog](https://keepachangelog.com/) and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.9.0] - 2026-11-06
+
+### Fixed
+- **باگ‌های حالت TUN کل‌سیستمی (ویندوز):** فایل‌های geo (`geoip.dat`/`geosite.dat`) که اینباوند TUN با مسیریابی geo به آن‌ها نیاز دارد در zip رسمی Xray وجود ندارند و قاعده‌های `geosite:*`/`geoip:*` هنگام شروع هسته fail می‌شدند؛ اکنون naxlo قبل از اجرای هسته آن‌ها را از منابع رسمی v2fly دانلود، در `userData/xray/assets` ذخیره و با `XRAY_LOCATION_ASSET` به هسته معرفی می‌کند (با بازبینی freshness).
+- **System-wide TUN bugs (Windows):** the geo assets (`geoip.dat`/`geosite.dat`) required by TUN routing rules are absent from the official Xray zip, so `geosite:*`/`geoip:*` rules hard-failed at core startup; naxlo now downloads them from the official v2fly releases into `userData/xray/assets` and points the core at them via `XRAY_LOCATION_ASSET` (with a staleness re-check).
+- نشت DNS دور‌زنندهٔ تونل در ویندوز بسته شد: `autoSystemWfpBlockLeak: ["dns"]` (فقط ویندوز) ترافیک `udp/53`، `tcp/53`، WinDNS و DoT (`853`) بیرون از تونل را با فیلتر WFP مسدود می‌کند. / The Windows DNS leak around the tunnel is closed: `autoSystemWfpBlockLeak: ["dns"]` (Windows-only) blocks `udp/53`, `tcp/53`, the WinDNS client and DoT (`853`) from escaping the tunnel via WFP filters.
+- خاموش‌کردن هسته اکنون graceful است: `taskkill /T` بدون `/F` + انتظار تا خروج واقعی فرایند (و در صورت نیاز kill-tree) تا آداپتور Wintun و روت‌های سیستم تمیز پاک شوند. / Core shutdown is graceful now: `taskkill /T` without `/F` plus a real exit wait (kill-tree only as fallback) so the Wintun adapter and system routes clean up properly.
+- ارتقای UAC: قفل single-instance قبل از relaunch elevated آزاد می‌شود (نمونهٔ ادمین دیگر به‌عنوان «نمونهٔ دوم» خارج نمی‌شود)؛ در صورت رد کردن UAC برنامه در حال اجرا می‌ماند و حالت اتصال به «پروکسی» برمی‌گردد. / UAC elevation: the single-instance lock is released before the elevated relaunch (the admin instance no longer quits as a "second instance"); on UAC denial the app stays open and rolls the connection mode back to proxy.
+- تغییر حالت اتصال (پروکسی ⇄ TUN) هنگام اتصال فعال، اکنون با یک toast اتصال را در حالت جدید برقرار می‌کند؛ failover قبل از اتصال به سرور بعدی اول قطع می‌کند؛ مسیرهای اتصال خودکار TUN بدون ادمین با هشدار رد می‌شوند. / Switching connection mode (proxy ⇄ TUN) while connected now reconnects in the new mode with a toast; failover disconnects before connecting to the next server; TUN auto-connect paths are skipped with a warning when not elevated.
+- **باگ‌گیری انیمیشن‌ها:** shimmer اسکلتون/دکمه‌ها فقط `background-position` را انیمیت می‌کند (بدون پرش رنگ)، درخشش نوار پیشرفت کلید `sweep`/`sweep-rtl` جداگانه گرفت، حالت indeterminate و اسلاید بوت در RTL معکوس می‌شوند، میله‌های اکولایزر از پایین مقیاس می‌شوند، `MotionConfig` با «کاهش حرکت» همهٔ انیمیشن‌های motion را خاموش می‌کند و تعویض صفحه اسکرول را به بالا برمی‌گرداند. / **Animation bug-hunt:** skeleton/button shimmer animates `background-position` only (no color jump), the progress sheen got dedicated `sweep`/`sweep-rtl` keyframes, indeterminate progress and the boot slide mirror correctly in RTL, equalizer bars scale from the bottom, `MotionConfig` fully honors reduce-motion, and page switches reset the scroll position.
+
+### Added
+- **نسخهٔ Rust از حالت lean خارج شد:** tray سیستم (وضعیت زنده، اتصال/قطع سریع، باز کردن، خروج با همان guard)، شروع خودکار با OS (پلاگین autostart)، **وارد کردن فایل کانفیگ** با پشتیبانی ZIP رمزدار (ZipCrypto/AES) و مودال رمز در UI، انتخاب دستی فایل اجرایی هسته با اعتبارسنجی، **failover خودکار** پس از سه بار شکست پروب سلامت، بستن پنجره به tray وقتی «کوچک‌شدن به tray» فعال است و parity قطع اتصال هنگام حذف/پاک‌کردن سرورها.
+- **The Rust edition outgrows its lean scope:** a system tray (live status, quick connect/disconnect, open, guarded quit), OS auto-start (autostart plugin), **config file import** with password-protected ZIP support (ZipCrypto/AES) and the password modal in the UI, manual core-binary picking with validation, **auto-failover** after three failed health probes, close-to-tray when minimize-to-tray is on, and disconnect parity when removing/clearing servers.
+- کلیدهای auto-start، کوچک‌شدن به tray، انتخاب فایل هسته و «وارد کردن از فایل» در نسخهٔ Rust از حالت پنهان خارج شدند. / The auto-start, minimize-to-tray, pick-core-file and import-from-file controls are now enabled in the Rust edition.
+
+### Changed
+- TUN و به‌روزرسانی خاموش خودکار همچنان مخصوص نسخهٔ الکترون (ویندوز) باقی می‌مانند. / TUN mode and silent self-update remain Electron-only (Windows).
+- اندروید: versionCode 1900 و versionName 1.9.0. / Android bumped to versionCode 1900 / versionName 1.9.0.
+
 ## [1.8.0] - 2026-11-01
 
 ### Added

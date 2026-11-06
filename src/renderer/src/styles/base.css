@@ -234,3 +234,16 @@ a {
     transform: translateX(310%);
   }
 }
+
+[dir='rtl'] .boot__bar > span {
+  animation-name: boot-slide-rtl;
+}
+
+@keyframes boot-slide-rtl {
+  0% {
+    transform: translateX(110%);
+  }
+  100% {
+    transform: translateX(-310%);
+  }
+}

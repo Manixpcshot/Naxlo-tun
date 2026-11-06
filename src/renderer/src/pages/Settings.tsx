@@ -55,7 +55,12 @@ export function Settings(): React.ReactElement {
     // Persist first: the elevated instance must come up in TUN mode and
     // auto-connect without another prompt.
     await saveSettings({ connectionMode: 'tun' }).catch(() => undefined)
-    await window.naxlo.app.relaunchElevated().catch(() => undefined)
+    const done = await run(() => window.naxlo.app.relaunchElevated(), t('errorTitle'))
+    if (done === undefined) {
+      // UAC dismissed (or unsupported): roll the mode back so the UI matches
+      // the instance that is actually running.
+      await saveSettings({ connectionMode: 'proxy' }).catch(() => undefined)
+    }
   }
 
   const numberField = (key: 'socksPort' | 'httpPort', value: number): React.ReactElement => (
@@ -219,11 +224,9 @@ export function Settings(): React.ReactElement {
               >
                 {state.core.ready ? t('coreInstall') : t('coreDownload')}
               </Button>
-              {!isTauri() ? (
-                <Button icon="folder" onClick={() => void run(() => window.naxlo.core.pick(), t('errorTitle'))}>
-                  {t('corePickFile')}
-                </Button>
-              ) : null}
+              <Button icon="folder" onClick={() => void run(() => window.naxlo.core.pick(), t('errorTitle'))}>
+                {t('corePickFile')}
+              </Button>
               <Button
                 icon="refresh"
                 variant="ghost"
@@ -356,17 +359,13 @@ export function Settings(): React.ReactElement {
                   onChange={(value) => setLang(value)}
                 />
               </Field>
-              {!isTauri() ? (
-                <>
-                  <Toggle checked={settings.autoStart} onChange={(value) => patch({ autoStart: value })} title={t('autoStart')} />
-                  <Toggle
-                    checked={settings.minimizeToTray}
-                    onChange={(value) => patch({ minimizeToTray: value })}
-                    title={t('minimizeToTray')}
-                    description={t('minimizeToTrayDesc')}
-                  />
-                </>
-              ) : null}
+              <Toggle checked={settings.autoStart} onChange={(value) => patch({ autoStart: value })} title={t('autoStart')} />
+              <Toggle
+                checked={settings.minimizeToTray}
+                onChange={(value) => patch({ minimizeToTray: value })}
+                title={t('minimizeToTray')}
+                description={t('minimizeToTrayDesc')}
+              />
               <Toggle checked={settings.reduceMotion} onChange={(value) => patch({ reduceMotion: value })} title={t('reduceMotion')} description={t('reduceMotionDesc')} />
 
               <Field label={t('accentField')}>

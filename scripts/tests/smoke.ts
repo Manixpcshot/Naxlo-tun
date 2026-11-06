@@ -27,6 +27,7 @@ import {
   zipUsesAes
 } from '../../src/main/lib/fileImport'
 import { WINTUN_VERSION, WINTUN_ZIP_SHA256, WINTUN_ZIP_URL } from '../../src/main/lib/xray/wintun'
+import { GEO_FILES, GEOIP_URL, GEOSITE_URL, geoAssetLocation, needsGeoAssets } from '../../src/main/lib/xray/geo'
 import { strToU8, zipSync } from 'fflate'
 import { pickBestServer } from '../../src/main/lib/autoselect'
 import type { ServerConfig } from '../../src/shared/types'
@@ -270,6 +271,28 @@ test('xray config: TUN mode adds the built-in tun inbound', () => {
   // Local SOCKS/HTTP inbounds remain available for direct clients.
   assert.ok(inbounds.some((i) => i.protocol === 'socks'))
   assert.ok(inbounds.some((i) => i.protocol === 'http'))
+})
+
+test('geo: routing settings decide whether geo assets are needed', () => {
+  assert.equal(needsGeoAssets({ routeMode: 'all-proxy', blockAds: false }), false)
+  assert.equal(needsGeoAssets({ routeMode: 'iran-direct', blockAds: false }), true)
+  assert.equal(needsGeoAssets({ routeMode: 'all-proxy', blockAds: true }), true)
+  assert.ok(GEOIP_URL.endsWith('/geoip.dat'))
+  assert.ok(GEOSITE_URL.endsWith('/dlc.dat'))
+  assert.deepEqual([...GEO_FILES], ['geoip.dat', 'geosite.dat'])
+})
+
+test('geo: asset location prefers a core dir that already ships them', () => {
+  const os = require('node:os') as typeof import('node:os')
+  const fs = require('node:fs') as typeof import('node:fs')
+  const dir = fs.mkdtempSync(require('node:path').join(os.tmpdir(), 'naxlo-geo-'))
+  const coreDir = require('node:path').join(dir, 'core')
+  const assets = require('node:path').join(dir, 'assets')
+  fs.mkdirSync(coreDir, { recursive: true })
+  assert.equal(geoAssetLocation(require('node:path').join(coreDir, 'xray.exe'), assets), assets)
+  for (const file of GEO_FILES) fs.writeFileSync(require('node:path').join(coreDir, file), 'x'.repeat(1024))
+  assert.equal(geoAssetLocation(require('node:path').join(coreDir, 'xray.exe'), assets), coreDir)
+  fs.rmSync(dir, { recursive: true, force: true })
 })
 
 test('wintun: pinned official checksum and URL', () => {

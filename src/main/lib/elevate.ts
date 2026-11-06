@@ -6,10 +6,18 @@
  * through the Windows UAC prompt (`Start-Process -Verb RunAs`) with the
  * `--tun-elevated` flag; the fresh instance owns the connection lifecycle so
  * connect/disconnect never trigger another prompt.
+ *
+ * The relaunch is *confirmed*: the PowerShell exit code tells us whether the
+ * UAC prompt was accepted. A dismissed prompt keeps the current instance
+ * alive instead of silently closing the app.
  */
 import { app } from 'electron'
-import { execSync, spawn } from 'node:child_process'
+import { execSync } from 'node:child_process'
+import { execFile } from 'node:child_process'
+import { promisify } from 'node:util'
 import { log } from './logger'
+
+const execFileAsync = promisify(execFile)
 
 const SCOPE = 'elevate'
 
@@ -25,28 +33,37 @@ export function isAdmin(): boolean {
 }
 
 /**
- * Relaunch the packaged app elevated (UAC). The current instance exits right
- * after spawning so the single-instance lock is released first.
+ * Relaunch the packaged app elevated (UAC). Resolves `true` only when the
+ * UAC prompt was accepted — the caller then lets this instance exit while
+ * the elevated one takes over; `false` means "stay put".
  */
-export function relaunchElevated(): boolean {
+export async function relaunchElevated(): Promise<boolean> {
   if (!app.isPackaged) {
     log.warn(SCOPE, 'elevated relaunch is only available in packaged builds')
     return false
   }
   if (process.platform !== 'win32') return false
+  const exe = process.execPath.replace(/'/g, "''")
+  const script = `Start-Process -FilePath '${exe}' -ArgumentList '--tun-elevated' -Verb RunAs`
+  // Release the single-instance lock *before* the elevated process spawns,
+  // otherwise it would see us holding it and quit as a "second instance".
+  app.releaseSingleInstanceLock()
   try {
-    app.releaseSingleInstanceLock()
-    const exe = process.execPath.replace(/'/g, "''")
-    spawn(
-      'powershell.exe',
-      ['-NoProfile', '-Command', `Start-Process -FilePath '${exe}' -ArgumentList '--tun-elevated' -Verb RunAs`],
-      { detached: true, stdio: 'ignore', windowsHide: true }
-    ).unref()
-    log.info(SCOPE, 'relaunching elevated for TUN mode')
-    setTimeout(() => app.exit(0), 350)
-    return true
+    // A dismissed UAC prompt makes Start-Process throw → non-zero exit here.
+    await execFileAsync('powershell.exe', ['-NoProfile', '-Command', script], {
+      windowsHide: true,
+      timeout: 120_000
+    })
   } catch (err) {
-    log.error(SCOPE, 'elevated relaunch failed', err)
+    log.warn(SCOPE, 'elevated relaunch cancelled or failed', err instanceof Error ? err.message : err)
+    try {
+      app.requestSingleInstanceLock()
+    } catch {
+      /* another instance took over meanwhile — nothing sensible to do */
+    }
     return false
   }
+  log.info(SCOPE, 'relaunching elevated for TUN mode')
+  setTimeout(() => app.exit(0), 350)
+  return true
 }

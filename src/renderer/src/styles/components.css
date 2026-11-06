@@ -667,12 +667,29 @@
   position: absolute;
   inset: 0;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
-  animation: shimmer 1.6s linear infinite;
+  animation: sweep 1.6s linear infinite;
+}
+
+[dir='rtl'] .progress__bar::after {
+  animation-name: sweep-rtl;
 }
 
 .progress--indeterminate .progress__bar {
   width: 34% !important;
   animation: indeterminate 1.5s var(--ease-in-out) infinite;
+}
+
+[dir='rtl'] .progress--indeterminate .progress__bar {
+  animation-name: indeterminate-rtl;
+}
+
+@keyframes indeterminate-rtl {
+  0% {
+    transform: translateX(110%);
+  }
+  100% {
+    transform: translateX(-320%);
+  }
 }
 
 /* Skeleton --------------------------------------------------- */

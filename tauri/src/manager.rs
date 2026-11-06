@@ -649,6 +649,46 @@ fn spawn_latency_timer(app: &AppHandle, gen: u64) {
                 Tick::Failed(failures) => {
                     core.log("warn", "connection", &format!("latency probe failed ({}/3)", failures));
                     if failures >= 3 {
+                        // Parity with Electron: try a different healthy server
+                        // before giving up (auto-failover).
+                        let next = if settings.auto_failover {
+                            let candidates: Vec<ServerConfig> = {
+                                let g = core.lock();
+                                let active = g.active_server_id.clone();
+                                g.vault
+                                    .servers
+                                    .iter()
+                                    .filter(|s| Some(&s.id) != active.as_ref())
+                                    .cloned()
+                                    .collect()
+                            };
+                            pick_best(&candidates).map(|s| (s.id.clone(), s.name.clone()))
+                        } else {
+                            None
+                        };
+                        if let Some((next_id, next_name)) = next {
+                            core.log("warn", "connection", "health checks failed — switching servers");
+                            core.toast(
+                                "warning",
+                                l("در حال تعویض سرور…", "Switching servers…"),
+                                Some(LString {
+                                    fa: format!("اتصال فعلی پاسخ نمی‌دهد؛ در حال امتحان «{}»", next_name),
+                                    en: format!("The current server stopped responding; trying \"{}\"", next_name),
+                                }),
+                            );
+                            cleanup_after_failure(
+                                &app2,
+                                l(
+                                    "پروکسی پاسخ نداد — در حال تعویض سرور",
+                                    "The proxy stopped responding — switching servers",
+                                ),
+                            )
+                            .await;
+                            if let Err(e) = do_connect(&app2, Some(next_id)).await {
+                                core.toast("error", l("تعویض سرور ناموفق بود", "Failover failed"), Some(e));
+                            }
+                            return;
+                        }
                         cleanup_after_failure(
                             &app2,
                             l(
@@ -736,18 +776,28 @@ pub fn schedule_auto_refresh(app: &AppHandle) {
 }
 
 /// Close guard: warn while connected, offering to disconnect before exit.
-pub fn guarded_close(app: &AppHandle) {
+/// `allow_tray_hide` is true for the window close button (honors
+/// minimize-to-tray when idle) and false for the tray's Quit item.
+pub fn guarded_close(app: &AppHandle, allow_tray_hide: bool) {
     use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
 
     let Some(core) = app.try_state::<AppCore>() else {
         app.exit(0);
         return;
     };
-    let (connected, lang) = {
+    let (connected, lang, minimize) = {
         let g = core.lock();
-        (g.runner.is_some(), g.settings.language.clone())
+        (g.runner.is_some(), g.settings.language.clone(), g.settings.minimize_to_tray)
     };
     if !connected {
+        // Not connected: honor "minimize to tray" and keep the app running.
+        if minimize && allow_tray_hide {
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.hide();
+                core.log("info", "window", "closed to tray (minimize-to-tray enabled)");
+                return;
+            }
+        }
         app.exit(0);
         return;
     }

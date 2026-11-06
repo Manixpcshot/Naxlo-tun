@@ -2,14 +2,32 @@
    Motion: keyframes + the animated background layer
    ============================================================ */
 
+/* Background-position only: skeletons must shimmer in place, never slide. */
 @keyframes shimmer {
   0% {
     background-position: 200% 0;
-    transform: translateX(-100%);
   }
   100% {
     background-position: -200% 0;
+  }
+}
+
+/* Transform-only sweep for overlay highlights (progress bar sheen). */
+@keyframes sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
     transform: translateX(100%);
+  }
+}
+
+@keyframes sweep-rtl {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
   }
 }
 
@@ -294,6 +312,8 @@
   width: 2.5px;
   background: var(--success);
   border-radius: 2px;
+  /* Grow from the baseline, not from the middle of the bar. */
+  transform-origin: 50% 100%;
   animation: eq 1.1s var(--ease-in-out) infinite;
 }
 

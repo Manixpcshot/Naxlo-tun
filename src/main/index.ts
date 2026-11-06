@@ -26,6 +26,7 @@ import { L } from '../shared/i18n'
 import { refreshSubscription, SubscriptionError } from './lib/subscription'
 import { redact } from './lib/redact'
 import { runtime } from './runtime'
+import { isAdmin } from './lib/elevate'
 import { checkForUpdatesOnLaunch, initAutoUpdater } from './lib/updater'
 
 const SCOPE = 'main'
@@ -70,7 +71,12 @@ async function bootstrap(): Promise<void> {
     const failed = getVault().servers.find((server) => server.id === failedId)
     log.warn(SCOPE, `failover: ${failed?.name ?? failedId} → ${next.name}`)
     toast('warning', L('سرور قبلی پاسخ نداد؛ سوییچ خودکار', 'Previous server stopped answering — auto switch'), L(next.name, next.name))
-    void manager.connect(next.id)
+    // The dying tunnel still owns the local ports: tear it down first,
+    // otherwise the replacement connect fails with "port already in use".
+    void manager
+      .disconnect('failover')
+      .then(() => manager.connect(next.id))
+      .catch((err) => log.error(SCOPE, 'failover connect failed', err))
   }
 
   try {
@@ -95,15 +101,28 @@ async function bootstrap(): Promise<void> {
   checkForUpdatesOnLaunch()
 
   if (runtime.autoStarted && settings.autoConnectLast && getVault().selectedServerId) {
-    log.info(SCOPE, 'auto-connecting to the last used server')
-    setConnection('preparing')
-    void manager.connect()
+    if (settings.connectionMode === 'tun' && !isAdmin()) {
+      log.warn(SCOPE, 'skipping auto-connect: TUN mode needs administrator rights')
+      toast(
+        'warning',
+        L('اتصال خودکار انجام نشد', 'Auto-connect skipped'),
+        L('حالت TUN به دسترسی مدیر نیاز دارد؛ برنامه را با دسترسی مدیر باز کنید.', 'TUN mode needs administrator rights — reopen Naxlo as administrator.')
+      )
+    } else {
+      log.info(SCOPE, 'auto-connecting to the last used server')
+      setConnection('preparing')
+      void manager.connect()
+    }
   }
 
   if (runtime.tunElevated && settings.connectionMode === 'tun' && getVault().selectedServerId) {
-    log.info(SCOPE, 'elevated relaunch: auto-connecting in TUN mode')
-    setConnection('preparing')
-    void manager.connect()
+    if (isAdmin()) {
+      log.info(SCOPE, 'elevated relaunch: auto-connecting in TUN mode')
+      setConnection('preparing')
+      void manager.connect()
+    } else {
+      log.warn(SCOPE, 'elevated relaunch without admin rights — staying idle')
+    }
   }
 }
 

@@ -7,7 +7,7 @@
  * piped through the redactor before it reaches the log ring buffer.
  */
 import { app } from 'electron'
-import { spawn, execFile } from 'node:child_process'
+import { spawn, execFile, type ChildProcess } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync, chmodSync, unlinkSync } from 'node:fs'
 import { join, dirname } from 'node:path'
@@ -123,11 +123,37 @@ export function startCore(options: RunOptions): RunHandle {
       return
     }
     log.info(SCOPE, `stopping core (reason: ${reason})`)
-    await killTree(child.pid, reason)
+    if (process.platform === 'win32') {
+      // Graceful first: Xray tears down TUN routes / WFP filters on a normal
+      // exit, so give it a moment before resorting to a forced kill.
+      execFile('taskkill', ['/pid', String(child.pid), '/T'], { windowsHide: true }, () => undefined)
+      await waitForExit(child, 2500)
+    }
+    if (child.exitCode === null && !child.killed) {
+      await killTree(child.pid, reason)
+    }
     removeConfigFile(configFile)
   }
 
   return { pid: child.pid ?? -1, exited, stop, configFile }
+}
+
+function waitForExit(child: ChildProcess, ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    if (child.exitCode !== null || child.killed) {
+      resolve()
+      return
+    }
+    const onExit = (): void => {
+      clearTimeout(timer)
+      resolve()
+    }
+    const timer = setTimeout(() => {
+      child.removeListener('exit', onExit)
+      resolve()
+    }, ms)
+    child.once('exit', onExit)
+  })
 }
 
 function removeConfigFile(file: string): void {

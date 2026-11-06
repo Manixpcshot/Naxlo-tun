@@ -6,14 +6,16 @@
  * through the proxy. Everything is reported as `AppState` so the renderer can
  * animate the transitions.
  */
-import { dirname } from 'node:path'
+import { dirname, join } from 'node:path'
 import net from 'node:net'
+import { app } from 'electron'
 import { log } from '../logger'
 import { redact, registerSecret } from '../redact'
 import { getSettings } from '../settings'
 import { getVault, updateVault } from '../secretStore'
 import { downloadCore, findCore, latestReleaseTag, readVersion, type CoreLocation } from './core'
 import { buildXrayConfig, validateConfig } from './config'
+import { ensureGeoAssets, geoAssetLocation, needsGeoAssets } from './geo'
 import { ensureWintun } from './wintun'
 import { isAdmin } from '../elevate'
 import { cleanupStaleConfigs, startCore, type RunHandle } from './runner'
@@ -203,6 +205,19 @@ class XrayManager {
       }
       const settings = getSettings()
 
+      // Routing rules (iran-direct / block-ads) are resolved by Xray at startup
+      // from geoip.dat/geosite.dat — fetch them before the core is spawned or
+      // it would exit immediately with an opaque error.
+      if (needsGeoAssets(settings)) {
+        await ensureGeoAssets(geoAssetsDir(), 120_000, (file, phase) =>
+          log.info(SCOPE, phase === 'download' ? `downloading routing data ${file}` : `routing data ${file} ready`)
+        )
+        if (stale()) {
+          log.info(SCOPE, 'connect cancelled while fetching routing data')
+          return
+        }
+      }
+
       if (await portInUse(settings.listenAddress, settings.socksPort)) {
         throw new AppError(
           L(
@@ -237,7 +252,7 @@ class XrayManager {
       }
 
       setConnection('starting')
-      const geoDir = dirname(core.path)
+      const geoDir = geoAssetLocation(core.path, geoAssetsDir())
       const config = buildXrayConfig({ server, settings, geoDir })
       const handle = startCore({
         corePath: core.path,
@@ -570,6 +585,11 @@ function portInUse(host: string, port: number): Promise<boolean> {
     socket.once('error', () => done(false))
     socket.connect(port, host)
   })
+}
+
+/** Writable home for geoip.dat / geosite.dat (XRAY_LOCATION_ASSET). */
+export function geoAssetsDir(): string {
+  return join(app.getPath('userData'), 'xray', 'assets')
 }
 
 export const manager = new XrayManager()
