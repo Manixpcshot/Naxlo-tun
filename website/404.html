@@ -3,18 +3,33 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>۴۰۴ | Naxlo</title>
+  <title data-i18n="page_title_404">۴۰۴ | Naxlo</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/vazirmatn@5/index.css" />
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
+  <header>
+    <div class="wrap nav">
+      <a class="brand" href="/">
+        <img src="/favicon.svg" alt="Naxlo" />
+        <span data-i18n="brand">ناکسو</span>
+      </a>
+      <div class="spacer"></div>
+      <div class="lang" role="group" aria-label="Language">
+        <button id="lang-fa" class="on">فا</button>
+        <button id="lang-en">EN</button>
+      </div>
+    </div>
+  </header>
   <main>
-    <div class="wrap" style="max-width:560px; text-align:center; padding-top:110px">
+    <div class="wrap" style="max-width:560px; text-align:center; padding-top:90px">
       <img src="/icon-192.png" alt="Naxlo" style="width:110px; margin:0 auto 26px; border-radius:26px; box-shadow:0 0 60px rgba(34,211,238,0.25)" />
-      <h1 style="font-size:52px">۴۰۴</h1>
-      <p style="color:var(--text-dim); margin:10px 0 26px">این صفحه در تونل گم شد — چیزی که دنبالش بودید اینجا نیست.</p>
-      <a class="btn btn-primary" href="/">بازگشت به خانه</a>
+      <h1 style="font-size:52px" data-i18n="n404_code">۴۰۴</h1>
+      <p style="color:var(--text-dim); margin:10px 0 26px" data-i18n="n404_body">این صفحه در تونل گم شد — چیزی که دنبالش بودید اینجا نیست.</p>
+      <a class="btn btn-primary" href="/" data-i18n="n404_btn">بازگشت به خانه</a>
     </div>
   </main>
+  <script src="/app.js"></script>
 </body>
 </html>

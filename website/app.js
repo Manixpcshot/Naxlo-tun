@@ -84,6 +84,19 @@
     foot1: '© Naxlo — built for a free internet',
     foot_speed: 'Speed test',
     foot_dl: 'Download',
+    step_n1: '1',
+    step_n2: '2',
+    step_n3: '3',
+    page_title_home: 'Naxlo — open-source VPN client',
+    page_title_speed: 'Speed test | Naxlo',
+    page_title_404: '404 | Naxlo',
+    meta_desc_home: 'Naxlo is a lean open-source VPN client for Windows, Linux, macOS and Android: Xray core, TUN mode, multi-subscription management and zero logs.',
+    og_title: 'Naxlo | Naxlo VPN',
+    og_desc: 'Open-source VPN client on the Xray core — secure tunnel, calm dark design, zero logs.',
+    meta_desc_speed: 'Download speed test from the Naxlo server — the very file the Naxlo apps use to measure tunnel throughput.',
+    n404_code: '404',
+    n404_body: 'This page got lost in the tunnel — what you were looking for is not here.',
+    n404_btn: 'Back to home',
     /* speed test page */
     st_title: 'Speed test',
     st_lead: 'Measures download throughput from this server. If Naxlo is connected, you are measuring the tunnel itself.',
@@ -102,14 +115,9 @@
   const FA = {}
   const nodes = Array.from(document.querySelectorAll('[data-i18n]'))
   nodes.forEach((el) => { FA[el.getAttribute('data-i18n')] = el.textContent })
+  const metaNodes = Array.from(document.querySelectorAll('[data-i18n-content]'))
+  metaNodes.forEach((el) => { FA[el.getAttribute('data-i18n-content')] = el.getAttribute('content') || '' })
 
-  const TITLES = {
-    fa: { title: document.title, desc: document.querySelector('meta[name=description]')?.content },
-    en: {
-      title: 'Naxlo — open-source VPN client',
-      desc: 'Naxlo is a lean open-source VPN client for Windows, Linux, macOS and Android: Xray core, TUN mode, multi-subscription management and zero logs.'
-    }
-  }
 
   function applyLang(lang) {
     const dict = lang === 'en' ? EN : FA
@@ -117,11 +125,12 @@
       const key = el.getAttribute('data-i18n')
       if (dict[key] != null) el.textContent = dict[key]
     })
+    metaNodes.forEach((el) => {
+      const key = el.getAttribute('data-i18n-content')
+      if (dict[key] != null) el.setAttribute('content', dict[key])
+    })
     document.documentElement.lang = lang
     document.documentElement.dir = lang === 'fa' ? 'rtl' : 'ltr'
-    document.title = TITLES[lang].title
-    const meta = document.querySelector('meta[name=description]')
-    if (meta && TITLES[lang].desc) meta.content = TITLES[lang].desc
     document.getElementById('lang-fa')?.classList.toggle('on', lang === 'fa')
     document.getElementById('lang-en')?.classList.toggle('on', lang === 'en')
     try { localStorage.setItem('naxlo-site-lang', lang) } catch { /* private mode */ }

@@ -15,6 +15,7 @@ import React, {
 } from 'react'
 import type { AppState, LString, LogEntry, ServerView, Settings, Toast } from '@shared/bridge'
 import { DEFAULT_SETTINGS, isLString } from '@shared/bridge'
+import { L } from '@shared/i18n'
 import type { AppInfo } from '@shared/api'
 
 const EMPTY_STATE: AppState = {
@@ -133,7 +134,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }): Reac
   }, [])
 
   const run = useCallback(
-    async <T,>(task: () => Promise<T>, errorTitle: string | LString = 'خطا'): Promise<T | undefined> => {
+    async <T,>(task: () => Promise<T>, errorTitle: string | LString = L('خطا', 'Error', 'Hata')): Promise<T | undefined> => {
       setBusy(true)
       try {
         return await task()
