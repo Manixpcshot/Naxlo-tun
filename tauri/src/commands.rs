@@ -499,7 +499,9 @@ pub async fn disconnect(app: AppHandle) -> Result<String, String> {
 #[tauri::command]
 pub async fn stats_get(app: AppHandle) -> Result<crate::models::StatsPayload, String> {
     let core = core_of(&app)?;
-    Ok(core.lock().vault.stats.clone())
+    // Bind first: a MutexGuard in the tail expression would outlive `core`.
+    let stats = core.lock().vault.stats.clone();
+    Ok(stats)
 }
 
 #[tauri::command]
