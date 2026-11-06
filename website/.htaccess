@@ -1,0 +1,74 @@
+# ============================================================
+#  Naxlo website — Apache configuration for cPanel hosting
+#  Upload this file together with the site into the document
+#  root of vpn.naxlo.ir (usually ~/public_html or the subdomain
+#  folder cPanel created for it).
+# ============================================================
+
+# No directory listings, sane default document
+Options -Indexes
+DirectoryIndex index.html
+
+# Persian/English content is UTF-8 everywhere
+AddDefaultCharset UTF-8
+
+<IfModule mod_mime.c>
+  AddType image/svg+xml .svg
+  AddType application/manifest+json .webmanifest
+  # the measurement file is raw bytes, never text
+  AddType application/octet-stream .bin
+</IfModule>
+
+# ------------------------------------------------------------ compression
+# Text assets only. speedtest.bin is explicitly excluded below —
+# compressing it would corrupt the speed measurement.
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css application/javascript application/json image/svg+xml application/manifest+json
+</IfModule>
+<IfModule mod_setenvif.c>
+  SetEnvIf Request_URI "speedtest\.bin$" no-gzip dont-vary
+</IfModule>
+
+# ------------------------------------------------------------ caching
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/html "access plus 0 seconds"
+  ExpiresByType text/css "access plus 7 days"
+  ExpiresByType application/javascript "access plus 7 days"
+  ExpiresByType image/svg+xml "access plus 30 days"
+  ExpiresByType image/png "access plus 30 days"
+  ExpiresByType image/x-icon "access plus 30 days"
+  ExpiresByType image/vnd.microsoft.icon "access plus 30 days"
+  ExpiresByType application/manifest+json "access plus 1 days"
+</IfModule>
+
+# The measurement file must always come from origin: a cached copy
+# would make repeated speed tests meaningless.
+<FilesMatch "speedtest\.bin$">
+  <IfModule mod_headers.c>
+    Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+    Header set Pragma "no-cache"
+    Header unset ETag
+  </IfModule>
+</FilesMatch>
+
+# ------------------------------------------------------------ security
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-Frame-Options "SAMEORIGIN"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+  Header set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+</IfModule>
+
+# ------------------------------------------------------------ https
+# cPanel AutoSSL issues the certificate; force HTTPS in production.
+# Local/preview hosts are skipped so the site stays testable offline.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{HTTPS} !=on
+  RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+  RewriteCond %{HTTP_HOST} !^(localhost|127\.0\.0\.1|0\.0\.0\.0) [NC]
+  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</IfModule>
+
+ErrorDocument 404 /404.html

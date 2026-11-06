@@ -463,11 +463,14 @@ pub async fn speed_test(app: AppHandle) -> Result<SpeedResult, String> {
         )));
     }
     let http_port = { core.lock().state.http_port };
+    // Project-hosted measurement file first (always reachable, never
+    // rate-limited) with a cache-busting query, then public mirrors.
     let targets = [
-        "https://speed.cloudflare.com/__down?bytes=16000000",
-        "https://proof.ovh.net/files/10Mb.dat",
+        format!("https://vpn.naxlo.ir/speedtest.bin?r={}", crate::util::now_ms()),
+        "https://speed.cloudflare.com/__down?bytes=16000000".to_string(),
+        "https://speedtest.tele2.net/10MB.zip".to_string(),
     ];
-    for target in targets {
+    for target in &targets {
         let result = crate::net::measure_throughput("127.0.0.1", http_port, target, 12 * 1024 * 1024, 15000).await;
         if result.ok && result.ms > 0 {
             let mbps = (result.bytes as f64) * 8.0 / (result.ms as f64) / 1000.0;

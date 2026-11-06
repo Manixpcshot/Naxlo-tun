@@ -271,6 +271,32 @@ test('xray config: TUN mode adds the built-in tun inbound', () => {
   // Local SOCKS/HTTP inbounds remain available for direct clients.
   assert.ok(inbounds.some((i) => i.protocol === 'socks'))
   assert.ok(inbounds.some((i) => i.protocol === 'http'))
+  // In-TUN DNS: a `dns` outbound answers wire queries from the adapter and
+  // the port-53 rule routes them to it before any other rule can.
+  const outbounds = config.outbounds as any[]
+  const dnsOut = outbounds.find((o) => o.protocol === 'dns')
+  assert.ok(dnsOut)
+  assert.equal(dnsOut.tag, 'naxlo-dns')
+  const dnsSection = config.dns as any
+  assert.ok(dnsSection)
+  assert.equal(dnsSection.queryStrategy, 'UseIPv4')
+  assert.ok(dnsSection.servers.some((s: string) => s.startsWith('https://')))
+  const rules = (config.routing as any).rules as any[]
+  const dnsRule = rules.find((r) => r.outboundTag === 'naxlo-dns')
+  assert.ok(dnsRule)
+  assert.deepEqual(dnsRule.inboundTag, ['naxlo-tun'])
+  assert.equal(rules[0], dnsRule)
+})
+
+test('xray config: proxy mode has no dns outbound or section', () => {
+  const parsed = parseProxyLink(VLESS_TLS_WS)
+  assert.ok(parsed)
+  const config = buildXrayConfig({ server: parsed.server, settings: DEFAULT_SETTINGS })
+  const outbounds = config.outbounds as any[]
+  assert.ok(!outbounds.some((o) => o.protocol === 'dns'))
+  assert.equal(config.dns, undefined)
+  const rules = (config.routing as any).rules as any[]
+  assert.ok(!rules.some((r) => r.outboundTag === 'naxlo-dns'))
 })
 
 test('geo: routing settings decide whether geo assets are needed', () => {

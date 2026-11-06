@@ -1,36 +1,49 @@
-# Naxlo 1.10.1 — stats bug-hunt hotfix 🐞
+# Naxlo 1.11.0 — website, working speed test & healed TUN 🌐
 
-> کلاینت فارسی‌زبان VLESS برای ویندوز، لینوکس، مک و اندروید بر پایهٔ هستهٔ رسمی Xray
+> کلاینت فارسی‌زبان VLESS برای ویندوز، لینوکس، مک و اندروید بر پایهٔ هسته رسمی Xray
 > Persian-first VLESS client for Windows, Linux, macOS and Android on the official Xray core.
 
-## 🔧 چه چیزی درست شد / What's fixed
+## 🌐 وب‌سایت رسمی / Official website — vpn.naxlo.ir
 
-### 📊 نمودار آمار و تغییر ساعت تابستانی / Stats chart vs. DST
-- سطل‌های روزانهٔ نمودار ۱۴ روزه با گام ثابت ۲۴ ساعته ساخته می‌شدند؛ در منطقه‌های زمانی دارای DST (مثل اروپا/برلین) عبور از تغییر ساعت می‌توانست یک تاریخ را **تکرار یا حذف** کند — کلید تکراری React و دقیقه‌های جابه‌جا. اکنون همهٔ محاسبات تقویمی است و روزهای ۲۳/۲۵ ساعته درست تقسیم می‌شوند.
-- Daily buckets used fixed 24h steps; a DST switch inside the 14-day window (e.g. Europe/Berlin) could **duplicate or skip a date** — duplicate React keys and misattributed minutes. All day math is calendar-based now, and 23h/25h days split correctly. A regression test guards consecutive buckets.
+- سایت استاتیک آمادهٔ **cPanel** هم‌طراح با اپ: تقریباً مشکی با یک تأکید فیروزه‌ای، وزیرمتن، راست‌به‌چپ، کلید زبان فا/EN، انیمیشن‌های نرم، favicon و آیکن‌های PWA/OG.
+- کارت‌های دانلود **خودکار** از API انتشارهای گیت‌هاب پر می‌شوند — همیشه آخرین نسخه با حجم فایل‌ها، بدون نیاز به ویرایش سایت.
+- صفحهٔ **تست سرعت در مرورگر** (`/speedtest.html`) با گیج زنده؛ اگر اپ متصل باشد، خود تونل سنجیده می‌شود.
+- فایل اندازه‌گیری `/speedtest.bin` (۱۰ مگابایت تصادفی) که **خود اپ‌ها** هم برای تست سرعت از آن استفاده می‌کنند؛ طبق `.htaccess` هرگز فشرده یا کش نمی‌شود.
+- راهنمای استقرار: `website/README.md` — زیپ آمادهٔ `naxlo-website.zip` را در document root ساب‌دامین extract کنید و AutoSSL را بزنید.
+- A cPanel-ready static site in the app's own design language: near-black with one cyan accent, Vazirmatn, RTL, fa/EN switch, soft animations, favicon + PWA/OG icons. Download cards auto-fill from the GitHub releases API (always the latest assets + sizes). `/speedtest.html` runs a live in-browser test, and `/speedtest.bin` (10 MB random, never compressed/cached per `.htaccess`) is the very file the apps measure through the tunnel. Deploy guide: `website/README.md`.
 
-### ⏱️ زمان نشست‌ها با crash از بین نمی‌رود / Crash-safe session time
-- نشست باز هر ۲۵ ثانیه با پروب سلامت **heartbeat** می‌گیرد؛ اگر برنامه crash کند یا کشته شود، بازیابیِ هنگام startup نشست را با زمان آخرین heartbeat می‌بندد — به‌جای صفر کردن کل مدت (رفتار ۱.۱۰.۰). در هر دو نسخهٔ Electron و Rust.
-- The open session now **heartbeats** every 25s with the health probe; after a crash/kill, startup recovery closes it at the last heartbeat instead of zeroing the whole duration (1.10.0 behaviour). In both the Electron and Rust editions.
+## ⚡ تست سرعت درست شد / Speed test fixed
 
-### 🇹🇷 ترکی حالا واقعاً نمایش داده می‌شود / Turkish actually renders now
-- ترجمه‌های ترکی v1.10.0 در **سه نقطه** گم می‌شدند: `fail()` در IPC الکترون و `normalizeError` در shim تائوری فیلد `tr` را حذف می‌کردند و `pick()` در رندرر منطق قدیمی fa/en را تکرار کرده بود — کاربر ترکی همیشه fallback انگلیسی می‌دید. هر سه درست شد.
-- v1.10.0's Turkish translations were lost in **three places**: the Electron IPC `fail()` and the Tauri shim's `normalizeError` dropped the `tr` field, and the renderer's `pick()` duplicated the old fa/en logic — Turkish users always saw the English fallback. All three fixed (pick now delegates to the shared pickL).
+- هدف‌های قدیمی در بسیاری از مسیرها مرده یا مسدود بودند (`proof.ovh.net` سال‌هاست خاموش است) و تست فقط خطا می‌داد.
+- ترتیب جدید در هر دو نسخهٔ Electron و Rust: **۱)** فایل خود پروژه `vpn.naxlo.ir/speedtest.bin` (با query ضد‌کش) **۲)** Cloudflare **۳)** آینهٔ tele2.
+- The old targets were dead or blocked on many routes (`proof.ovh.net` has been down for years), so the test only ever errored. New order in both editions: the project's own file first (cache-busted), then Cloudflare, then a tele2 mirror.
 
-### 🎞️ ریزه‌کاری / Minor
-- اسپارک‌لاین تاریخچهٔ سرعت در پنجرهٔ باریک از کارت بیرون نمی‌زند. / The speed-history sparkline no longer overflows its card on narrow windows.
+## 🩹 حالت TUN درمان شد / TUN healed
+
+- نشانهٔ کلاسیک «متصل است ولی هیچ چیز باز نمی‌شود»: پرس‌وجوهای DNS که فیلترهای WFP به تونل هل می‌دهند با قاعدهٔ catch-all به forwarder سرور می‌رفتند و بسیاری سرورها UDP:53 را بی‌صدا دور می‌اندازند.
+- اکنون یک outbound از نوع `dns` + قاعدهٔ پورت ۵۳ از اینباند TUN، پاسخ‌ها را **داخل خود Xray** می‌سازد — DoH رمزنگاری‌شده که از داخل پروکسی عبور می‌کند (نشت DNS صفر).
+- `queryStrategy: UseIPv4` جواب‌های AAAA را از آداپتر فقط-IPv4 دور نگه می‌دارد؛ دیگر اتصال‌ها روی مسیر دست‌نیافتنی IPv6 هنگ نمی‌کنند.
+- The classic "connected but nothing loads" symptom: WFP-filtered DNS queries rode the catch-all rule to the server's UDP forwarder, which many servers silently drop. A `dns` outbound + port-53 rule from the TUN inbound now answers them inside Xray via encrypted DoH through the proxy, and `UseIPv4` keeps AAAA records off the IPv4-only adapter so connections no longer stall.
+
+## 🎨 آیکون جدید پر جزئیات / New detailed icon
+
+- نسخهٔ ۲ نشان: سپر محافظ دور پرتو N، حلقه‌های مداری با ماهواره، صورت‌های فلکی و ذره‌های داده روی پرتو — بازسازی همهٔ artefactها: ico/icns/png، tray، بنر گیت‌هاب، ست تائوری، پیش‌زمینهٔ adaptive اندروید و favicon سایت.
+- Mark v2: a protective shield around the N beam, orbit rings with satellites, constellations and data particles — every artefact regenerated (ico/icns/png, tray, GitHub banner, Tauri set, Android adaptive foreground, site favicon).
 
 ## 📦 دانلود / Downloads
 
 | فایل / File | برای / For |
-| --- | --- |
-| `Naxlo-Setup-1.10.1.exe` | نصب‌کنندهٔ ویندوز (NSIS) / Windows installer |
-| `Naxlo-Portable-1.10.1.exe` | نسخهٔ قابل‌حمل ویندوز / Windows portable |
-| `Naxlo-Rust-Setup-1.10.1.exe` | نسخهٔ Rust/Tauri ویندوز / Rust edition, Windows |
-| `Naxlo-Rust-v1.10.1-linux-amd64.AppImage` / `.deb` | لینوکس / Linux |
-| `Naxlo-Rust-v1.10.1-macos-arm64.dmg` | مک (Apple Silicon، بدون امضا — راهنمای Gatekeeper در README) / macOS (unsigned, Gatekeeper guide in README) |
-| `Naxlo-android-v1.10.1-*.apk` | اندروید / Android |
+|---|---|
+| `Naxlo-Setup-1.11.0.exe` | ویندوز — نصب‌کنندهٔ نسخهٔ اصلی / Windows main installer |
+| `Naxlo-Portable-1.11.0.exe` | ویندوز — پرتابل / Windows portable |
+| `Naxlo-Rust-Setup-1.11.0.exe` | ویندوز — نسخهٔ سبک Rust / Windows lean Rust edition |
+| `Naxlo-Rust-v1.11.0-linux-amd64.AppImage` / `.deb` | لینوکس / Linux |
+| `Naxlo-Rust-v1.11.0-macos-arm64.dmg` | مک (Apple Silicon، بدون امضا — راهنمای Gatekeeper در README) / macOS |
+| `Naxlo-android-v1.11.0-debug.apk` / `-unsigned.apk` | اندروید / Android |
 
-همهٔ فایل‌ها با `.sha256` / `SHA256SUMS.txt` منتشر شده‌اند؛ به‌روزرسانی خودکار برنامه پس از دانلود، با یک‌بار بسته‌شدن و باز شدن مجدد نصب می‌شود. / Every asset ships with checksums; the silent self-update installs after one restart.
+همهٔ فایل‌ها با `SHA256SUMS.txt` و checksum تکی کنارشان. / Every asset ships with `SHA256SUMS.txt` plus per-file checksums.
 
-> macOS (unsigned): `xattr -cr /Applications/naxlo.app` سپس اجرا کنید. / then open the app.
+## 🧾 یادداشت‌ها / Notes
+
+- اندروید: versionCode 2100 / versionName 1.11.0. / Android: versionCode 2100 / versionName 1.11.0.
+- تست‌ها: ۳۴ تست smoke سبز (شامل گارانتی‌های جدید کانفیگ TUN/DNS). / 34 smoke tests green (including new TUN/DNS config guarantees).
