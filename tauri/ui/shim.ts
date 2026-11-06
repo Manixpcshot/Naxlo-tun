@@ -12,14 +12,18 @@ import { listen, type UnlistenFn } from '@tauri-apps/api/event'
 import type { AppInfo, AppUpdateInfo, CoreUpdateInfo, FetchReportView, NaxloApi } from '../../src/shared/api'
 import type { AppState, CoreStatus, LogEntry, ServerView, Settings, StatsPayload, Toast } from '../../src/shared/bridge'
 
-type LString = { fa: string; en: string }
+type LString = { fa: string; en: string; tr?: string }
 
 function normalizeError(raw: unknown): LString {
   if (typeof raw === 'string') {
     try {
       const parsed = JSON.parse(raw) as Partial<LString> | null
       if (parsed && typeof parsed === 'object' && typeof parsed.fa === 'string') {
-        return { fa: parsed.fa, en: typeof parsed.en === 'string' ? parsed.en : parsed.fa }
+        return {
+          fa: parsed.fa,
+          en: typeof parsed.en === 'string' ? parsed.en : parsed.fa,
+          tr: typeof parsed.tr === 'string' ? parsed.tr : undefined
+        }
       }
     } catch {
       /* not JSON — fall through */
@@ -29,7 +33,11 @@ function normalizeError(raw: unknown): LString {
   if (raw && typeof raw === 'object' && 'fa' in raw) {
     const candidate = raw as Partial<LString>
     if (typeof candidate.fa === 'string') {
-      return { fa: candidate.fa, en: typeof candidate.en === 'string' ? candidate.en : candidate.fa }
+      return {
+        fa: candidate.fa,
+        en: typeof candidate.en === 'string' ? candidate.en : candidate.fa,
+        tr: typeof candidate.tr === 'string' ? candidate.tr : undefined
+      }
     }
   }
   const text = raw instanceof Error ? raw.message : String(raw)

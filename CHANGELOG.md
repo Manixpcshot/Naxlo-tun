@@ -6,6 +6,18 @@ All notable changes to Naxlo are documented here. Releases are cut per tag
 The format follows [Keep a Changelog](https://keepachangelog.com/) and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.10.1] - 2026-11-06
+
+### Fixed
+- **نمودار آمار در تغییر ساعت تابستانی (DST) خراب می‌شد:** سطل‌های روزانه با گام ثابت ۲۴ ساعته ساخته می‌شدند؛ در منطقهٔ زمانی اروپا عبور از تغییر ساعت (۲۵ اکتبر) می‌توانست یک تاریخ را در پنجرهٔ ۱۴ روزه **تکرار یا حذف** کند (کلید تکراری React + دقیقه‌های جابه‌جا). اکنون همهٔ محاسبات روزانه تقویمی است (`setDate`) و روزهای ۲۳/۲۵ ساعته درست حساب می‌شوند؛ یک تست جدید پشت‌بند بودن روزها را گارانتی می‌کند.
+- **The stats chart broke across DST:** daily buckets were built with fixed 24h steps, so a daylight-saving switch inside the 14-day window could **duplicate or skip a local date** (duplicate React keys + misattributed minutes). All day math is calendar-based now (`setDate`); 23h/25h days are handled correctly and a new test guarantees consecutive buckets.
+- **زمان نشست دیگر با crash از بین نمی‌رود:** نشست باز هر ۲۵ ثانیه با پروب سلامت heartbeat می‌گیرد (`endedAt` به‌روز می‌شود)؛ پس از crash، بازیابی startup نشست را با زمان آخرین heartbeat می‌بندد نه با مدت صفر. (پیش‌تر کل مدت نشستِ crash خورده صفر می‌شد.) / **Session time now survives crashes:** the open session heartbeats every 25s with the health probe; startup recovery closes crashed sessions at their last heartbeat instead of zeroing them.
+- **پیام‌های ترکی واقعاً به UI می‌رسند:** `tr` در سه نقطه گم می‌شد — `fail()` در IPC الکترون و `normalizeError` در shim تائوری فیلد را هنگام عبور از مرز فرایند **حذف می‌کردند** و `pick()` در رندرر منطق قدیمی fa/en را تکرار کرده بود؛ در نتیجه ترجمه‌های ترکی v1.10.0 هرگز نمایش داده نمی‌شدند. هر سه درست شدند (`pick` اکنون از `pickL` مشترک استفاده می‌کند). / **Turkish messages actually reach the UI now:** `tr` was lost in three places — the Electron IPC `fail()` and the Tauri shim's `normalizeError` **dropped the field** at the process boundary, and the renderer's `pick()` duplicated the old fa/en logic; v1.10.0's Turkish translations never rendered. All three fixed (`pick` now delegates to the shared `pickL`).
+- اسپارک‌لاین تاریخچهٔ سرعت در پنجره‌های باریک از کارت بیرون نمی‌زند (`max-width: 100%`). / The speed-history sparkline no longer overflows its card on narrow windows.
+
+### Changed
+- اندروید: versionCode 2001 و versionName 1.10.1. / Android bumped to versionCode 2001 / versionName 1.10.1.
+
 ## [1.10.0] - 2026-11-06
 
 ### Added

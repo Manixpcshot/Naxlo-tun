@@ -473,6 +473,44 @@ test('stats: aggregation splits midnight-spanning sessions and ignores open ones
   assert.equal(formatMinutes(45), '45m')
 })
 
+test('stats: daily buckets are consecutive calendar days (DST-safe)', () => {
+  const { aggregateStats } = require('../../src/shared/stats') as typeof import('../../src/shared/stats')
+  for (const now of [Date.now(), new Date('2026-11-06T12:00:00').getTime(), new Date('2026-03-29T12:00:00').getTime()]) {
+    const summary = aggregateStats([], 30, now)
+    assert.equal(summary.daily.length, 30)
+    const keys = new Set(summary.daily.map((d) => d.date))
+    assert.equal(keys.size, 30, 'a DST switch must not duplicate or skip a local date')
+    for (let i = 1; i < summary.daily.length; i++) {
+      const prev = summary.daily[i - 1].date
+      const next = new Date(`${prev}T12:00:00`)
+      next.setDate(next.getDate() + 1)
+      const expected = `${next.getFullYear()}-${`${next.getMonth() + 1}`.padStart(2, '0')}-${`${next.getDate()}`.padStart(2, '0')}`
+      assert.equal(summary.daily[i].date, expected, `bucket ${i} must be the next calendar day`)
+    }
+  }
+})
+
+test('stats: open heartbeating sessions are ignored, stale ones keep their time', () => {
+  const { aggregateStats } = require('../../src/shared/stats') as typeof import('../../src/shared/stats')
+  const now = Date.now()
+  const sessions = [
+    {
+      // Still running: heartbeats pushed endedAt forward but reason is empty.
+      serverId: 'open', serverName: 'OPEN', country: null, mode: 'proxy' as const,
+      startedAt: now - 3600000, endedAt: now - 60000, reason: ''
+    },
+    {
+      // Crashed mid-session; startup closed it as stale at the last heartbeat.
+      serverId: 'crashed', serverName: 'CRASHED', country: null, mode: 'proxy' as const,
+      startedAt: now - 7200000, endedAt: now - 5400000, reason: 'stale'
+    }
+  ]
+  const summary = aggregateStats(sessions, 14, now)
+  assert.equal(summary.totalSessions, 1, 'the open session must not be counted')
+  assert.equal(summary.totalMinutes, 30, 'the crashed session keeps its heartbeat duration')
+  assert.equal(summary.topServers[0].serverId, 'crashed')
+})
+
 test('stats: speed samples are trimmed to the newest window', () => {
   const { trimSpeedSamples } = require('../../src/shared/stats') as typeof import('../../src/shared/stats')
   const samples = Array.from({ length: 130 }, (_, i) => ({ at: i + 1, mbps: i, ms: 10 }))

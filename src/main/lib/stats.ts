@@ -19,13 +19,17 @@ const SESSION_CAP = 400
 
 let active: SessionStat | null = null
 
-/** Close sessions left open by a previous crash/kill. Call after loadVault(). */
+/**
+ * Close sessions left open by a previous crash/kill. Call after loadVault().
+ * An open session heartbeats its `endedAt` while connected, so a crashed
+ * session keeps its time up to the last heartbeat (≤ one probe interval).
+ */
 export function recoverStats(): void {
   const stats = getVault().stats
   let touched = false
   for (const s of stats.sessions) {
-    if (!(s.endedAt > s.startedAt)) {
-      s.endedAt = s.startedAt
+    if (s.reason === '') {
+      if (!(s.endedAt > s.startedAt)) s.endedAt = s.startedAt
       s.reason = 'stale'
       touched = true
     }
@@ -57,7 +61,7 @@ export function endSession(reason: string): void {
   const endedAt = Date.now()
   const stats = getVault().stats
   const stored = stats.sessions.find(
-    (s) => s.startedAt === session.startedAt && s.serverId === session.serverId && !(s.endedAt > s.startedAt)
+    (s) => s.startedAt === session.startedAt && s.serverId === session.serverId && s.reason === ''
   )
   if (stored) {
     stored.endedAt = endedAt
@@ -66,6 +70,24 @@ export function endSession(reason: string): void {
     pushSession({ ...session, endedAt, reason })
   }
   updateVault({ stats: { ...stats, sessions: capSessions(stats.sessions) } })
+}
+
+/**
+ * Heartbeat: stamp the open session's `endedAt` with the current time so a
+ * crash keeps the session duration up to the last beat. Called from the
+ * latency probe interval while connected.
+ */
+export function touchActiveSession(): void {
+  const session = active
+  if (!session) return
+  const stats = getVault().stats
+  const stored = stats.sessions.find(
+    (s) => s.startedAt === session.startedAt && s.serverId === session.serverId && s.reason === ''
+  )
+  if (stored) {
+    stored.endedAt = Date.now()
+    updateVault({ stats: { ...stats } })
+  }
 }
 
 /** Flush an open session on app exit so its time is not lost. */

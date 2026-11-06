@@ -9,7 +9,7 @@ import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
 import { IPC, type AppState, type LogEntry, type Toast } from '../shared/bridge'
 import type { NaxloApi } from '../shared/api'
 
-type Envelope<T> = { ok: true; data: T } | { ok: false; error: { fa: string; en: string } }
+type Envelope<T> = { ok: true; data: T } | { ok: false; error: { fa: string; en: string; tr?: string } }
 
 async function invoke<T>(channel: string, ...args: unknown[]): Promise<T> {
   const result = (await ipcRenderer.invoke(channel, ...args)) as Envelope<T>

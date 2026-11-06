@@ -359,14 +359,18 @@ impl AppCore {
 
     /* ------------------------------------------------------------ stats */
 
-    /// Close sessions left open by a previous crash/kill (bootstrap).
+    /// Close sessions left open by a previous crash/kill (bootstrap). An open
+    /// session heartbeats its `ended_at`, so a crashed one keeps its time up
+    /// to the last heartbeat (≤ one probe interval).
     pub fn recover_stats(&self) {
         let touched = {
             let mut g = self.lock();
             let mut touched = false;
             for session in g.vault.stats.sessions.iter_mut() {
-                if !(session.ended_at > session.started_at) {
-                    session.ended_at = session.started_at;
+                if session.reason.is_empty() {
+                    if !(session.ended_at > session.started_at) {
+                        session.ended_at = session.started_at;
+                    }
                     session.reason = "stale".to_string();
                     touched = true;
                 }
@@ -408,11 +412,28 @@ impl AppCore {
                 .sessions
                 .iter_mut()
                 .rev()
-                .find(|s| !(s.ended_at > s.started_at));
+                .find(|s| s.reason.is_empty());
             match open {
                 Some(session) => {
                     session.ended_at = ended_at;
                     session.reason = reason.to_string();
+                    true
+                }
+                None => false,
+            }
+        };
+        if touched {
+            self.save_vault();
+        }
+    }
+
+    /// Heartbeat: stamp the open session so a crash keeps its duration.
+    pub fn touch_active_session(&self) {
+        let touched = {
+            let mut g = self.lock();
+            match g.vault.stats.sessions.iter_mut().rev().find(|s| s.reason.is_empty()) {
+                Some(session) => {
+                    session.ended_at = now_ms();
                     true
                 }
                 None => false,
