@@ -1,6 +1,6 @@
 [package]
 name = "naxlo"
-version = "1.8.0"
+version = "1.9.0"
 description = "Naxlo — Persian VLESS client (Rust edition)"
 authors = ["Manixpcshot"]
 edition = "2021"
@@ -14,9 +14,10 @@ crate-type = ["rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = [] }
+tauri = { version = "2", features = ["tray-icon", "image-png"] }
 tauri-plugin-dialog = "2"
 tauri-plugin-clipboard-manager = "2"
+tauri-plugin-autostart = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "gzip", "stream"] }
@@ -24,7 +25,7 @@ tokio = { version = "1", features = ["net", "time", "process", "io-util", "macro
 futures-util = "0.3"
 base64 = "0.22"
 sha2 = "0.10"
-zip = { version = "2", default-features = false, features = ["deflate"] }
+zip = { version = "2", default-features = false, features = ["deflate", "aes-crypto"] }
 aes-gcm = "0.10"
 getrandom = "0.2"
 percent-encoding = "2"

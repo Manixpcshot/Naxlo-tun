@@ -161,6 +161,7 @@ impl AppCore {
     pub fn emit_state(&self) {
         let state = self.snapshot_state();
         let _ = self.app.emit(STATE_EVENT, &state);
+        crate::tray::refresh(&self.app);
     }
 
     pub fn patch_state<F: FnOnce(&mut AppState)>(&self, f: F) {

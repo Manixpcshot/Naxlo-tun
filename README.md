@@ -106,9 +106,10 @@ Electron + React (ویندوز) • **Rust + Tauri (ویندوز/لینوکس/م
 - پروکسی سیستم روی هر سه سیستم‌عامل (ویندوز: WinINET با پشتیبان‌گیری دقیق؛ مک: `networksetup`؛ لینوکس: `gsettings`)
 - خزانهٔ رمزنگاری‌شدهٔ AES-256-GCM (کلید تصادفی با دسترسی `0600`)، ماسک کامل مقادیر حساس، بدون ثبت در لاگ
 - تست تأخیر تکی/گروهی، تست سرعت، انتخاب خودکار بهترین سرور، هشدار خروج هنگام اتصال
+- tray سیستم (وضعیت زنده، اتصال/قطع سریع، خروج با guard)، شروع خودکار با OS، failover خودکار پس از سه بار شکست پروب سلامت
+- وارد کردن فایل کانفیگ (`txt/json/conf/sub` خام یا Base64 و ZIP رمزدار ZipCrypto/AES) و انتخاب دستی فایل اجرایی هسته
 
-**فعلاً فقط در نسخهٔ Electron:** حالت TUN، tray، شروع خودکار، به‌روزرسانی خودکار برنامه و وارد کردن از فایل.
-این موارد در نسخه‌های بعدی به نسخهٔ Rust هم می‌آیند.
+**فعلاً فقط در نسخهٔ Electron:** حالت TUN و به‌روزرسانی خودکارِ خاموش برنامه.
 
 ## 🛠️ ساخت از سورس
 
@@ -199,9 +200,11 @@ tauri/              # نسخهٔ Rust — همان UI با بک‌اند Rust
 
 **English summary** — Naxlo is a Persian (RTL), dark-themed desktop client for VLESS subscriptions. Two editions
 ship from v1.7.0: the full **Electron + React** app (Windows: local proxy, optional system-wide TUN mode with the
-checksum-pinned Wintun driver, tray, auto-update) and a lean **Rust + Tauri** edition (Windows / Linux / macOS: same
-React UI on a Rust backend — URL subscriptions, local-proxy connect/disconnect with the official Xray core,
-system-proxy integration on all three OSes, AES-256-GCM encrypted vault). It fetches a subscription TXT, decodes
+checksum-pinned Wintun driver, tray, auto-update) and a **Rust + Tauri** edition (Windows / Linux / macOS: same
+React UI on a Rust backend — URL and local-file subscriptions including password-protected ZIPs, local-proxy
+connect/disconnect with the official Xray core, system-proxy integration on all three OSes, AES-256-GCM encrypted
+vault, system tray, OS auto-start and auto-failover; TUN mode and silent self-update stay Electron-only).
+It fetches a subscription TXT, decodes
 Base64, lists parsed configs and runs Xray as a **local proxy** (SOCKS5 + HTTP on loopback). Closing while connected
 always asks first. Secrets live in an encrypted vault, are masked in the UI and never logged. Installers (EXE,
 AppImage, DEB, unsigned DMG, APKs) are published on every tag via GitHub Actions with SHA-256 checksums.

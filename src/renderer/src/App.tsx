@@ -3,7 +3,7 @@
  * status bar and toasts.
  */
 import React, { useEffect, useState } from 'react'
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, MotionConfig, motion } from 'motion/react'
 import { Titlebar } from './components/Titlebar'
 import { Sidebar, PAGES, type PageId } from './components/Sidebar'
 import { StatusBar } from './components/StatusBar'
@@ -54,8 +54,15 @@ export default function App(): React.ReactElement {
   }, [page, t])
 
   const reduce = settings.reduceMotion
+  const mainRef = React.useRef<HTMLElement | null>(null)
+
+  /* Fresh page, fresh scroll position. */
+  React.useEffect(() => {
+    mainRef.current?.scrollTo({ top: 0 })
+  }, [page])
 
   return (
+    <MotionConfig reducedMotion={reduce ? 'always' : 'user'}>
     <div className="app">
       <Aurora disabled={reduce} />
       <Titlebar />
@@ -63,7 +70,7 @@ export default function App(): React.ReactElement {
       <div className="app__body">
         <Sidebar page={page} onNavigate={setPage} />
 
-        <main className="app__main">
+        <main className="app__main" ref={mainRef}>
           {!ready ? (
             <div className="boot">
               <span className="boot__mark">
@@ -99,6 +106,7 @@ export default function App(): React.ReactElement {
       <StatusBar />
       <Toasts />
     </div>
+    </MotionConfig>
   )
 }
 

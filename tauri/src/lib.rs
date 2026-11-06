@@ -3,8 +3,8 @@
 //! Lean scope: the same React UI as the Electron app, backed by Rust
 //! commands. Subscriptions, server lists, local-proxy connect/disconnect,
 //! settings, the encrypted vault and trilingual errors all mirror the
-//! Electron main process; TUN mode, tray, auto-start, self-update and
-//! file import are Electron-only for now.
+//! Electron main process; TUN mode and silent self-update remain
+//! Electron-only for now.
 
 mod commands;
 mod ids;
@@ -20,6 +20,7 @@ mod state;
 mod submeta;
 mod subscription;
 mod sysproxy;
+mod tray;
 mod util;
 mod vault;
 mod xray_config;
@@ -32,6 +33,10 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_clipboard_manager::init())
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            Some(vec!["--autostart"]),
+        ))
         .setup(|app| {
             let handle = app.handle().clone();
             let base_dir = app.path().app_data_dir()?;
@@ -39,6 +44,21 @@ pub fn run() {
             app.manage(core);
             let core = app.state::<AppCore>();
             core.bootstrap();
+            tray::init(app)?;
+            tray::refresh(app.handle());
+            // Keep the OS autostart entry in sync with the stored setting.
+            {
+                use tauri_plugin_autostart::ManagerExt;
+                let auto_start = core.lock().settings.auto_start;
+                let result = if auto_start {
+                    app.autolaunch().enable()
+                } else {
+                    app.autolaunch().disable()
+                };
+                if let Err(e) = result {
+                    core.log("warn", "settings", &format!("autostart sync failed: {}", e));
+                }
+            }
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -88,7 +108,7 @@ pub fn run() {
                     // while the proxy is running.
                     api.prevent_close();
                     let handle = window.app_handle().clone();
-                    std::thread::spawn(move || manager::guarded_close(&handle));
+                    std::thread::spawn(move || manager::guarded_close(&handle, true));
                 }
             }
         })

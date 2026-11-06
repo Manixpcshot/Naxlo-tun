@@ -63,19 +63,26 @@ export function buildXrayConfig({ server, settings }: BuildOptions): Json {
     // System-wide tunnel via Xray's built-in TUN inbound (Wintun adapter).
     // IPv4-only on purpose: on systems with IPv6 disabled, IPv6 routes here
     // would stop the adapter from starting.
+    const tunSettings: Json = {
+      name: 'naxlo',
+      desc: 'Naxlo',
+      mtu: 1500,
+      gateway: ['10.213.0.1/24'],
+      dns: ['1.1.1.1', '8.8.8.8'],
+      autoSystemRoutingTable: ['0.0.0.0/0'],
+      autoOutboundsInterface: 'auto'
+    }
+    if (process.platform === 'win32') {
+      // WFP filters keep the system's DNS (udp/tcp 53, the Windows DNS Client
+      // service, DoT/DoQ) inside the tunnel — without them name resolution
+      // silently bypasses the tunnel. Requires `dns` on the adapter (set above).
+      tunSettings.autoSystemWfpBlockLeak = ['dns']
+    }
     inbounds.unshift({
       tag: 'naxlo-tun',
       port: 0,
       protocol: 'tun',
-      settings: {
-        name: 'naxlo',
-        desc: 'Naxlo',
-        mtu: 1500,
-        gateway: ['10.213.0.1/24'],
-        dns: ['1.1.1.1', '8.8.8.8'],
-        autoSystemRoutingTable: ['0.0.0.0/0'],
-        autoOutboundsInterface: 'auto'
-      },
+      settings: tunSettings,
       sniffing: {
         enabled: true,
         destOverride: ['http', 'tls', 'quic'],

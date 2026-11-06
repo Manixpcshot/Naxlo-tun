@@ -77,7 +77,18 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
     return true
   })
   handle(IPC.appIsAdmin, () => isAdmin())
-  handle(IPC.appRelaunchElevated, () => relaunchElevated())
+  handle(IPC.appRelaunchElevated, async () => {
+    // Never leave a running tunnel (and its system proxy) behind: the old
+    // instance exits right after the elevated one spawns.
+    if (manager.isConnected) await manager.disconnect('tun-relaunch')
+    const relaunched = await relaunchElevated()
+    if (!relaunched) {
+      throw new AppError(
+        L('پنجرهٔ UAC تأیید نشد؛ برنامه در حالت فعلی باز می‌ماند', 'The UAC prompt was dismissed — staying in the current instance')
+      )
+    }
+    return true
+  })
 
   /* ----------------------------------------------------------- servers */
   handle(IPC.serversList, () => listServers(false))
@@ -289,6 +300,7 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
   /* ---------------------------------------------------------- settings */
   handle(IPC.settingsGet, () => getSettings())
   handle(IPC.settingsSet, async (patch: Partial<Settings>) => {
+    const previousMode = getSettings().connectionMode
     const next = updateSettings(patch)
     setLogLevel(next.logLevel)
     applyAutoStart(next.autoStart)
@@ -298,6 +310,20 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
       systemProxyEnabled: next.applySystemProxy
     })
     manager.scheduleAutoRefresh()
+    // Switching proxy ↔ TUN while connected must rebuild the tunnel, or the
+    // running core keeps the old (wrong) routing mode.
+    if (patch.connectionMode && patch.connectionMode !== previousMode && manager.isConnected) {
+      log.info(SCOPE, `connection mode changed to ${patch.connectionMode} — reconnecting`)
+      toast(
+        'info',
+        L('اعمال دوبارهٔ اتصال', 'Reconnecting'),
+        L('حالت اتصال تغییر کرد؛ تونل با تنظیمات جدید برقرار می‌شود.', 'The connection mode changed — the tunnel is being rebuilt.')
+      )
+      void manager
+        .disconnect('mode-changed')
+        .then(() => manager.connect())
+        .catch((err) => log.error(SCOPE, 'reconnect after mode change failed', err))
+    }
     return next
   })
 
