@@ -85,4 +85,4 @@
 
 [1m[93mwarning[0m: `naxlo` (lib) generated 5 warnings
 [1m[93mwarning[0m: `naxlo` (lib test) generated 5 warnings (5 duplicates)
-[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 50.53s
+[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 51.95s
