@@ -6,6 +6,19 @@ All notable changes to Naxlo are documented here. Releases are cut per tag
 The format follows [Keep a Changelog](https://keepachangelog.com/) and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.12.0] - 2026-11-07
+
+### Added
+- **تست سرعت تطبیقی مثل speedtest.net (هر سه سطح: اپ الکترون، نسخهٔ Rust و وب‌سایت):** یک پروب تک‌جریانی ۲ مگابایتی اول خط را می‌سنجد؛ بعد حجم اصلی از یک نردبان (۸/۱۶/۳۲/۶۴/۱۰۰ مگابایت) طوری انتخاب می‌شود که پنجرهٔ اندازه‌گیری ~۸ ثانیه پر بماند؛ **۴ جریان هم‌زمان** می‌کشند (خط‌های گیگابیتی دیگر به یک TCP محدود نمی‌شوند) و نرخ نهایی فقط از **پنجرهٔ پایدار پس از رمپ‌آپ ۱٫۵ ثانیه‌ای** حساب می‌شود — یعنی خط قوی دیگر عدد کم‌تری از واقعیت نمی‌بیند. منبع‌ها به ترتیب: سایت خود پروژه (فایل استاتیک ۱۰ مگابایتی + مولد on-demand جدید `speedtest.php?bytes=N` تا ۲۵۰MB)، سپس Cloudflare (`__down?bytes=N`) و آینهٔ tele2 (۱۰/۲۰/۵۰/۱۰۰MB).
+- **Adaptive speedtest.net-style measurement (Electron, Rust edition and the website):** a 2 MB single-stream probe sizes the line, the main phase then picks a ladder size (8/16/32/64/100 MB) that fills an ~8 s window, **four parallel streams** pull it (gigabit lines are no longer capped by one TCP connection) and the final rate uses only the **steady-state window after a 1.5 s slow-start ramp** — fast lines finally see their real number. Sources in order: the project site (10 MB static file + the new on-demand generator `speedtest.php?bytes=N`, capped 250 MB), then Cloudflare (`__down?bytes=N`) and the tele2 mirror (10/20/50/100 MB).
+- **`speedtest.php` روی سایت:** مولد بایت تصادفی فشرده‌ناپذیر با هدرهای no-store؛ `.htaccess` آن را مثل `speedtest.bin` از gzip و کش خارج می‌کند. / **`speedtest.php` on the site:** an incompressible random-byte generator with no-store headers; `.htaccess` keeps it out of gzip and caches just like `speedtest.bin`.
+- صفحهٔ تست سرعت وب حالا حجم هدف و تعداد جریان را هم نشان می‌دهد و مقیاس گیج با سرعت بزرگ می‌شود (۱۰۰→۲۰۰۰ مگابیت). / The web speed-test page now shows the target size and stream count, and the gauge scale grows with the line (100→2000 Mbit/s).
+
+### Changed
+- نتیجهٔ تست سرعت حالا `sizeMb` و `streams` را هم برمی‌گرداند (در هر دو نسخهٔ دسکتاپ). / The speed-test result now also carries `sizeMb` and `streams` (both desktop editions).
+- اندروید: versionCode 2102 و versionName 1.12.0. / Android bumped to versionCode 2102 / versionName 1.12.0.
+- تست‌ها: ۳۷ smoke سبز (۳ تست جدید برای نردبان/نرخ پایدار/آینهٔ tele2 + تست‌های واحد Rust معادل). / 37 smoke tests green (3 new for ladder/steady-rate/tele2 mirror + matching Rust unit tests).
+
 ## [1.11.1] - 2026-11-06
 
 ### Fixed

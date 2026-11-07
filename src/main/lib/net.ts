@@ -12,6 +12,7 @@ import tls from 'node:tls'
 import { performance } from 'node:perf_hooks'
 import { log } from './logger'
 import type { PublicIdentity } from '../../shared/types'
+import { SPEED_PROBE_BYTES, SPEED_PROBE_MS, SPEED_MAIN_MS, SPEED_RAMP_MS, SPEED_STREAMS, pickSizeMb, steadyMbps, tele2SizeMb } from '../../shared/speed'
 
 const SCOPE = 'net'
 
@@ -177,17 +178,25 @@ export interface ThroughputResult {
   error?: string
 }
 
+interface StreamOptions {
+  capBytes: number
+  /** Milliseconds after `started` when the stream is cut off. */
+  deadlineMs: number
+  /** performance.now() baseline shared by all streams of one phase. */
+  started: number
+  onBytes?: (delta: number) => void
+}
+
 /**
- * Download-throughput measurement through the local HTTP inbound: opens a
- * CONNECT tunnel, streams the body and counts bytes until the cap/timeout.
- * Used for the "speed" tile — the number only ever reaches the UI.
+ * One measured download stream through the local HTTP inbound: CONNECT
+ * tunnel + TLS + raw GET, counting body bytes until the cap or the shared
+ * deadline. The number only ever reaches the UI / stats vault.
  */
-export function measureThroughput(
+function streamDownload(
   proxyHost: string,
   proxyPort: number,
   targetUrl: string,
-  maxBytes = 12 * 1024 * 1024,
-  timeoutMs = 15000
+  opts: StreamOptions
 ): Promise<ThroughputResult> {
   return new Promise((resolve) => {
     let url: URL
@@ -197,20 +206,20 @@ export function measureThroughput(
       resolve({ ok: false, bytes: 0, ms: 0, status: 0, error: 'invalid url' })
       return
     }
-    const started = performance.now()
     let settled = false
     let bytes = 0
-    const finish = (result: ThroughputResult): void => {
+    const finish = (result: Omit<ThroughputResult, 'ms'>): void => {
       if (settled) return
       settled = true
       clearTimeout(timer)
-      resolve({ ...result, ms: Math.round(performance.now() - started) })
+      resolve({ ...result, ms: Math.round(performance.now() - opts.started) })
     }
     const timer = setTimeout(() => {
-      // A partial download still yields a usable rate.
-      if (bytes > 64 * 1024) finish({ ok: true, bytes, ms: 0, status: 200 })
-      else finish({ ok: false, bytes, ms: 0, status: 0, error: 'timeout' })
-    }, timeoutMs)
+      // Deadline: a partial transfer is still a valid measurement sample.
+      if (bytes > 0) finish({ ok: true, bytes, status: 200 })
+      else finish({ ok: false, bytes: 0, status: 0, error: 'deadline' })
+      connectReq.destroy()
+    }, Math.max(200, opts.deadlineMs - (performance.now() - opts.started)))
 
     const connectReq = http.request({
       host: proxyHost,
@@ -218,12 +227,12 @@ export function measureThroughput(
       method: 'CONNECT',
       path: `${url.hostname}:${url.port || 443}`
     })
-    connectReq.on('error', (err) => finish({ ok: false, bytes: 0, ms: 0, status: 0, error: err.message }))
-    connectReq.setTimeout(timeoutMs, () => connectReq.destroy(new Error('timeout')))
+    connectReq.on('error', (err) => finish({ ok: false, bytes: 0, status: 0, error: err.message }))
+    connectReq.setTimeout(opts.deadlineMs, () => connectReq.destroy(new Error('timeout')))
     connectReq.on('connect', (res, socket) => {
       if (res.statusCode !== 200) {
         socket.destroy()
-        finish({ ok: false, bytes: 0, ms: 0, status: res.statusCode ?? 0, error: 'tunnel failed' })
+        finish({ ok: false, bytes: 0, status: res.statusCode ?? 0, error: 'tunnel failed' })
         return
       }
       const secure = tls.connect(
@@ -243,46 +252,135 @@ export function measureThroughput(
         }
       )
       secure.on('error', (err) => {
-        if (bytes > 64 * 1024) finish({ ok: true, bytes, ms: 0, status: 200 })
-        else finish({ ok: false, bytes, ms: 0, status: 0, error: err.message })
+        if (bytes > 0) finish({ ok: true, bytes, status: 200 })
+        else finish({ ok: false, bytes: 0, status: 0, error: err.message })
       })
       let headDone = false
       let status = 0
       secure.on('data', (chunk: Buffer) => {
+        let payload = chunk
         if (!headDone) {
           const text = chunk.toString('utf8', 0, Math.min(chunk.length, 1024))
           const end = text.indexOf('\r\n\r\n')
           const head = end >= 0 ? text.slice(0, end) : text
           const match = /HTTP\/1\.\d\s+(\d{3})/.exec(head.split('\r\n')[0] ?? '')
           status = match ? Number(match[1]) : 0
-          if (end >= 0) {
-            headDone = true
-            bytes += chunk.length - (end + 4)
-          } else if (text.includes('\r\n\r\n')) {
-            headDone = true
-          }
           if (status >= 400) {
             secure.destroy()
             socket.destroy()
-            finish({ ok: false, bytes: 0, ms: 0, status, error: `http ${status}` })
+            finish({ ok: false, bytes: 0, status, error: `http ${status}` })
+            return
           }
-          return
+          if (end >= 0) {
+            headDone = true
+            payload = chunk.subarray(end + 4)
+          } else {
+            return
+          }
         }
-        bytes += chunk.length
-        if (bytes >= maxBytes) {
+        if (payload.length === 0) return
+        bytes += payload.length
+        opts.onBytes?.(payload.length)
+        if (bytes >= opts.capBytes) {
           secure.destroy()
           socket.destroy()
-          finish({ ok: true, bytes, ms: 0, status })
+          finish({ ok: true, bytes, status })
         }
       })
       secure.on('end', () => {
         socket.destroy()
-        finish({ ok: status >= 200 && status < 400 && bytes > 0, bytes, ms: 0, status })
+        finish({ ok: status >= 200 && status < 400 && bytes > 0, bytes, status })
       })
     })
     connectReq.end()
   })
 }
+
+/* ------------------------------------------------- adaptive speed test */
+
+export type SpeedTargetBase = 'own' | 'cloudflare' | 'tele2'
+
+const SPEED_BASES: SpeedTargetBase[] = ['own', 'cloudflare', 'tele2']
+
+/** Measurement URL of one base for a given transfer size (MiB). */
+export function speedUrl(base: SpeedTargetBase, sizeMb: number, nonce: number): string {
+  const bytes = sizeMb * 1024 * 1024
+  if (base === 'own') {
+    // The static 10 MiB file covers the small steps; bigger steps hit the
+    // on-demand generator so the site never has to ship huge binaries.
+    return sizeMb <= 10
+      ? `https://vpn.naxlo.ir/speedtest.bin?r=${nonce}`
+      : `https://vpn.naxlo.ir/speedtest.php?bytes=${bytes}&r=${nonce}`
+  }
+  if (base === 'cloudflare') return `https://speed.cloudflare.com/__down?bytes=${bytes}`
+  return `https://speedtest.tele2.net/${tele2SizeMb(sizeMb)}MB.zip`
+}
+
+export interface SpeedOutcome {
+  ok: boolean
+  mbps: number
+  bytes: number
+  ms: number
+  sizeMb: number
+  streams: number
+  target: SpeedTargetBase | null
+  error?: string
+}
+
+/**
+ * speedtest.net-style measurement: a 2 MiB single-stream probe sizes the
+ * line, then four parallel streams pull a ladder size chosen to fill ~8 s,
+ * and the final rate is the steady-state window (slow-start excluded).
+ */
+export async function runSpeedTest(proxyHost: string, proxyPort: number): Promise<SpeedOutcome> {
+  const nonce = Date.now()
+  for (const base of SPEED_BASES) {
+    const probeStart = performance.now()
+    const probe = await streamDownload(proxyHost, proxyPort, speedUrl(base, 2, nonce), {
+      capBytes: SPEED_PROBE_BYTES,
+      deadlineMs: SPEED_PROBE_MS,
+      started: probeStart
+    })
+    if (!probe.ok || probe.bytes < 64 * 1024 || probe.ms <= 0) continue
+    const probeMbps = (probe.bytes * 8) / probe.ms / 1000
+    const sizeMb = pickSizeMb(probeMbps)
+
+    const started = performance.now()
+    let total = 0
+    let ramp = 0
+    let rampTaken = false
+    const rampTimer = setTimeout(() => {
+      ramp = total
+      rampTaken = true
+    }, SPEED_RAMP_MS)
+    const streams = Array.from({ length: SPEED_STREAMS }, () =>
+      streamDownload(proxyHost, proxyPort, speedUrl(base, sizeMb, nonce), {
+        capBytes: sizeMb * 1024 * 1024,
+        deadlineMs: SPEED_MAIN_MS,
+        started,
+        onBytes: (delta) => {
+          total += delta
+        }
+      })
+    )
+    const results = await Promise.all(streams)
+    clearTimeout(rampTimer)
+    if (!rampTaken) ramp = total
+    const elapsed = performance.now() - started
+    if (!results.some((r) => r.ok) || total < 256 * 1024) continue
+    return {
+      ok: true,
+      mbps: steadyMbps(total, ramp, elapsed),
+      bytes: total,
+      ms: Math.round(elapsed),
+      sizeMb,
+      streams: SPEED_STREAMS,
+      target: base
+    }
+  }
+  return { ok: false, mbps: 0, bytes: 0, ms: 0, sizeMb: 0, streams: 0, target: null, error: 'unreachable' }
+}
+
 
 /** Wait until a local TCP port accepts connections (Xray inbound is up). */
 export function waitForPort(host: string, port: number, timeoutMs = 8000): Promise<boolean> {

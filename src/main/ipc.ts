@@ -16,7 +16,7 @@ import { getVault, persistNow, replaceServers, updateVault, vaultEncryptionKind,
 import { log, getLogs, clearLogs, onLog, setLogLevel } from './lib/logger'
 import { redact, registerSecret, clearSecrets } from './lib/redact'
 import { refreshFileSubscription, refreshSubscription, subscriptionIdFor, type FetchReport } from './lib/subscription'
-import { measureThroughput } from './lib/net'
+import { runSpeedTest } from './lib/net'
 import { clearStats, getStats, recordSpeed } from './lib/stats'
 import { manager } from './lib/xray/manager'
 import { restoreSystemProxy } from './lib/systemProxy'
@@ -237,21 +237,13 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
       throw new AppError(L('برای تست سرعت ابتدا متصل شوید', 'Connect first to run a speed test'))
     }
     const state = getState()
-    // Our own measurement file first (hosted on the project site, always
-    // reachable, never rate-limited), then public mirrors. The cache-busting
-    // query keeps repeated tests honest against any CDN/edge cache.
-    const targets = [
-      `https://vpn.naxlo.ir/speedtest.bin?r=${Date.now()}`,
-      'https://speed.cloudflare.com/__down?bytes=16000000',
-      'https://speedtest.tele2.net/10MB.zip'
-    ]
-    for (const target of targets) {
-      const result = await measureThroughput('127.0.0.1', state.httpPort, target)
-      if (result.ok && result.ms > 0) {
-        const mbps = Math.round(((result.bytes * 8) / result.ms / 1000) * 10) / 10
-        recordSpeed(mbps, result.ms)
-        return { mbps, bytes: result.bytes, ms: result.ms }
-      }
+    // Adaptive, speedtest.net-style: probe → ladder size → parallel streams,
+    // steady-state rate. Bases in order: our own site (never rate-limited),
+    // Cloudflare, tele2 mirror.
+    const result = await runSpeedTest('127.0.0.1', state.httpPort)
+    if (result.ok && result.ms > 0) {
+      recordSpeed(result.mbps, result.ms)
+      return { mbps: result.mbps, bytes: result.bytes, ms: result.ms, sizeMb: result.sizeMb, streams: result.streams }
     }
     throw new AppError(
       L('تست سرعت ناموفق بود؛ سرورهای اندازه‌گیری در دسترس نیستند', 'Speed test failed — measurement servers are unreachable')

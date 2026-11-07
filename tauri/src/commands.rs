@@ -463,21 +463,18 @@ pub async fn speed_test(app: AppHandle) -> Result<SpeedResult, String> {
         )));
     }
     let http_port = { core.lock().state.http_port };
-    // Project-hosted measurement file first (always reachable, never
-    // rate-limited) with a cache-busting query, then public mirrors.
-    let targets = [
-        format!("https://vpn.naxlo.ir/speedtest.bin?r={}", crate::util::now_ms()),
-        "https://speed.cloudflare.com/__down?bytes=16000000".to_string(),
-        "https://speedtest.tele2.net/10MB.zip".to_string(),
-    ];
-    for target in &targets {
-        let result = crate::net::measure_throughput("127.0.0.1", http_port, target, 12 * 1024 * 1024, 15000).await;
-        if result.ok && result.ms > 0 {
-            let mbps = (result.bytes as f64) * 8.0 / (result.ms as f64) / 1000.0;
-            let mbps = (mbps * 10.0).round() / 10.0;
-            core.record_speed(mbps, result.ms);
-            return Ok(SpeedResult { mbps, bytes: result.bytes, ms: result.ms });
-        }
+    // Adaptive, speedtest.net-style: probe → ladder size → parallel streams,
+    // steady-state rate. Bases in order: our own site, Cloudflare, tele2.
+    let outcome = crate::net::run_speed_test("127.0.0.1", http_port).await;
+    if outcome.ok && outcome.ms > 0 {
+        core.record_speed(outcome.mbps, outcome.ms);
+        return Ok(SpeedResult {
+            mbps: outcome.mbps,
+            bytes: outcome.bytes,
+            ms: outcome.ms,
+            size_mb: outcome.size_mb,
+            streams: outcome.streams as u8,
+        });
     }
     Err(err(l(
         "تست سرعت ناموفق بود؛ سرورهای اندازه‌گیری در دسترس نیستند",

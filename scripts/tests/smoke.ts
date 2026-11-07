@@ -12,6 +12,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { extractLinks, parseProxyLink, tryDecodeBase64 } from '../../src/main/lib/parseConfig'
 import { buildXrayConfig, validateConfig } from '../../src/main/lib/xray/config'
+import { pickSizeMb, steadyMbps, tele2SizeMb, SPEED_LADDER_MB } from '../../src/shared/speed'
 import { DEFAULT_SETTINGS } from '../../src/shared/types'
 import { maskAddress, maskIp, maskMiddle, maskUrl } from '../../src/shared/mask'
 import { redact, registerSecret } from '../../src/main/lib/redact'
@@ -286,6 +287,31 @@ test('xray config: TUN mode adds the built-in tun inbound', () => {
   assert.ok(dnsRule)
   assert.deepEqual(dnsRule.inboundTag, ['naxlo-tun'])
   assert.equal(rules[0], dnsRule)
+})
+
+test('speed: ladder size follows the probe rate', () => {
+  assert.equal(pickSizeMb(1), 8)
+  assert.equal(pickSizeMb(10), 16)
+  assert.equal(pickSizeMb(40), 64)
+  assert.equal(pickSizeMb(500), 100)
+  assert.equal(pickSizeMb(0), SPEED_LADDER_MB[0])
+  assert.equal(pickSizeMb(Number.NaN), SPEED_LADDER_MB[0])
+})
+
+test('speed: steady rate excludes the slow-start ramp', () => {
+  // 8 s window with a 1.5 s ramp: 80 MiB total, 10 MiB inside the ramp.
+  const mbps = steadyMbps(80 * 1024 * 1024, 10 * 1024 * 1024, 8000)
+  assert.ok(Math.abs(mbps - 90.3) < 0.5, `mbps=${mbps}`)
+  // A window shorter than the ramp never divides by <=0.
+  assert.ok(steadyMbps(1000, 500, 100) >= 0)
+})
+
+test('speed: tele2 mirror picks the largest fitting file', () => {
+  assert.equal(tele2SizeMb(8), 10)
+  assert.equal(tele2SizeMb(16), 10)
+  assert.equal(tele2SizeMb(32), 20)
+  assert.equal(tele2SizeMb(64), 50)
+  assert.equal(tele2SizeMb(100), 100)
 })
 
 test('xray config: proxy mode has no dns outbound or section', () => {

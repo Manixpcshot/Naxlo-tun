@@ -65,7 +65,7 @@
     sp_kicker: 'Speed test',
     sp_title: 'Measure your throughput',
     sp1t: 'Inside Naxlo itself',
-    sp1d: 'The in-app “speed test” button downloads a slice of this site’s measurement file through the tunnel and computes the real throughput — the number lands in your stats card.',
+    sp1d: 'The in-app “speed test” measures like speedtest.net: light probe, ladder size, four parallel streams and the steady-state rate after slow-start — the number lands in your stats card.',
     sp2t: 'Right now, in the browser',
     sp2d: 'If Naxlo is connected (system proxy or TUN), this test measures the very path your traffic takes right now.',
     sp2b: 'Start speed test',
@@ -99,7 +99,7 @@
     n404_btn: 'Back to home',
     /* speed test page */
     st_title: 'Speed test',
-    st_lead: 'Measures download throughput from this server. If Naxlo is connected, you are measuring the tunnel itself.',
+    st_lead: 'A light probe sizes the line, then four parallel streams pull a ladder size (8–100 MB) for ~8 s and the steady-state rate (after slow-start) is reported. With Naxlo connected, you measure the tunnel itself.',
     st_start: 'Start test',
     st_again: 'Run again',
     st_running: 'Measuring…',
@@ -108,7 +108,8 @@
     st_mbps: 'Mbit/s',
     st_mb: 'Downloaded',
     st_sec: 'Duration',
-    st_note: 'The test streams up to 10 MB from',
+    st_size: 'Target size × streams',
+    st_note: 'Sources in order: this site (static file + on-demand generator), Cloudflare and the tele2 mirror:',
     st_back: 'Back to home'
   }
 
@@ -212,6 +213,57 @@
   loadDownloads()
 
   /* --------------------------------------------------- speed test */
+  /* Adaptive, speedtest.net-style: 2 MB probe → ladder size → 4 parallel
+     streams for ~8 s → steady-state rate (slow-start ramp excluded). */
+  const SPEED = {
+    PROBE_BYTES: 2 * 1048576,
+    PROBE_MS: 4000,
+    MAIN_MS: 8000,
+    RAMP_MS: 1500,
+    STREAMS: 4,
+    LADDER: [8, 16, 32, 64, 100]
+  }
+  const pickSizeMb = (mbps) => {
+    if (!isFinite(mbps) || mbps <= 0) return SPEED.LADDER[0]
+    const ideal = (mbps * (SPEED.MAIN_MS / 1000)) / 8
+    for (const step of SPEED.LADDER) if (step >= ideal) return step
+    return 100
+  }
+  const steadyMbps = (total, ramp, ms) => {
+    const win = Math.max(200, ms - SPEED.RAMP_MS)
+    return ((total - ramp) * 8) / win / 1000
+  }
+  const tele2Size = (mb) => [10, 20, 50, 100].filter((n) => n <= mb).pop() || 10
+  const speedUrl = (base, sizeMb, nonce) => {
+    const bytes = sizeMb * 1048576
+    if (base === 'own') {
+      return sizeMb <= 10
+        ? '/speedtest.bin?r=' + nonce
+        : '/speedtest.php?bytes=' + bytes + '&r=' + nonce
+    }
+    if (base === 'cloudflare') return 'https://speed.cloudflare.com/__down?bytes=' + bytes
+    return 'https://speedtest.tele2.net/' + tele2Size(sizeMb) + 'MB.zip'
+  }
+  async function streamFetch(url, capBytes, deadline, addBytes) {
+    let bytes = 0
+    try {
+      const res = await fetch(url, { cache: 'no-store' })
+      if (!res.ok || !res.body) return { ok: false, bytes: 0 }
+      const reader = res.body.getReader()
+      for (;;) {
+        if (performance.now() >= deadline) { await reader.cancel(); break }
+        const { done, value } = await reader.read()
+        if (done) break
+        bytes += value.length
+        addBytes(value.length)
+        if (bytes >= capBytes) { await reader.cancel(); break }
+      }
+      return { ok: bytes > 0, bytes }
+    } catch {
+      return { ok: bytes > 0, bytes }
+    }
+  }
+
   const gauge = document.getElementById('gauge-val')
   if (gauge) {
     const btn = document.getElementById('st-btn')
@@ -220,12 +272,14 @@
     const arc = document.getElementById('st-arc')
     const mbEl = document.getElementById('st-mb')
     const secEl = document.getElementById('st-sec')
+    const sizeEl = document.getElementById('st-size')
     const CIRC = 2 * Math.PI * 110
     let running = false
+    let scale = 100
 
     const setArc = (mbps) => {
-      const p = Math.max(0, Math.min(mbps / 100, 1))
-      arc.style.strokeDashoffset = String(CIRC * (1 - p))
+      while (mbps > scale && scale < 2000) scale *= 2
+      arc.style.strokeDashoffset = String(CIRC * (1 - Math.max(0, Math.min(mbps / scale, 1))))
     }
 
     btn.addEventListener('click', async () => {
@@ -234,39 +288,68 @@
       btn.disabled = true
       btn.textContent = EN.st_running
       log.textContent = ''
-      let bytes = 0
-      const started = performance.now()
+      const lang = () => (document.documentElement.lang === 'en' ? 'en' : 'fa')
+      const nonce = Date.now()
+      let total = 0
+      const addBytes = (d) => { total += d }
+      const startedAll = performance.now()
       const tick = setInterval(() => {
-        const ms = performance.now() - started
-        const mbps = ms > 200 ? (bytes * 8) / ms / 1000 : 0
-        gauge.textContent = mbps.toFixed(1)
-        setArc(mbps)
-        bar.style.width = Math.min(mbps, 100) + '%'
-        mbEl.textContent = (bytes / 1048576).toFixed(2) + ' MB'
+        const ms = performance.now() - startedAll
+        mbEl.textContent = (total / 1048576).toFixed(2) + ' MB'
         secEl.textContent = (ms / 1000).toFixed(1) + ' s'
       }, 120)
-      try {
-        const res = await fetch('/speedtest.bin?r=' + Date.now(), { cache: 'no-store' })
-        if (!res.ok || !res.body) throw new Error('http ' + res.status)
-        const reader = res.body.getReader()
-        for (;;) {
-          const { done, value } = await reader.read()
-          if (done) break
-          bytes += value.length
-          if (bytes >= 10 * 1048576) { await reader.cancel(); break }
-        }
-        const ms = performance.now() - started
-        const mbps = (bytes * 8) / ms / 1000
+
+      let final = null
+      for (const base of ['own', 'cloudflare', 'tele2']) {
+        total = 0
+        const probeStart = performance.now()
+        const probe = await streamFetch(speedUrl(base, 2, nonce), SPEED.PROBE_BYTES, probeStart + SPEED.PROBE_MS, () => {})
+        const probeMs = performance.now() - probeStart
+        if (!probe.ok || probe.bytes < 65536 || probeMs <= 0) continue
+        const probeMbps = (probe.bytes * 8) / probeMs / 1000
+        const sizeMb = pickSizeMb(probeMbps)
+        if (sizeEl) sizeEl.textContent = sizeMb + ' MB × ' + SPEED.STREAMS
+
+        total = 0
+        const started = performance.now()
+        const deadline = started + SPEED.MAIN_MS
+        let ramp = 0
+        let rampTaken = false
+        const rampTimer = setTimeout(() => { ramp = total; rampTaken = true }, SPEED.RAMP_MS)
+        const live = setInterval(() => {
+          const ms = performance.now() - started
+          const mbps = ms > 300 ? steadyMbps(total, rampTaken ? ramp : 0, Math.max(ms, SPEED.RAMP_MS + 200)) : 0
+          gauge.textContent = mbps.toFixed(1)
+          setArc(mbps)
+          bar.style.width = Math.min((mbps / scale) * 100, 100) + '%'
+          mbEl.textContent = (total / 1048576).toFixed(2) + ' MB'
+          secEl.textContent = (ms / 1000).toFixed(1) + ' s'
+        }, 120)
+        const results = await Promise.all(
+          Array.from({ length: SPEED.STREAMS }, () =>
+            streamFetch(speedUrl(base, sizeMb, nonce), sizeMb * 1048576, deadline, addBytes)
+          )
+        )
+        clearInterval(live)
+        clearTimeout(rampTimer)
+        if (!rampTaken) ramp = total
+        const elapsed = performance.now() - started
+        if (!results.some((r) => r.ok) || total < 262144) continue
+        const mbps = steadyMbps(total, ramp, elapsed)
+        final = { mbps, sizeMb, base }
         gauge.textContent = mbps.toFixed(1)
         setArc(mbps)
-        bar.style.width = Math.min(mbps, 100) + '%'
-        mbEl.textContent = (bytes / 1048576).toFixed(2) + ' MB'
-        secEl.textContent = (ms / 1000).toFixed(1) + ' s'
-        log.textContent = EN.st_done
-      } catch {
-        log.textContent = EN.st_fail
+        bar.style.width = Math.min((mbps / scale) * 100, 100) + '%'
+        break
       }
       clearInterval(tick)
+      if (final) {
+        log.textContent = (lang() === 'fa'
+          ? 'پایان — حجم ' + final.sizeMb + ' مگابایت با ' + SPEED.STREAMS + ' جریان هم‌زمان'
+          : 'Done — ' + final.sizeMb + ' MB over ' + SPEED.STREAMS + ' parallel streams')
+      } else {
+        log.textContent = EN.st_fail
+      }
       running = false
       btn.disabled = false
       btn.textContent = EN.st_again
