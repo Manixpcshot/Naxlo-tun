@@ -33,8 +33,8 @@
   <div class="wrap" style="max-width:660px; text-align:center; padding-top:64px;">
     <span class="kicker"><span class="dot"></span><span data-i18n="sp_kicker">تست سرعت</span></span>
     <h1 style="font-size:clamp(28px,4vw,42px)" data-i18n="st_title">تست سرعت</h1>
-    <p class="lead" style="color:var(--text-dim); margin:14px auto 0; max-width:520px" data-i18n="st_lead">
-      نرخ دانلود از این سرور را می‌سنجد. اگر ناکسو متصل باشد، در حال اندازه‌گیری خود تونل هستید.
+    <p class="lead" style="color:var(--text-dim); margin:14px auto 0; max-width:560px" data-i18n="st_lead">
+      اول یک پروب سبک خط را می‌سنجد، بعد ۴ جریان هم‌زمان به‌مدت ~۸ ثانیه حجم پلکانی (۸ تا ۱۰۰ مگابایت) می‌کشند و نرخ پایدار (پس از رمپ‌آپ) گزارش می‌شود. اگر ناکسو متصل باشد، خود تونل سنجیده می‌شود.
     </p>
 
     <div class="gauge">
@@ -61,6 +61,7 @@
     <div class="test-stats">
       <div><b id="st-mb">0.00 MB</b><span data-i18n="st_mb">حجم دانلودشده</span></div>
       <div><b id="st-sec">0.0 s</b><span data-i18n="st_sec">مدت</span></div>
+      <div><b id="st-size">—</b><span data-i18n="st_size">حجم هدف × جریان‌ها</span></div>
     </div>
 
     <div style="margin-top:26px">
@@ -68,7 +69,7 @@
     </div>
     <p class="test-log" id="st-log"></p>
     <p style="color:var(--text-mute); font-size:12.5px; margin-top:6px">
-      <span data-i18n="st_note">تست تا ۱۰ مگابایت از این فایل را استریم می‌کند:</span>
+      <span data-i18n="st_note">منبع‌ها به ترتیب: همین سایت (فایل استاتیک + مولد on-demand)، Cloudflare و آینهٔ tele2:</span>
       <code class="file">/speedtest.bin</code>
     </p>
   </div>

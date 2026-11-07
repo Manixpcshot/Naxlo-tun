@@ -99,7 +99,7 @@ const api: NaxloApi = {
   },
 
   speed: {
-    test: () => call<{ mbps: number; bytes: number; ms: number }>('speed_test')
+    test: () => call<{ mbps: number; bytes: number; ms: number; sizeMb?: number; streams?: number }>('speed_test')
   },
 
   stats: {

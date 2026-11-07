@@ -400,6 +400,10 @@ pub struct SpeedResult {
     pub mbps: f64,
     pub bytes: u64,
     pub ms: u64,
+    /// Ladder size (MiB) the adaptive test settled on.
+    pub size_mb: u64,
+    /// Parallel streams used in the main phase.
+    pub streams: u8,
 }
 
 /// One recorded proxy session (stats page) — shape parity with Electron.

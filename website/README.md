@@ -10,7 +10,8 @@ Rust apps download when you press «تست سرعت».
 |---|---|
 | `index.html` | Landing page (RTL Persian, EN toggle, dark app-like design) |
 | `speedtest.html` | In-browser speed test (gauge + live progress) |
-| `speedtest.bin` | 10 MB measurement file used by the apps and the web test — **must stay uncompressed & un-cached** (see `.htaccess`) |
+| `speedtest.bin` | 10 MB measurement file for modest lines — **must stay uncompressed & un-cached** (see `.htaccess`) |
+| `speedtest.php` | on-demand generator (`?bytes=N`, capped 250 MB) so fast lines get a long enough measurement window; incompressible output, no-store headers |
 | `styles.css`, `app.js` | Design tokens identical to the app + behaviour (i18n, releases list, gauge) |
 | `favicon.svg/.ico`, `apple-touch-icon.png`, `icon-192/512.png`, `og.png` | Brand assets |
 | `manifest.webmanifest`, `robots.txt`, `sitemap.xml`, `404.html` | PWA/SEO niceties |

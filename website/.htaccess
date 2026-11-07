@@ -26,7 +26,7 @@ AddDefaultCharset UTF-8
   AddOutputFilterByType DEFLATE text/html text/css application/javascript application/json image/svg+xml application/manifest+json
 </IfModule>
 <IfModule mod_setenvif.c>
-  SetEnvIf Request_URI "speedtest\.bin$" no-gzip dont-vary
+  SetEnvIf Request_URI "speedtest\.(bin|php)$" no-gzip dont-vary
 </IfModule>
 
 # ------------------------------------------------------------ caching
@@ -44,7 +44,7 @@ AddDefaultCharset UTF-8
 
 # The measurement file must always come from origin: a cached copy
 # would make repeated speed tests meaningless.
-<FilesMatch "speedtest\.bin$">
+<FilesMatch "speedtest\.(bin|php)$">
   <IfModule mod_headers.c>
     Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
     Header set Pragma "no-cache"
