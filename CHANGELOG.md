@@ -6,6 +6,24 @@ All notable changes to Naxlo are documented here. Releases are cut per tag
 The format follows [Keep a Changelog](https://keepachangelog.com/) and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.13.0] - 2026-11-07
+
+### Added
+- **ابزارها در وب‌سایت (`tools.html`):** اعتبارسنج کانفیگ کاملاً client-side (vless/vmess/trojan/ss با همان قاعده‌های پارسر اپ: UUID، پورت، network ناشناخته، pbk واقعی برای REALITY، SNI، serviceName برای gRPC…) با نمایش فیلدهای پارشده به‌صورت پوشیده (هرگزcredential کامل نشان داده نمی‌شود) + تبدیل **لینک ↔ QR** (ساخت QR از لینک برای اسکن موبایل و خواندن متن از تصویر QR با ارسال مستقیم به اعتبارسنج). هیچ چیز آپلود نمی‌شود.
+- **Website tools page:** fully client-side config validator (vless/vmess/trojan/ss with the app's own parse rules: UUID, port, unknown network, REALITY pbk, SNI, gRPC serviceName…) showing parsed fields masked (full credentials never rendered) + **link ↔ QR** (build a QR from a link for phone scanning, and read a QR image back straight into the validator). Nothing is uploaded.
+- **صفحهٔ تغییرات زنده (`changelog.html`):** تاریخچهٔ انتشارها مستقیم از API گیت‌هاب (متن ریلیز با رندر سبک مارک‌داون) + نوار وضعیت بیلد سه ورک‌فلو (Release/Android/tauri) روی آخرین تگ با چراغ سبز/قرمز/در‌حال‌اجرا.
+- **Live changelog page:** release history straight from the GitHub API (light markdown rendering) + a build-status strip for the three workflows (Release/Android/tauri) on the latest tag with green/red/running chips.
+- **تست‌های DOM وب‌سایت (jsdom):** ۹ تست جدید در `npm test` که صفحه‌ها را در jsdom بار می‌کنند و کلید زبان/fa-EN (شامل شمارهٔ قدم‌ها و title/meta)، اعتبارسنج و fallbackهای بدون API را گارانتی می‌کنند. / **Website DOM tests (jsdom):** 9 new tests in `npm test` load the pages in jsdom and guarantee the fa/EN switch (including step numerals and title/meta), the validator and the no-API fallbacks.
+
+### Fixed
+- **اعداد در اپ واقعاً یکدست شدند:** کاشی‌های صفحهٔ آمار از `formatMinutes` مشترک استفاده می‌کردند که حتی در فارسی/ترکی «1h 2m» لاتین می‌ساخت؛ اکنون `minutesLabel` در format.ts واحد و ارقام را بر اساس زبان می‌سازد (فا: «۱ ساعت و ۲ دقیقه»، tr: «1 sa 2 dk») + تست regression جدید که ارقام fa/en/tr را قفل می‌کند. وب‌سایت هم در حالت فارسی اعداد لاتین نشان می‌داد (حجم کارت‌های دانلود، گیج تست سرعت، MB/ثانیه) که اکنون با `loc()` فارسی می‌شوند و در EN کاملاً لاتین می‌مانند.
+- **Digits are finally consistent in the app:** the stats tiles used the shared `formatMinutes` which rendered Latin "1h 2m" even in Persian/Turkish; a new `minutesLabel` in format.ts builds units and digits per language (fa: «۱ ساعت و ۲ دقیقه», tr: «1 sa 2 dk») plus a regression test locking fa/en/tr digits. The website also showed Latin digits in fa mode (download-card sizes, speed gauge, MB/seconds) which now localise via `loc()` while EN stays fully Latin.
+- **رسپانسیو موبایل سایت:** منوی دسکتاپ در <۹۴۰px پنهان می‌شد و راه ناوبری نبود؛ حالا دکمهٔ همبرگری با پنل کشویی، حلقه‌های هیرو و آیکن با `min()` مقیاس می‌گیرند، گیج/تونل/کارت‌ها در <۶۰۰px جمع‌وجور می‌شوند و دکمه‌ها تمام‌عرض می‌شوند. / **Mobile responsiveness:** below 940px the nav used to disappear entirely; now a burger button opens a dropdown panel, hero rings/icon scale with `min()`, and under 600px the gauge/tunnel/cards compact and buttons go full-width.
+
+### Changed
+- اندروید: versionCode 2103 و versionName 1.13.0. / Android bumped to versionCode 2103 / versionName 1.13.0.
+- `jsdom` به devDependencies اضافه شد (فقط برای تست‌ها). / `jsdom` added to devDependencies (tests only).
+
 ## [1.12.0] - 2026-11-07
 
 ### Added

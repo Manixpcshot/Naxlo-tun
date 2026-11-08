@@ -13,6 +13,7 @@ import { resolve } from 'node:path'
 import { extractLinks, parseProxyLink, tryDecodeBase64 } from '../../src/main/lib/parseConfig'
 import { buildXrayConfig, validateConfig } from '../../src/main/lib/xray/config'
 import { pickSizeMb, steadyMbps, tele2SizeMb, SPEED_LADDER_MB } from '../../src/shared/speed'
+import { fa, minutesLabel, setFormatLocale } from '../../src/renderer/src/lib/format'
 import { DEFAULT_SETTINGS } from '../../src/shared/types'
 import { maskAddress, maskIp, maskMiddle, maskUrl } from '../../src/shared/mask'
 import { redact, registerSecret } from '../../src/main/lib/redact'
@@ -287,6 +288,20 @@ test('xray config: TUN mode adds the built-in tun inbound', () => {
   assert.ok(dnsRule)
   assert.deepEqual(dnsRule.inboundTag, ['naxlo-tun'])
   assert.equal(rules[0], dnsRule)
+})
+
+test('format: digits and units follow the active language', () => {
+  setFormatLocale('en')
+  assert.equal(fa(1234567), '1,234,567')
+  assert.equal(minutesLabel(62), '1h 2m')
+  assert.equal(minutesLabel(90), '1h 30m')
+  setFormatLocale('fa')
+  assert.equal(fa(1234567), '۱٬۲۳۴٬۵۶۷')
+  assert.equal(minutesLabel(62), '۱ ساعت و ۲ دقیقه')
+  assert.equal(minutesLabel(60), '۱ ساعت')
+  setFormatLocale('tr')
+  assert.equal(minutesLabel(62), '1 sa 2 dk')
+  setFormatLocale('en')
 })
 
 test('speed: ladder size follows the probe rate', () => {
