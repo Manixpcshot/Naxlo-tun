@@ -12,7 +12,8 @@ import { Button, Card, PageHeader } from '../components/ui'
 import { useStore } from '../lib/store'
 import { useI18n } from '../lib/i18n'
 import { extractFlagCodes, fa, stripFlags } from '../lib/format'
-import { aggregateStats, formatMinutes } from '@shared/stats'
+import { aggregateStats } from '@shared/stats'
+import { minutesLabel } from '../lib/format'
 import type { StatsPayload } from '@shared/bridge'
 
 const DAYS = 14
@@ -53,9 +54,9 @@ export function Stats(): React.ReactElement {
   const empty = summary.totalSessions === 0 && speed.length === 0
 
   const tiles = [
-    { icon: 'clock' as const, label: t('statsTotalTime'), value: formatMinutes(summary.totalMinutes) },
+    { icon: 'clock' as const, label: t('statsTotalTime'), value: minutesLabel(summary.totalMinutes) },
     { icon: 'activity' as const, label: t('statsSessions'), value: fa(summary.totalSessions) },
-    { icon: 'gauge' as const, label: t('statsAvgSession'), value: formatMinutes(summary.avgMinutes) },
+    { icon: 'gauge' as const, label: t('statsAvgSession'), value: minutesLabel(summary.avgMinutes) },
     { icon: 'bolt' as const, label: t('statsBestSpeed'), value: bestSpeed !== null ? `${fa(bestSpeed)} Mbps` : '—' }
   ]
 
@@ -108,7 +109,7 @@ export function Stats(): React.ReactElement {
               const day = Number(bucket.date.slice(8))
               return (
                 <div key={bucket.date} className={`daychart__col ${isToday ? 'daychart__col--today' : ''}`}>
-                  <div className="daychart__track" title={`${bucket.date} — ${formatMinutes(bucket.minutes)}`}>
+                  <div className="daychart__track" title={`${bucket.date} — ${minutesLabel(bucket.minutes)}`}>
                     <motion.div
                       className="daychart__bar"
                       initial={reduce ? { height: `${Math.max(pct, bucket.minutes > 0 ? 4 : 1)}%` } : { height: '1%' }}
@@ -147,7 +148,7 @@ export function Stats(): React.ReactElement {
                   >
                     <span className="toplist__flag">{code ? <Flag code={code} /> : null}</span>
                     <span className="toplist__name" title={name}>{name}</span>
-                    <span className="toplist__meta">{fa(server.sessions)}× • {formatMinutes(server.minutes)}</span>
+                    <span className="toplist__meta">{fa(server.sessions)}× • {minutesLabel(server.minutes)}</span>
                     <span className="toplist__track">
                       <motion.span
                         className="toplist__bar"

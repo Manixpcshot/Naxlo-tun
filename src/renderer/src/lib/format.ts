@@ -116,6 +116,27 @@ export function formatBytes(bytes: number | null | undefined): string {
   return `${fa(rounded)} ${units[unit]}`
 }
 
+/**
+ * Language-aware minutes duration for the stats page — the shared
+ * `formatMinutes` is locale-neutral ("1h 2m") which left Western digits and
+ * English units inside the Persian/Turkish UI.
+ */
+export function minutesLabel(minutes: number): string {
+  const m = Math.max(0, Math.round(minutes))
+  const h = Math.floor(m / 60)
+  const rest = m % 60
+  if (lang === 'fa') {
+    if (h === 0) return `${fa(rest)} دقیقه`
+    return rest === 0 ? `${fa(h)} ساعت` : `${fa(h)} ساعت و ${fa(rest)} دقیقه`
+  }
+  if (lang === 'tr') {
+    if (h === 0) return `${fa(rest)} dk`
+    return rest === 0 ? `${fa(h)} sa` : `${fa(h)} sa ${fa(rest)} dk`
+  }
+  if (h === 0) return `${fa(rest)}m`
+  return rest === 0 ? `${fa(h)}h` : `${fa(h)}h ${fa(rest)}m`
+}
+
 /** Bytes consumed from a subscription quota (upload + download). */
 export function subUsed(info: SubUserinfo): number {
   return info.upload + info.download

@@ -49,3 +49,7 @@ if (!existsSync(bundle)) {
   await import(pathToFileURL(bundle).href)
   if (existsSync(outDir)) rmSync(outDir, { recursive: true, force: true })
 }
+
+// Website DOM tests (jsdom): i18n switching, validator, graceful fallbacks.
+process.stdout.write('  running website DOM tests…\n')
+await import(pathToFileURL(resolve(root, 'scripts/tests/website-dom.mjs')).href)

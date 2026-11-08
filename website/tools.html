@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title data-i18n="page_title_tools">ابزارها | Naxlo</title>
+  <meta name="description" data-i18n-content="meta_desc_tools" content="اعتبارسنج کانفیگ و تبدیل لینک به QR — کاملاً در مرورگر، بدون آپلود هیچ چیز." />
+  <meta name="theme-color" content="#05060a" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="alternate icon" href="/favicon.ico" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/vazirmatn@5/index.css" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="/">
+      <img src="/favicon.svg" alt="Naxlo" />
+      <span data-i18n="brand">ناکسو</span>
+    </a>
+    <nav>
+      <a href="/#features" data-i18n="nav_features">امکانات</a>
+      <a href="/#download" data-i18n="nav_download">دانلود</a>
+      <a href="/speedtest.html" data-i18n="nav_speed">تست سرعت</a>
+      <a href="/changelog.html" data-i18n="nav_cl">تغییرات</a>
+      <a href="/tools.html" data-i18n="nav_tools">ابزارها</a>
+    </nav>
+    <div class="spacer"></div>
+    <div class="lang" role="group" aria-label="Language">
+      <button id="lang-fa" class="on">فا</button>
+      <button id="lang-en">EN</button>
+    </div>
+    <button class="burger" id="burger" aria-label="menu">☰</button>
+  </div>
+</header>
+
+<main>
+  <section>
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="kicker" data-i18n="tools_kicker">ابزارها</span>
+        <h2 data-i18n="tools_title">جعبه‌ابزار کانفیگ — همه‌چیز در مرورگر شما</h2>
+        <p data-i18n="tools_sub">هیچ لینکی آپلود نمی‌شود؛ پارس، اعتبارسنجی و QR کاملاً client-side انجام می‌شود.</p>
+      </div>
+
+      <div class="tools-grid">
+        <!-- -------------------------------------------- validator -->
+        <div class="tool-card reveal">
+          <h3 data-i18n="v_title">اعتبارسنج کانفیگ</h3>
+          <p data-i18n="v_sub">لینک vless / vmess / trojan / ss را بچسبانید تا ساختارش دقیقاً مثل پارسر خود ناکسو بررسی شود.</p>
+          <textarea id="v-input" spellcheck="false" data-i18n-ph="v_ph" placeholder="vless://uuid@host:443?type=ws&security=reality&pbk=...#name"></textarea>
+          <div class="tool-actions">
+            <button class="btn btn-primary" id="v-btn" data-i18n="v_btn">بررسی کن</button>
+            <button class="btn btn-ghost" id="v-clear" data-i18n="v_clear">پاک کردن</button>
+          </div>
+          <div class="tool-out" id="v-out"></div>
+        </div>
+
+        <!-- -------------------------------------------- qr -->
+        <div class="tool-card reveal">
+          <h3 data-i18n="q_title">لینک ↔ QR</h3>
+          <p data-i18n="q_sub">لینک کانفیگ یا اشتراک را به QR تبدیل کنید تا با موبایل اسکن شود؛ یا تصویر QR را بدهید تا متنش را بخواند.</p>
+          <textarea id="q-input" spellcheck="false" data-i18n-ph="q_ph" placeholder="vless://… یا https://…"></textarea>
+          <div class="tool-actions">
+            <button class="btn btn-primary" id="q-btn" data-i18n="q_btn">ساخت QR</button>
+            <label class="btn btn-ghost" style="cursor:pointer">
+              <span data-i18n="q_file">خواندن تصویر QR</span>
+              <input type="file" id="q-file" accept="image/*" hidden />
+            </label>
+          </div>
+          <div class="tool-out">
+            <div class="qr-box empty" id="q-box"><span data-i18n="q_empty">QR اینجا ساخته می‌شود</span></div>
+            <div id="q-decoded" style="margin-top:12px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <span data-i18n="foot1">© ناکسو — ساخته‌شده برای اینترنت آزاد</span>
+    <div class="spacer"></div>
+    <a href="/">Naxlo</a>
+    <a href="/changelog.html" data-i18n="nav_cl">تغییرات</a>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>

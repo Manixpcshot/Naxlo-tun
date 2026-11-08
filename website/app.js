@@ -4,6 +4,11 @@
 
   let releaseCache = null
 
+  /** Persian digits when the page language is fa, Western otherwise. */
+  const loc = (value) => (document.documentElement.lang === 'fa'
+    ? String(value).replace(/\d/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[Number(d)])
+    : String(value))
+
   /* ---------------------------------------------------------- i18n */
   const EN = {
     brand: 'Naxlo',
@@ -84,6 +89,30 @@
     foot1: '© Naxlo — built for a free internet',
     foot_speed: 'Speed test',
     foot_dl: 'Download',
+    nav_cl: 'Changelog',
+    nav_tools: 'Tools',
+    page_title_tools: 'Tools | Naxlo',
+    meta_desc_tools: 'Config validator and link-to-QR converter — fully in the browser, nothing is uploaded.',
+    tools_kicker: 'Tools',
+    tools_title: 'Config toolbox — everything stays in your browser',
+    tools_sub: 'Nothing is uploaded; parsing, validation and QR generation are fully client-side.',
+    v_title: 'Config validator',
+    v_sub: 'Paste a vless / vmess / trojan / ss link and get the same parse + checks the Naxlo app itself runs.',
+    v_ph: 'vless://uuid@host:443?type=ws&security=reality&pbk=...#name',
+    v_btn: 'Validate',
+    v_clear: 'Clear',
+    q_title: 'Link ↔ QR',
+    q_sub: 'Turn a config or subscription link into a QR code for your phone, or feed it a QR image to read back the text.',
+    q_ph: 'vless://… or https://…',
+    q_btn: 'Make QR',
+    q_file: 'Read QR image',
+    q_empty: 'The QR code appears here',
+    page_title_cl: 'Changelog | Naxlo',
+    meta_desc_cl: 'Live release history of Naxlo with the build status of each tag, straight from the GitHub API.',
+    cl_kicker: 'Live changelog',
+    cl_title: 'Release history + build status',
+    cl_sub: 'Straight from the GitHub API; the chips above show the three workflows (Release / Android / tauri) on the latest tag.',
+    cl_all: 'All releases on GitHub',
     step_n1: '1',
     step_n2: '2',
     step_n3: '3',
@@ -118,6 +147,8 @@
   nodes.forEach((el) => { FA[el.getAttribute('data-i18n')] = el.textContent })
   const metaNodes = Array.from(document.querySelectorAll('[data-i18n-content]'))
   metaNodes.forEach((el) => { FA[el.getAttribute('data-i18n-content')] = el.getAttribute('content') || '' })
+  const phNodes = Array.from(document.querySelectorAll('[data-i18n-ph]'))
+  phNodes.forEach((el) => { FA[el.getAttribute('data-i18n-ph')] = el.getAttribute('placeholder') || '' })
 
 
   function applyLang(lang) {
@@ -129,6 +160,10 @@
     metaNodes.forEach((el) => {
       const key = el.getAttribute('data-i18n-content')
       if (dict[key] != null) el.setAttribute('content', dict[key])
+    })
+    phNodes.forEach((el) => {
+      const key = el.getAttribute('data-i18n-ph')
+      if (dict[key] != null) el.setAttribute('placeholder', dict[key])
     })
     document.documentElement.lang = lang
     document.documentElement.dir = lang === 'fa' ? 'rtl' : 'ltr'
@@ -145,11 +180,15 @@
   if (saved !== 'fa') applyLang(saved)
 
   /* ------------------------------------------------- scroll reveal */
-  const io = new IntersectionObserver(
-    (entries) => entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target) } }),
-    { threshold: 0.12 }
-  )
-  document.querySelectorAll('.reveal').forEach((el) => io.observe(el))
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(
+      (entries) => entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target) } }),
+      { threshold: 0.12 }
+    )
+    document.querySelectorAll('.reveal').forEach((el) => io.observe(el))
+  } else {
+    document.querySelectorAll('.reveal').forEach((el) => el.classList.add('in'))
+  }
 
   /* --------------------------------------------- release downloads */
   const PICKS = [
@@ -162,7 +201,7 @@
     { match: /android-.*-unsigned\.apk$/, icon: '🤖', fa: 'اندروید — APK', en: 'Android — APK', sub: { fa: 'کلاینت بومی Kotlin', en: 'Native Kotlin client' } }
   ]
 
-  const fmtSize = (n) => (n > 1024 * 1024 ? (n / 1024 / 1024).toFixed(1) + ' MB' : Math.round(n / 1024) + ' KB')
+  const fmtSize = (n) => loc(n > 1024 * 1024 ? (n / 1024 / 1024).toFixed(1) + ' MB' : Math.round(n / 1024) + ' KB')
 
   function renderDownloads() {
     const grid = document.getElementById('dl-grid')
@@ -211,6 +250,293 @@
     }
   }
   loadDownloads()
+
+  /* ------------------------------------------------- burger + tools */
+  const burger = document.getElementById('burger')
+  if (burger) {
+    burger.addEventListener('click', () => document.querySelector('header')?.classList.toggle('open'))
+    document.querySelectorAll('.nav nav a').forEach((a) =>
+      a.addEventListener('click', () => document.querySelector('header')?.classList.remove('open'))
+    )
+  }
+
+  const isFa = () => document.documentElement.lang !== 'en'
+  const maskMid = (v) => (v && v.length > 12 ? v.slice(0, 5) + '…' + v.slice(-4) : v || '—')
+
+  /* client-side config validator — mirrors src/main/lib/parseConfig.ts */
+  const NET_ALIASES = { tcp: 'tcp', ws: 'ws', websocket: 'ws', grpc: 'grpc', gun: 'grpc', multi: 'grpc', h2: 'h2', http: 'h2', quic: 'quic', kcp: 'kcp', mkcp: 'kcp', splithttp: 'splithttp', xhttp: 'xhttp', xudp: 'tcp' }
+  const SEC_ALIASES = { none: 'none', '': 'none', tls: 'tls', xtls: 'xtls', reality: 'reality', recon: 'reality' }
+  const UUID_RE = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/
+
+  function b64dec(input) {
+    try { return decodeURIComponent(escape(atob(input.replace(/-/g, '+').replace(/_/g, '/')))) } catch { /* fall through */ }
+    try { return atob(input) } catch { return null }
+  }
+
+  function parseAuthority(authority, fields, err) {
+    let host = authority
+    let port = 443
+    if (host.startsWith('[')) {
+      const close = host.indexOf(']')
+      if (close > 0) { port = Number(host.slice(close + 2)) || 443; host = host.slice(1, close) }
+    } else {
+      const colon = host.lastIndexOf(':')
+      if (colon > 0) { port = Number(host.slice(colon + 1)) || 443; host = host.slice(0, colon) }
+    }
+    fields.address = maskMid(host)
+    fields.port = String(port)
+    if (!host) err('آدرس سرور خالی است', 'Server address is empty')
+    if (!Number.isInteger(port) || port < 1 || port > 65535) err('پورت معتبر نیست (' + port + ')', 'Invalid port (' + port + ')')
+  }
+
+  function validateLink(input) {
+    const issues = []
+    const fields = {}
+    const err = (fa, en) => issues.push({ lvl: 'err', fa, en })
+    const warn = (fa, en) => issues.push({ lvl: 'warn', fa, en })
+    const raw = (input || '').trim()
+    if (!raw) return { fields: null, issues: [{ lvl: 'err', fa: 'چیزی وارد نشده است', en: 'Nothing pasted' }] }
+
+    if (raw.startsWith('vless://') || raw.startsWith('trojan://')) {
+      const isVless = raw.startsWith('vless://')
+      fields.protocol = isVless ? 'vless' : 'trojan'
+      const body = raw.slice(isVless ? 8 : 9)
+      const hash = body.indexOf('#')
+      const main = hash >= 0 ? body.slice(0, hash) : body
+      if (hash >= 0) fields.name = decodeURIComponent(body.slice(hash + 1).replace(/[%20]/g, ' ')).slice(0, 24) || undefined
+      const at = main.indexOf('@')
+      if (at < 0) { err('بخش اعتبارنامه (@) وجود ندارد', 'Missing credential (@) section'); return { fields, issues } }
+      const credential = main.slice(0, at)
+      const rest = main.slice(at + 1)
+      if (isVless) { fields.uuid = credential ? credential.slice(0, 8) + '…' : '—'; if (!UUID_RE.test(credential)) err('UUID معتبر نیست', 'UUID is not valid') }
+      else if (!credential) err('رمز trojan خالی است', 'Trojan password is empty')
+      const q = rest.indexOf('?')
+      const params = new URLSearchParams(q >= 0 ? rest.slice(q + 1) : '')
+      parseAuthority(q >= 0 ? rest.slice(0, q) : rest, fields, err)
+      const netRaw = (params.get('type') || params.get('network') || 'tcp').toLowerCase()
+      const network = NET_ALIASES[netRaw]
+      if (!network) err('شبکه ناشناخته: ' + netRaw, 'Unknown network: ' + netRaw)
+      else fields.network = network
+      const secRaw = (params.get('security') || (isVless ? 'none' : 'tls')).toLowerCase()
+      const security = SEC_ALIASES[secRaw]
+      if (security === undefined) warn('لایهٔ امنیتی ناشناخته: ' + secRaw, 'Unknown security: ' + secRaw)
+      else fields.security = security
+      if (security === 'reality') {
+        if (!params.get('pbk')) err('کلید عمومی REALITY (pbk) وجود ندارد — کانفیگ کار نمی‌کند', 'REALITY public key (pbk) missing — the config cannot work')
+        else fields.pbk = maskMid(params.get('pbk'))
+        if (!params.get('sni')) warn('SNI برای REALITY توصیه می‌شود', 'SNI is recommended for REALITY')
+      }
+      if (security === 'tls' && !params.get('sni')) warn('SNI نبود؛ ناکسو آدرس سرور را جایگزین می‌کند', 'No SNI; Naxlo falls back to the server address')
+      if (params.get('sni')) fields.sni = maskMid(params.get('sni'))
+      if (network === 'grpc' && !params.get('serviceName')) warn('serviceName برای gRPC خالی است', 'serviceName is empty for gRPC')
+      if (network === 'ws' && params.get('path')) fields.path = params.get('path')
+      if (isVless && security === 'tls' && network === 'tcp' && params.get('flow') !== 'xtls-rprx-vision') {
+        warn('flow=xtls-rprx-vision برای VLESS+TLS+TCP توصیه می‌شود', 'flow=xtls-rprx-vision is recommended for VLESS+TLS+TCP')
+      }
+    } else if (raw.startsWith('vmess://')) {
+      fields.protocol = 'vmess'
+      const json = b64dec(raw.slice(8))
+      if (!json) { err('Base64 نامعتبر است', 'Invalid Base64'); return { fields, issues } }
+      let data
+      try { data = JSON.parse(json) } catch { err('JSON داخل vmess خراب است', 'The JSON inside vmess is corrupt'); return { fields, issues } }
+      if (data.add) fields.address = maskMid(String(data.add))
+      else err('آدرس (add) وجود ندارد', 'Missing address (add)')
+      const port = Number(data.port)
+      fields.port = String(data.port ?? '')
+      if (!port || port < 1 || port > 65535) err('پورت معتبر نیست', 'Invalid port')
+      fields.uuid = data.id ? String(data.id).slice(0, 8) + '…' : '—'
+      if (!UUID_RE.test(String(data.id ?? ''))) err('UUID معتبر نیست', 'UUID is not valid')
+      const network = NET_ALIASES[String(data.net ?? 'tcp').toLowerCase()]
+      if (!network) err('شبکه ناشناخته: ' + data.net, 'Unknown network: ' + data.net)
+      else fields.network = network
+      const security = SEC_ALIASES[String(data.tls ?? 'none').toLowerCase()] ?? 'none'
+      fields.security = security
+      if (security === 'tls' && !data.sni && !data.host) warn('SNI نبود؛ ناکسو آدرس سرور را جایگزین می‌کند', 'No SNI; Naxlo falls back to the server address')
+      if (data.ps) fields.name = String(data.ps).slice(0, 24)
+    } else if (raw.startsWith('ss://')) {
+      fields.protocol = 'shadowsocks'
+      let body = raw.slice(5)
+      const hash = body.indexOf('#')
+      if (hash >= 0) { fields.name = decodeURIComponent(body.slice(hash + 1)).slice(0, 24) || undefined; body = body.slice(0, hash) }
+      let userinfo = null
+      let authority = body
+      const at = body.lastIndexOf('@')
+      if (at > 0) { userinfo = b64dec(body.slice(0, at)); authority = body.slice(at + 1) }
+      else {
+        const decoded = b64dec(body)
+        if (decoded && decoded.includes('@')) {
+          const a2 = decoded.lastIndexOf('@')
+          userinfo = decoded.slice(0, a2)
+          authority = decoded.slice(a2 + 1)
+        }
+      }
+      if (userinfo && userinfo.includes(':')) fields.method = userinfo.slice(0, userinfo.indexOf(':'))
+      else warn('بخش method:password خوانده نشد', 'Could not read the method:password part')
+      parseAuthority(authority, fields, err)
+    } else {
+      err('فرمت لینک ناشناخته است (vless/vmess/trojan/ss)', 'Unknown link format (vless/vmess/trojan/ss)')
+    }
+    return { fields, issues }
+  }
+
+  const vBtn = document.getElementById('v-btn')
+  if (vBtn) {
+    const out = document.getElementById('v-out')
+    const render = () => {
+      const { fields, issues } = validateLink(document.getElementById('v-input').value)
+      out.innerHTML = ''
+      if (fields) {
+        const kv = document.createElement('div')
+        kv.className = 'kv'
+        for (const [key, value] of Object.entries(fields)) {
+          const chip = document.createElement('span')
+          chip.textContent = key + ': ' + value
+          kv.appendChild(chip)
+        }
+        out.appendChild(kv)
+      }
+      if (!issues.length) {
+        const ok = document.createElement('div')
+        ok.className = 'issue okk'
+        ok.innerHTML = '<span class="ic">✓</span><p></p>'
+        ok.querySelector('p').textContent = isFa() ? 'کانفیگ معتبر است — هیچ مشکلی پیدا نشد.' : 'The config is valid — no issues found.'
+        out.appendChild(ok)
+      }
+      for (const issue of issues) {
+        const row = document.createElement('div')
+        row.className = 'issue ' + (issue.lvl === 'err' ? 'err' : 'warn')
+        row.innerHTML = '<span class="ic"></span><p></p>'
+        row.querySelector('.ic').textContent = issue.lvl === 'err' ? '✕' : '!'
+        row.querySelector('p').textContent = isFa() ? issue.fa : issue.en
+        out.appendChild(row)
+      }
+    }
+    vBtn.addEventListener('click', render)
+    document.getElementById('v-clear').addEventListener('click', () => {
+      document.getElementById('v-input').value = ''
+      out.innerHTML = ''
+    })
+  }
+
+  /* ------------------------------------------------------ qr make/read */
+  const qBtn = document.getElementById('q-btn')
+  if (qBtn && typeof window.qrcode === 'function') {
+    qBtn.addEventListener('click', () => {
+      const text = document.getElementById('q-input').value.trim()
+      const box = document.getElementById('q-box')
+      if (!text) return
+      try {
+        const qr = window.qrcode(0, 'M')
+        qr.addData(text)
+        qr.make()
+        box.className = 'qr-box'
+        box.innerHTML = qr.createSvgTag({ cellSize: 4, margin: 2, scalable: true })
+      } catch {
+        box.className = 'qr-box empty'
+        box.textContent = isFa() ? 'ساخت QR ممکن نشد' : 'Could not build the QR'
+      }
+    })
+  }
+  const qFile = document.getElementById('q-file')
+  if (qFile && typeof window.jsQR === 'function') {
+    qFile.addEventListener('change', (event) => {
+      const file = event.target.files && event.target.files[0]
+      if (!file) return
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        canvas.width = img.width
+        canvas.height = img.height
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(img, 0, 0)
+        const data = ctx.getImageData(0, 0, canvas.width, canvas.height)
+        const result = window.jsQR(data.data, canvas.width, canvas.height)
+        const out = document.getElementById('q-decoded')
+        out.innerHTML = ''
+        if (result && result.data) {
+          const ta = document.createElement('textarea')
+          ta.value = result.data
+          ta.readOnly = true
+          ta.style.minHeight = '70px'
+          out.appendChild(ta)
+          const use = document.createElement('button')
+          use.className = 'btn btn-ghost'
+          use.style.marginTop = '10px'
+          use.textContent = isFa() ? 'بفرست به اعتبارسنج' : 'Send to validator'
+          use.addEventListener('click', () => {
+            document.getElementById('v-input').value = result.data
+            document.getElementById('v-btn').click()
+          })
+          out.appendChild(use)
+        } else {
+          out.textContent = isFa() ? 'QR از این تصویر خوانده نشد' : 'No QR could be read from this image'
+        }
+        URL.revokeObjectURL(img.src)
+      }
+      img.src = URL.createObjectURL(file)
+    })
+  }
+
+  /* ------------------------------------------------- live changelog */
+  const relRoot = document.getElementById('releases')
+  if (relRoot) {
+    const esc = (value) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    const mdLite = (value) => esc(value)
+      .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
+      .replace(/`([^`]+)`/g, '<code>$1</code>')
+      .replace(/^#{1,4}\s*(.+)$/gm, '<b>$1</b>')
+    const fallback = () => {
+      relRoot.textContent = isFa() ? 'دریافت تغییرات ممکن نشد — اینترنت یا API در دسترس نیست.' : 'Could not fetch releases — the API is unreachable.'
+    }
+    try {
+      if (typeof fetch !== 'function') throw new Error('no fetch')
+      fetch('https://api.github.com/repos/Manixpcshot/Naxlo-tun/releases?per_page=12')
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error('http ' + res.status))))
+      .then((list) => {
+        relRoot.innerHTML = ''
+        for (const rel of list) {
+          const card = document.createElement('article')
+          card.className = 'release-card reveal in'
+          const head = document.createElement('header')
+          head.innerHTML = '<b></b><time></time><span class="cnt"></span>'
+          head.querySelector('b').textContent = rel.tag_name
+          head.querySelector('time').textContent = new Date(rel.published_at).toLocaleDateString(isFa() ? 'fa-IR' : 'en-GB')
+          head.querySelector('.cnt').textContent = (rel.assets || []).length + (isFa() ? ' فایل' : ' assets')
+          card.appendChild(head)
+          const body = document.createElement('div')
+          body.className = 'release-body'
+          body.innerHTML = mdLite(rel.body || '')
+          card.appendChild(body)
+          relRoot.appendChild(card)
+        }
+        const tag = list[0] && list[0].tag_name
+        if (tag) {
+          fetch('https://api.github.com/repos/Manixpcshot/Naxlo-tun/actions/runs?branch=' + encodeURIComponent(tag) + '&per_page=15')
+            .then((res) => (res.ok ? res.json() : Promise.reject(new Error('runs'))))
+            .then((runs) => {
+              const strip = document.getElementById('build-strip')
+              const latest = {}
+              for (const run of runs.workflow_runs || []) if (!latest[run.name]) latest[run.name] = run
+              strip.innerHTML = ''
+              for (const name of ['Release', 'Android', 'tauri']) {
+                const run = latest[name]
+                if (!run) continue
+                const chip = document.createElement('span')
+                const state = run.status === 'completed' ? (run.conclusion === 'success' ? 'pass' : 'fail') : 'run'
+                chip.className = 'chip ' + state
+                chip.innerHTML = '<i></i>'
+                chip.appendChild(document.createTextNode(name + ' · ' + tag))
+                strip.appendChild(chip)
+              }
+            })
+            .catch(() => { /* status strip is best-effort */ })
+        }
+      })
+      .catch(fallback)
+    } catch {
+      fallback()
+    }
+  }
 
   /* --------------------------------------------------- speed test */
   /* Adaptive, speedtest.net-style: 2 MB probe → ladder size → 4 parallel
@@ -295,8 +621,8 @@
       const startedAll = performance.now()
       const tick = setInterval(() => {
         const ms = performance.now() - startedAll
-        mbEl.textContent = (total / 1048576).toFixed(2) + ' MB'
-        secEl.textContent = (ms / 1000).toFixed(1) + ' s'
+        mbEl.textContent = loc((total / 1048576).toFixed(2) + ' MB')
+        secEl.textContent = loc((ms / 1000).toFixed(1) + ' s')
       }, 120)
 
       let final = null
@@ -308,7 +634,7 @@
         if (!probe.ok || probe.bytes < 65536 || probeMs <= 0) continue
         const probeMbps = (probe.bytes * 8) / probeMs / 1000
         const sizeMb = pickSizeMb(probeMbps)
-        if (sizeEl) sizeEl.textContent = sizeMb + ' MB × ' + SPEED.STREAMS
+        if (sizeEl) sizeEl.textContent = loc(sizeMb + ' MB × ' + SPEED.STREAMS)
 
         total = 0
         const started = performance.now()
@@ -319,11 +645,11 @@
         const live = setInterval(() => {
           const ms = performance.now() - started
           const mbps = ms > 300 ? steadyMbps(total, rampTaken ? ramp : 0, Math.max(ms, SPEED.RAMP_MS + 200)) : 0
-          gauge.textContent = mbps.toFixed(1)
+          gauge.textContent = loc(mbps.toFixed(1))
           setArc(mbps)
           bar.style.width = Math.min((mbps / scale) * 100, 100) + '%'
-          mbEl.textContent = (total / 1048576).toFixed(2) + ' MB'
-          secEl.textContent = (ms / 1000).toFixed(1) + ' s'
+          mbEl.textContent = loc((total / 1048576).toFixed(2) + ' MB')
+          secEl.textContent = loc((ms / 1000).toFixed(1) + ' s')
         }, 120)
         const results = await Promise.all(
           Array.from({ length: SPEED.STREAMS }, () =>
@@ -337,18 +663,20 @@
         if (!results.some((r) => r.ok) || total < 262144) continue
         const mbps = steadyMbps(total, ramp, elapsed)
         final = { mbps, sizeMb, base }
-        gauge.textContent = mbps.toFixed(1)
+        gauge.textContent = loc(mbps.toFixed(1))
         setArc(mbps)
         bar.style.width = Math.min((mbps / scale) * 100, 100) + '%'
         break
       }
       clearInterval(tick)
       if (final) {
-        log.textContent = (lang() === 'fa'
+        log.textContent = loc(lang() === 'fa'
           ? 'پایان — حجم ' + final.sizeMb + ' مگابایت با ' + SPEED.STREAMS + ' جریان هم‌زمان'
           : 'Done — ' + final.sizeMb + ' MB over ' + SPEED.STREAMS + ' parallel streams')
       } else {
-        log.textContent = EN.st_fail
+        log.textContent = document.documentElement.lang === 'fa'
+          ? 'تست ناموفق بود — فایل اندازه‌گیری در دسترس نیست.'
+          : EN.st_fail
       }
       running = false
       btn.disabled = false
