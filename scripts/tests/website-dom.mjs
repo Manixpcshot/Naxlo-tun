@@ -16,17 +16,60 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '../..')
 const page = (file) => readFileSync(join(root, 'website', file), 'utf8')
 const appJs = readFileSync(join(root, 'website', 'app.js'), 'utf8')
 
-function load(file) {
+/**
+ * @param file page to load
+ * @param stubFetch optional canned GitHub API responder installed before app.js runs
+ */
+function load(file, stubFetch) {
   const dom = new JSDOM(page(file), {
     url: 'https://vpn.naxlo.ir/' + (file === 'index.html' ? '' : file),
     runScripts: 'dangerously',
     pretendToBeVisual: true
   })
+  if (stubFetch) dom.window.fetch = stubFetch
   const script = dom.window.document.createElement('script')
   script.textContent = appJs
   dom.window.document.body.appendChild(script)
   return dom
 }
+
+/** Canned GitHub payloads so the release-driven UI can be tested offline. */
+const RELEASE = {
+  tag_name: 'v9.9.9',
+  published_at: '2026-11-09T10:00:00Z',
+  html_url: 'https://github.com/Manixpcshot/Naxlo-tun/releases/tag/v9.9.9',
+  body: '## Notes\n- **fixed** the digits\n- added `speedtest.php`',
+  assets: [
+    { name: 'Naxlo-Setup-9.9.9.exe', size: 96 * 1024 * 1024, browser_download_url: 'https://x/setup.exe' },
+    { name: 'Naxlo-Portable-9.9.9.exe', size: 90 * 1024 * 1024, browser_download_url: 'https://x/portable.exe' },
+    { name: 'Naxlo-Rust-Setup-9.9.9.exe', size: 12 * 1024 * 1024, browser_download_url: 'https://x/rust.exe' },
+    { name: 'Naxlo-Rust-v9.9.9-linux-amd64.AppImage', size: 20 * 1024 * 1024, browser_download_url: 'https://x/app.AppImage' },
+    { name: 'Naxlo-Rust-v9.9.9-linux-amd64.deb', size: 18 * 1024 * 1024, browser_download_url: 'https://x/pkg.deb' },
+    { name: 'Naxlo-Rust-v9.9.9-macos-arm64.dmg', size: 15 * 1024 * 1024, browser_download_url: 'https://x/mac.dmg' },
+    { name: 'Naxlo-android-v9.9.9-unsigned.apk', size: 30 * 1024 * 1024, browser_download_url: 'https://x/a.apk' }
+  ]
+}
+
+const RUNS = {
+  workflow_runs: [
+    { name: 'Release', status: 'completed', conclusion: 'success' },
+    { name: 'Android', status: 'completed', conclusion: 'failure' },
+    { name: 'tauri', status: 'in_progress', conclusion: null }
+  ]
+}
+
+const apiFetch = (url) => {
+  const target = String(url)
+  // /releases/latest → single object, /releases?per_page=N → list, /actions/runs → runs
+  const body = target.includes('/actions/runs')
+    ? RUNS
+    : target.includes('/releases/latest')
+      ? RELEASE
+      : [RELEASE]
+  return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(body) })
+}
+
+const tick = (ms = 20) => new Promise((resolve) => setTimeout(resolve, ms))
 
 const tests = []
 const test = (name, fn) => tests.push([name, fn])
@@ -120,6 +163,131 @@ test('speedtest: gauge exists and a failed run localises the message', async () 
   doc.getElementById('st-btn').click()
   await new Promise((resolve) => setTimeout(resolve, 50))
   assert.match(doc.getElementById('st-log').textContent, /تست ناموفق|failed/)
+})
+
+test('index: download grid renders from the API and leads with the visitor OS', async () => {
+  const { window } = load('index.html', apiFetch)
+  await tick()
+  const doc = window.document
+  const cards = doc.querySelectorAll('#dl-grid .dl')
+  assert.equal(cards.length, RELEASE.assets.length)
+  // jsdom reports a linux UA, so the Linux cards must be first and flagged
+  assert.equal(cards[0].className.includes('dl--match'), true)
+  assert.match(cards[0].getAttribute('href'), /AppImage|\.deb$/)
+  assert.match(cards[0].querySelector('.yours').textContent, /برای سیستم شما/)
+  assert.match(doc.getElementById('dl-version').textContent, /v9\.9\.9/)
+})
+
+test('index: sizes and the "for your system" badge localise with the language', async () => {
+  const { window } = load('index.html', apiFetch)
+  await tick()
+  const doc = window.document
+  assert.match(doc.querySelector('#dl-grid .size').textContent, /^[۰-۹]+[٫.][۰-۹]+ MB$/)
+  // the Persian decimal separator, never a Western dot
+  assert.equal(doc.querySelector('#dl-grid .size').textContent.includes('.'), false)
+  doc.getElementById('lang-en').click()
+  await tick()
+  assert.match(doc.querySelector('#dl-grid .size').textContent, /^[0-9]+\.[0-9]+ MB$/)
+  assert.equal(doc.querySelector('#dl-grid .yours').textContent, 'For your system')
+  assert.match(doc.getElementById('dl-version').textContent, /Latest: v9\.9\.9/)
+})
+
+test('index: hero CTA names the detected platform and stays translated', async () => {
+  const { window } = load('index.html', apiFetch)
+  await tick()
+  const cta = window.document.getElementById('hero-cta')
+  assert.match(cta.textContent, /دانلود برای لینوکس/)
+  window.document.getElementById('lang-en').click()
+  await tick()
+  assert.match(cta.textContent, /Download for Linux/)
+})
+
+test('index: back-to-top appears after scrolling and the skip link exists', async () => {
+  const { window } = load('index.html')
+  const doc = window.document
+  const top = doc.getElementById('totop')
+  assert.equal(top.classList.contains('on'), false)
+  Object.defineProperty(window, 'scrollY', { value: 900, configurable: true })
+  window.dispatchEvent(new window.Event('scroll'))
+  assert.equal(top.classList.contains('on'), true)
+  const skip = doc.querySelector('a.skip')
+  assert.equal(skip.getAttribute('href'), '#top')
+  assert.equal(skip.textContent, 'پرش به محتوا')
+})
+
+test('speedtest: the nav marks the current page in both languages', async () => {
+  const { window } = load('speedtest.html')
+  const doc = window.document
+  const active = doc.querySelector('nav a.on')
+  assert.ok(active, 'no active nav link')
+  assert.match(active.getAttribute('href'), /speedtest\.html$/)
+  assert.equal(active.getAttribute('aria-current'), 'page')
+  doc.getElementById('lang-en').click()
+  await tick()
+  assert.equal(doc.querySelector('nav a.on').textContent, 'Speed test')
+})
+
+test('tools: Ctrl+Enter validates and the QR actions exist', async () => {
+  const { window } = load('tools.html')
+  const doc = window.document
+  const input = doc.getElementById('v-input')
+  input.value = 'trojan://pw@example.com:443#t'
+  input.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', ctrlKey: true, bubbles: true }))
+  await tick()
+  assert.match(doc.getElementById('v-out').textContent, /trojan/)
+  assert.ok(doc.getElementById('q-copy'))
+  assert.ok(doc.getElementById('q-dl'))
+})
+
+test('changelog: renders notes, markdown and build chips from the API', async () => {
+  const { window } = load('changelog.html', apiFetch)
+  await tick(40)
+  const doc = window.document
+  const card = doc.querySelector('.release-card')
+  assert.ok(card, 'no release card')
+  assert.equal(card.querySelector('header b').textContent, 'v9.9.9')
+  assert.equal(card.querySelector('.release-body b').textContent, 'Notes')
+  assert.equal(card.querySelector('.release-body code').textContent, 'speedtest.php')
+  const foot = card.querySelectorAll('.release-foot a')
+  assert.equal(foot.length, 2)
+  assert.match(foot[0].textContent, /دانلود v9\.9\.9/)
+  assert.equal(foot[0].getAttribute('href'), RELEASE.html_url)
+  const chips = doc.querySelectorAll('#build-strip .chip')
+  assert.equal(chips.length, 3)
+  assert.equal(chips[0].className.includes('pass'), true)
+  assert.equal(chips[1].className.includes('fail'), true)
+  assert.equal(chips[2].className.includes('run'), true)
+  assert.match(chips[0].textContent, /Release — موفق/)
+  assert.match(chips[2].textContent, /tauri — در حال اجرا/)
+})
+
+test('changelog: EN switch relabels the release buttons', async () => {
+  const { window } = load('changelog.html', apiFetch)
+  await tick(40)
+  const doc = window.document
+  doc.getElementById('lang-en').click()
+  await tick()
+  assert.match(doc.querySelector('.release-foot a').textContent, /Download v9\.9\.9/)
+  assert.equal(doc.querySelectorAll('.release-foot a')[1].textContent, 'Release notes')
+  assert.match(doc.querySelector('.release-card .cnt').textContent, /7 assets/)
+  assert.match(doc.querySelectorAll('#build-strip .chip')[1].textContent, /Android — failed/)
+})
+
+test('static assets: sitemap, htaccess and the LTR dialog rule stay in place', () => {
+  const sitemap = readFileSync(join(root, 'website', 'sitemap.xml'), 'utf8')
+  for (const path of ['tools.html', 'changelog.html', 'speedtest.html']) {
+    assert.ok(sitemap.includes(path), 'sitemap missing ' + path)
+  }
+  const htaccess = readFileSync(join(root, 'website', '.htaccess'), 'utf8')
+  assert.match(htaccess, /Strict-Transport-Security/)
+  assert.match(htaccess, /pretty urls/i)
+  assert.match(htaccess, /speedtest\\\.\(bin\|php\)/)
+  const siteCss = readFileSync(join(root, 'website', 'styles.css'), 'utf8')
+  for (const rule of ['.dl--match', '.totop', '.skip', '.nav nav a.on', '.release-foot']) {
+    assert.ok(siteCss.includes(rule), 'styles.css missing ' + rule)
+  }
+  const appCss = readFileSync(join(root, 'src/renderer/src/styles/components.css'), 'utf8')
+  assert.match(appCss, /html\[dir='ltr'\] \.modal__actions \{\s*flex-direction: row-reverse/)
 })
 
 let failed = 0

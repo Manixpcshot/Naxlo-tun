@@ -1,45 +1,42 @@
-# Naxlo 1.13.0 — tools page, live changelog, consistent digits & mobile fix 🧰
+# Naxlo 1.14.0 — English button placement, smarter website 🧭
 
 > کلاینت فارسی‌زبان VLESS برای ویندوز، لینوکس، مک و اندروید بر پایهٔ هسته رسمی Xray
 > Persian-first VLESS client for Windows, Linux, macOS and Android on the official Xray core.
 
-## 🧰 صفحهٔ ابزارها / Tools page — vpn.naxlo.ir/tools.html
+## 🖱️ جای دکمه‌ها در انگلیسی / Button placement in English
 
-- **اعتبارسنج کانفیگ، کاملاً در مرورگر:** لینک `vless/vmess/trojan/ss` را بچسبانید؛ همان قاعده‌های پارسر خود اپ اجرا می‌شود (UUID، پورت، network ناشناخته، **pbk برای REALITY**، SNI، serviceName برای gRPC، flow پیشنهادی) و فیلدهای پارشده **پوشیده** نمایش داده می‌شوند — هیچ لینکی آپلود نمی‌شود.
-- **Config validator, fully in the browser:** paste a `vless/vmess/trojan/ss` link; the app's own parse rules run (UUID, port, unknown network, **REALITY pbk**, SNI, gRPC serviceName, recommended flow) and parsed fields render **masked** — nothing is uploaded.
-- **لینک ↔ QR:** از هر لینک کانفیگ/اشتراک QR بسازید تا با موبایل اسکن شود؛ یا تصویر QR بدهید تا متنش خوانده و مستقیم به اعتبارسنج فرستاده شود. / **Link ↔ QR:** build a QR from any config/subscription link for phone scanning, or feed a QR image to read its text straight into the validator.
+- در دیالوگ‌ها ترتیب «عمل اصلی، لغو» در فارسی عمل اصلی را راست‌چین می‌کرد، ولی در انگلیسی/ترکی همان ترتیب دکمهٔ اصلی را چپ‌ترین و گروه را به لبهٔ چپ می‌چسباند. حالا در LTR ردیف معکوس است: **لغو چپ، عمل اصلی راست‌ترین و گروه راست‌چین** — جای دکمهٔ اصلی در هر دو زبان یک طرف فیزیکی می‌ماند.
+- Dialogs are authored "primary, cancel"; RTL packed the primary at the right edge while LTR left it leftmost, glued to the left edge. LTR now reverses the row: **Cancel on the left, primary rightmost, group right-aligned** — the primary action keeps the same physical side in every language.
+- ردیف‌های دکمه هم‌تراز شدند (`align-items: center`) تا با برچسب‌های بلند انگلیسی نامرتب نشوند. / Button rows are centre-aligned so longer English labels stay tidy.
 
-## 📰 صفحهٔ تغییرات زنده / Live changelog — vpn.naxlo.ir/changelog.html
+## 🌐 وب‌سایت بهتر / A better website
 
-- تاریخچهٔ انتشارها مستقیم از API گیت‌هاب + نوار وضعیت بیلد سه ورک‌فلو (Release / Android / tauri) روی آخرین تگ. / Release history straight from the GitHub API + a build-status strip for the three workflows on the latest tag.
-
-## 🔢 اعداد بالاخره یکدست / Digits finally consistent
-
-- اپ: کاشی‌های آمار دیگر در فارسی/ترکی «1h 2m» لاتین نشان نمی‌دهند (`minutesLabel` جدید + تست regression که ارقام هر سه زبان را قفل می‌کند). / App: stats tiles no longer show Latin "1h 2m" in Persian/Turkish (new `minutesLabel` + a regression test locking all three languages' digits).
-- وب‌سایت: حالت فارسی اعداد لاتین داشت (حجم کارت‌ها، گیج، MB/ثانیه) که فارسی شد؛ EN کاملاً لاتین می‌ماند. / Website: fa mode had Latin digits (card sizes, gauge, MB/seconds) which now localise; EN stays fully Latin.
-
-## 📱 رسپانسیو موبایل / Mobile responsiveness
-
-- منوی همبرگری با پنل کشویی در <۹۴۰px (پیش‌تر ناوبری حذف می‌شد)، مقیاس‌پذیری حلقه‌ها/آیکن هیرو با `min()`، و چیدمان جمع‌وجور <۶۰۰px برای گیج، تونل، کارت‌ها و دکمه‌های تمام‌عرض. / Burger menu with a dropdown panel under 940px (the nav used to vanish), `min()`-scaled hero rings/icon, and a compact sub-600px layout for gauge, tunnel, cards and full-width buttons.
+- **تشخیص سیستم شما:** کارت دانلود مناسب سیستم‌عامل شما اول می‌آید با برچسب «برای سیستم شما / For your system» و هالهٔ تأکیدی؛ دکمهٔ اصلی هیرو هم همان پلتفرم را می‌گوید. / **Your platform first:** the matching download card leads with a "For your system" badge and accent glow, and the hero CTA names that platform.
+- **اعداد فارسی کامل:** جداکنندهٔ اعشاری هم فارسی شد — «۲۰٫۰ MB» به‌جای «۲۰.۰ MB»، دقیقاً مثل اپ. / **Fully Persian numbers:** the decimal separator localises too — «۲۰٫۰ MB» instead of «۲۰.۰ MB», exactly like the app.
+- **صفحهٔ تغییرات زنده‌تر:** هر انتشار دکمهٔ دانلود و یادداشت انتشار دارد، چیپ‌های بیلد وضعیت را با کلمهٔ بومی‌شده می‌گویند (موفق/ناموفق/در حال اجرا) و کارت‌ها با تعویض زبان باز-برچسب می‌خورند (پیش‌تر فارسی می‌ماندند). / **Livelier changelog:** every release gained download and notes buttons, build chips spell out their state per language, and the cards relabel on language switch (they used to stay Persian).
+- **ابزارها:** اعتبارسنج با **Ctrl+Enter** هم اجرا می‌شود؛ کنار QR دکمه‌های **کپی لینک** و **دانلود QR** اضافه شد. / **Tools:** the validator also runs on **Ctrl+Enter**; the QR card gained **Copy link** and **Download QR**.
+- **دسترس‌پذیری و ناوبری:** لینک فعال در منو (`aria-current`)، دکمهٔ بازگشت به بالا، لینک پرش به محتوا. / **A11y & navigation:** active nav link, back-to-top button, skip-to-content link.
+- **cPanel:** هدر HSTS، آدرس‌های بدون پسوند (`/tools`، `/changelog`، `/speedtest`) و sitemap به‌روز. / **cPanel:** HSTS header, extensionless URLs and an updated sitemap.
 
 ## 🧪 تست‌ها / Tests
 
-- ۳۸ تست smoke + **۹ تست DOM جدید وب‌سایت** (jsdom) داخل `npm test`: کلید زبان، شمارهٔ قدم‌ها، title/meta، اعتبارسنج و fallbackها. / 38 smoke tests + **9 new website DOM tests** (jsdom) inside `npm test`: language switch, step numerals, title/meta, validator and fallbacks.
+- **۱۸ تست DOM وب‌سایت** (jsdom + fetch ساختگی GitHub): گرید دانلود، اولویت سیستم بازدیدکننده، بومی‌سازی اندازه‌ها و اعشار، CTA، بازگشت به بالا، ناوبری فعال، Ctrl+Enter، رندر تغییرات و چیپ‌ها، و قفل sitemap/.htaccess/قاعدهٔ LTR دیالوگ — به‌همراه ۳۸ تست smoke.
+- **18 website DOM tests** (jsdom + a stubbed GitHub fetch) covering the download grid, visitor-OS ordering, size/decimal localisation, CTA, back-to-top, active nav, Ctrl+Enter, changelog rendering and chips, plus locks on sitemap/.htaccess/the LTR dialog rule — alongside 38 smoke tests.
 
 ## 📦 دانلود / Downloads
 
 | فایل / File | برای / For |
 |---|---|
-| `Naxlo-Setup-1.13.0.exe` | ویندوز — نصب‌کنندهٔ نسخهٔ اصلی / Windows main installer |
-| `Naxlo-Portable-1.13.0.exe` | ویندوز — پرتابل / Windows portable |
-| `Naxlo-Rust-Setup-1.13.0.exe` | ویندوز — نسخهٔ سبک Rust / Windows lean Rust edition |
-| `Naxlo-Rust-v1.13.0-linux-amd64.AppImage` / `.deb` | لینوکس / Linux |
-| `Naxlo-Rust-v1.13.0-macos-arm64.dmg` | مک (Apple Silicon) / macOS |
-| `Naxlo-android-v1.13.0-debug.apk` / `-unsigned.apk` | اندروید / Android |
-| `naxlo-website.zip` | کل وب‌سایت آمادهٔ cPanel (با tools/changelog جدید) / full cPanel-ready site (with the new tools/changelog) |
+| `Naxlo-Setup-1.14.0.exe` | ویندوز — نصب‌کنندهٔ نسخهٔ اصلی / Windows main installer |
+| `Naxlo-Portable-1.14.0.exe` | ویندوز — پرتابل / Windows portable |
+| `Naxlo-Rust-Setup-1.14.0.exe` | ویندوز — نسخهٔ سبک Rust / Windows lean Rust edition |
+| `Naxlo-Rust-v1.14.0-linux-amd64.AppImage` / `.deb` | لینوکس / Linux |
+| `Naxlo-Rust-v1.14.0-macos-arm64.dmg` | مک (Apple Silicon) / macOS |
+| `Naxlo-android-v1.14.0-debug.apk` / `-unsigned.apk` | اندروید / Android |
+| `naxlo-website.zip` | کل وب‌سایت آمادهٔ cPanel / full cPanel-ready website |
 
 همهٔ فایل‌ها با `SHA256SUMS.txt` و checksum تکی. / Every asset ships with `SHA256SUMS.txt` plus per-file checksums.
 
 ## 🧾 یادداشت‌ها / Notes
 
-- اندروید: versionCode 2103 / versionName 1.13.0. / Android: versionCode 2103 / versionName 1.13.0.
+- اندروید: versionCode 2104 / versionName 1.14.0. / Android: versionCode 2104 / versionName 1.14.0.

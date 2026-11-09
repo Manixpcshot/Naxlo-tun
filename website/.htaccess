@@ -58,11 +58,23 @@ AddDefaultCharset UTF-8
   Header set X-Frame-Options "SAMEORIGIN"
   Header set Referrer-Policy "strict-origin-when-cross-origin"
   Header set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+  # HTTPS is forced below, so advertise it for a year (subdomains included)
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
 </IfModule>
 
 # ------------------------------------------------------------ https
 # cPanel AutoSSL issues the certificate; force HTTPS in production.
 # Local/preview hosts are skipped so the site stays testable offline.
+# ------------------------------------------------------------ pretty urls
+# /tools, /changelog and /speedtest serve their .html file directly.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{DOCUMENT_ROOT}/%{REQUEST_URI}.html -f
+  RewriteRule ^(.+?)/?$ /$1.html [L]
+</IfModule>
+
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteCond %{HTTPS} !=on

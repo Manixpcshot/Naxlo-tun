@@ -4,10 +4,36 @@
 
   let releaseCache = null
 
-  /** Persian digits when the page language is fa, Western otherwise. */
-  const loc = (value) => (document.documentElement.lang === 'fa'
-    ? String(value).replace(/\d/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[Number(d)])
-    : String(value))
+  /**
+   * Persian digits AND the Persian decimal separator (٫) when the page language
+   * is fa, Western otherwise — so "83.5 MB" reads «۸۳٫۵ MB» exactly like the
+   * desktop app does. Only a leading number gets its dot converted, which keeps
+   * file names and prose untouched.
+   */
+  const loc = (value) => {
+    const str = String(value)
+    if (document.documentElement.lang !== 'fa') return str
+    const digits = str.replace(/\d/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[Number(d)])
+    return /^\d/.test(str) ? digits.replace('.', '٫') : digits
+  }
+
+  /** Best-effort OS of the visitor, used to lead with the right download. */
+  function detectOs() {
+    const ua = navigator.userAgent || ''
+    const plat = (navigator.userAgentData && navigator.userAgentData.platform) || ''
+    if (/android/i.test(ua)) return 'android'
+    if (/windows|win64|win32/i.test(plat + ua)) return 'win'
+    if (/mac os x|macintosh|iphone|ipad/i.test(plat + ua)) return 'mac'
+    if (/linux|x11/i.test(plat + ua)) return 'linux'
+    return null
+  }
+  const OS_NAME = {
+    win: { fa: 'ویندوز', en: 'Windows' },
+    mac: { fa: 'مک', en: 'macOS' },
+    linux: { fa: 'لینوکس', en: 'Linux' },
+    android: { fa: 'اندروید', en: 'Android' }
+  }
+  const VISITOR_OS = detectOs()
 
   /* ---------------------------------------------------------- i18n */
   const EN = {
@@ -89,6 +115,11 @@
     foot1: '© Naxlo — built for a free internet',
     foot_speed: 'Speed test',
     foot_dl: 'Download',
+    skip: 'Skip to content',
+    q_copy: 'Copy link',
+    q_dl: 'Download QR',
+    cl_get: 'Download',
+    cl_notes: 'Release notes',
     nav_cl: 'Changelog',
     nav_tools: 'Tools',
     page_title_tools: 'Tools | Naxlo',
@@ -171,6 +202,26 @@
     document.getElementById('lang-en')?.classList.toggle('on', lang === 'en')
     try { localStorage.setItem('naxlo-site-lang', lang) } catch { /* private mode */ }
     renderDownloads()
+    renderReleases()
+    applyPlatform(lang)
+  }
+
+  /** Lead the hero CTA with the visitor's own platform when we can detect it. */
+  function applyPlatform(lang) {
+    const cta = document.getElementById('hero-cta')
+    if (cta && VISITOR_OS && OS_NAME[VISITOR_OS]) {
+      cta.textContent = lang === 'fa'
+        ? 'دانلود برای ' + OS_NAME[VISITOR_OS].fa
+        : 'Download for ' + OS_NAME[VISITOR_OS].en
+    }
+    const here = location.pathname.replace(/^\/+/, '') || 'index.html'
+    document.querySelectorAll('header nav a').forEach((a) => {
+      const target = (a.getAttribute('href') || '').replace(/^\/+/, '')
+      const on = target.endsWith('.html') && (target === here || (here === '' && target === 'index.html'))
+      a.classList.toggle('on', on)
+      if (on) a.setAttribute('aria-current', 'page')
+      else a.removeAttribute('aria-current')
+    })
   }
 
   document.getElementById('lang-fa')?.addEventListener('click', () => applyLang('fa'))
@@ -178,6 +229,7 @@
   let saved = 'fa'
   try { saved = localStorage.getItem('naxlo-site-lang') || 'fa' } catch { /* ignore */ }
   if (saved !== 'fa') applyLang(saved)
+  else applyPlatform('fa')
 
   /* ------------------------------------------------- scroll reveal */
   if ('IntersectionObserver' in window) {
@@ -192,13 +244,13 @@
 
   /* --------------------------------------------- release downloads */
   const PICKS = [
-    { match: /^Naxlo-Setup-.*\.exe$/, icon: '🪟', fa: 'ویندوز — نسخهٔ اصلی', en: 'Windows — main edition', sub: { fa: 'نصب‌کنندهٔ Electron + React', en: 'Electron + React installer' } },
-    { match: /^Naxlo-Portable-.*\.exe$/, icon: '🧳', fa: 'ویندوز — پرتابل', en: 'Windows — portable', sub: { fa: 'بدون نصب، اجرا از همین پوشه', en: 'No install, run from folder' } },
-    { match: /^Naxlo-Rust-Setup-.*\.exe$/, icon: '⚙️', fa: 'ویندوز — نسخهٔ Rust', en: 'Windows — Rust edition', sub: { fa: 'سبک‌تر، با هستهٔ Tauri', en: 'Leaner, Tauri based' } },
-    { match: /linux-amd64\.AppImage$/, icon: '🐧', fa: 'لینوکس — AppImage', en: 'Linux — AppImage', sub: { fa: 'اجرا بدون نصب', en: 'Run without installing' } },
-    { match: /linux-amd64\.deb$/, icon: '📦', fa: 'لینوکس — DEB', en: 'Linux — DEB', sub: { fa: 'دبیان و اوبونتو', en: 'Debian & Ubuntu' } },
-    { match: /macos-.*\.dmg$/, icon: '🍎', fa: 'مک — DMG', en: 'macOS — DMG', sub: { fa: 'Apple Silicon', en: 'Apple Silicon' } },
-    { match: /android-.*-unsigned\.apk$/, icon: '🤖', fa: 'اندروید — APK', en: 'Android — APK', sub: { fa: 'کلاینت بومی Kotlin', en: 'Native Kotlin client' } }
+    { match: /^Naxlo-Setup-.*\.exe$/, icon: '🪟', os: 'win', fa: 'ویندوز — نسخهٔ اصلی', en: 'Windows — main edition', sub: { fa: 'نصب‌کنندهٔ Electron + React', en: 'Electron + React installer' } },
+    { match: /^Naxlo-Portable-.*\.exe$/, icon: '🧳', os: 'win', fa: 'ویندوز — پرتابل', en: 'Windows — portable', sub: { fa: 'بدون نصب، اجرا از همین پوشه', en: 'No install, run from folder' } },
+    { match: /^Naxlo-Rust-Setup-.*\.exe$/, icon: '⚙️', os: 'win', fa: 'ویندوز — نسخهٔ Rust', en: 'Windows — Rust edition', sub: { fa: 'سبک‌تر، با هستهٔ Tauri', en: 'Leaner, Tauri based' } },
+    { match: /linux-amd64\.AppImage$/, icon: '🐧', os: 'linux', fa: 'لینوکس — AppImage', en: 'Linux — AppImage', sub: { fa: 'اجرا بدون نصب', en: 'Run without installing' } },
+    { match: /linux-amd64\.deb$/, icon: '📦', os: 'linux', fa: 'لینوکس — DEB', en: 'Linux — DEB', sub: { fa: 'دبیان و اوبونتو', en: 'Debian & Ubuntu' } },
+    { match: /macos-.*\.dmg$/, icon: '🍎', os: 'mac', fa: 'مک — DMG', en: 'macOS — DMG', sub: { fa: 'Apple Silicon', en: 'Apple Silicon' } },
+    { match: /android-.*-unsigned\.apk$/, icon: '🤖', os: 'android', fa: 'اندروید — APK', en: 'Android — APK', sub: { fa: 'کلاینت بومی Kotlin', en: 'Native Kotlin client' } }
   ]
 
   const fmtSize = (n) => loc(n > 1024 * 1024 ? (n / 1024 / 1024).toFixed(1) + ' MB' : Math.round(n / 1024) + ' KB')
@@ -209,19 +261,25 @@
     if (!grid || !releaseCache) return
     const lang = document.documentElement.lang === 'en' ? 'en' : 'fa'
     grid.innerHTML = ''
-    for (const pick of PICKS) {
+    const ordered = VISITOR_OS
+      ? PICKS.slice().sort((x, y) => Number(y.os === VISITOR_OS) - Number(x.os === VISITOR_OS))
+      : PICKS
+    for (const pick of ordered) {
       const asset = releaseCache.assets.find((a) => pick.match.test(a.name))
       if (!asset) continue
+      const mine = VISITOR_OS === pick.os
       const a = document.createElement('a')
-      a.className = 'dl reveal in'
+      a.className = 'dl reveal in' + (mine ? ' dl--match' : '')
       a.href = asset.browser_download_url
       a.target = '_blank'
       a.rel = 'noopener'
       a.innerHTML =
-        '<span class="pico">' + pick.icon + '</span><span><b></b><span></span></span><span class="size">' +
-        fmtSize(asset.size) + '</span>'
+        '<span class="pico">' + pick.icon + '</span><span><b></b><span></span></span>' +
+        (mine ? '<span class="yours"></span>' : '') +
+        '<span class="size">' + fmtSize(asset.size) + '</span>'
       a.querySelector('b').textContent = pick[lang]
       a.querySelectorAll('span span')[0].textContent = pick.sub[lang]
+      if (mine) a.querySelector('.yours').textContent = lang === 'fa' ? 'برای سیستم شما' : 'For your system'
       grid.appendChild(a)
     }
     if (metaEl) {
@@ -250,6 +308,18 @@
     }
   }
   loadDownloads()
+
+  /* -------------------------------------------------- back to top */
+  const totop = document.getElementById('totop')
+  if (totop) {
+    const onScroll = () => totop.classList.toggle('on', (window.scrollY || 0) > 600)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    onScroll()
+    totop.addEventListener('click', () => {
+      if (typeof window.scrollTo === 'function') window.scrollTo({ top: 0, behavior: 'smooth' })
+      else window.scrollTo(0, 0)
+    })
+  }
 
   /* ------------------------------------------------- burger + tools */
   const burger = document.getElementById('burger')
@@ -412,6 +482,10 @@
       }
     }
     vBtn.addEventListener('click', render)
+    const vInput = document.getElementById('v-input')
+    vInput.addEventListener('keydown', (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') { event.preventDefault(); render() }
+    })
     document.getElementById('v-clear').addEventListener('click', () => {
       document.getElementById('v-input').value = ''
       out.innerHTML = ''
@@ -437,6 +511,33 @@
       }
     })
   }
+  const qCopy = document.getElementById('q-copy')
+  if (qCopy) {
+    qCopy.addEventListener('click', () => {
+      const text = document.getElementById('q-input').value.trim()
+      if (!text) return
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).catch(() => undefined)
+      qCopy.dataset.done = '1'
+      setTimeout(() => { delete qCopy.dataset.done }, 1400)
+    })
+  }
+  const qDl = document.getElementById('q-dl')
+  if (qDl) {
+    qDl.addEventListener('click', () => {
+      const svg = document.querySelector('#q-box svg')
+      if (!svg) return
+      const blob = new Blob([svg.outerHTML], { type: 'image/svg+xml' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'naxlo-config-qr.svg'
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      setTimeout(() => URL.revokeObjectURL(url), 4000)
+    })
+  }
+
   const qFile = document.getElementById('q-file')
   if (qFile && typeof window.jsQR === 'function') {
     qFile.addEventListener('change', (event) => {
@@ -479,62 +580,108 @@
 
   /* ------------------------------------------------- live changelog */
   const relRoot = document.getElementById('releases')
-  if (relRoot) {
-    const esc = (value) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    const mdLite = (value) => esc(value)
-      .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
-      .replace(/`([^`]+)`/g, '<code>$1</code>')
-      .replace(/^#{1,4}\s*(.+)$/gm, '<b>$1</b>')
-    const fallback = () => {
-      relRoot.textContent = isFa() ? 'دریافت تغییرات ممکن نشد — اینترنت یا API در دسترس نیست.' : 'Could not fetch releases — the API is unreachable.'
+  let releasesCache = null
+  let runsCache = null
+
+  const esc = (value) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const mdLite = (value) => esc(value)
+    .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/^#{1,4}\s*(.+)$/gm, '<b>$1</b>')
+
+  const RUN_WORD = {
+    pass: { fa: 'موفق', en: 'passed' },
+    fail: { fa: 'ناموفق', en: 'failed' },
+    run: { fa: 'در حال اجرا', en: 'running' }
+  }
+
+  function renderChips() {
+    const strip = document.getElementById('build-strip')
+    if (!strip || !runsCache || !releasesCache || !releasesCache.length) return
+    const tag = releasesCache[0].tag_name
+    const latest = {}
+    for (const run of runsCache.workflow_runs || []) if (!latest[run.name]) latest[run.name] = run
+    strip.innerHTML = ''
+    for (const name of ['Release', 'Android', 'tauri']) {
+      const run = latest[name]
+      if (!run) continue
+      const state = run.status === 'completed' ? (run.conclusion === 'success' ? 'pass' : 'fail') : 'run'
+      const chip = document.createElement('span')
+      chip.className = 'chip ' + state
+      chip.title = name + ' · ' + tag + ' · ' + (run.conclusion || run.status)
+      chip.innerHTML = '<i></i>'
+      chip.appendChild(document.createTextNode(
+        name + ' — ' + (isFa() ? RUN_WORD[state].fa : RUN_WORD[state].en)
+      ))
+      strip.appendChild(chip)
     }
+  }
+
+  /** Release cards are rebuilt on every language switch so their labels follow it. */
+  function renderReleases() {
+    if (!relRoot || !releasesCache) return
+    relRoot.innerHTML = ''
+    for (const rel of releasesCache) {
+      const card = document.createElement('article')
+      card.className = 'release-card reveal in'
+      const head = document.createElement('header')
+      head.innerHTML = '<b></b><time></time><span class="cnt"></span>'
+      head.querySelector('b').textContent = rel.tag_name
+      head.querySelector('time').textContent = new Date(rel.published_at).toLocaleDateString(isFa() ? 'fa-IR' : 'en-GB')
+      head.querySelector('.cnt').textContent = (rel.assets || []).length + (isFa() ? ' فایل' : ' assets')
+      card.appendChild(head)
+      const body = document.createElement('div')
+      body.className = 'release-body'
+      body.innerHTML = mdLite(rel.body || '')
+      card.appendChild(body)
+      const foot = document.createElement('div')
+      foot.className = 'release-foot'
+      const get = document.createElement('a')
+      get.className = 'btn btn-primary'
+      get.href = rel.html_url
+      get.target = '_blank'
+      get.rel = 'noopener'
+      get.textContent = isFa() ? 'دانلود ' + rel.tag_name : 'Download ' + rel.tag_name
+      const notes = document.createElement('a')
+      notes.className = 'btn btn-ghost'
+      notes.href = rel.html_url
+      notes.target = '_blank'
+      notes.rel = 'noopener'
+      notes.textContent = isFa() ? 'یادداشت انتشار' : 'Release notes'
+      foot.appendChild(get)
+      foot.appendChild(notes)
+      card.appendChild(foot)
+      relRoot.appendChild(card)
+    }
+    renderChips()
+  }
+
+  function releasesFallback() {
+    if (!relRoot) return
+    relRoot.textContent = isFa()
+      ? 'دریافت تغییرات ممکن نشد — اینترنت یا API در دسترس نیست.'
+      : 'Could not fetch releases — the API is unreachable.'
+  }
+
+  if (relRoot) {
     try {
       if (typeof fetch !== 'function') throw new Error('no fetch')
       fetch('https://api.github.com/repos/Manixpcshot/Naxlo-tun/releases?per_page=12')
-      .then((res) => (res.ok ? res.json() : Promise.reject(new Error('http ' + res.status))))
-      .then((list) => {
-        relRoot.innerHTML = ''
-        for (const rel of list) {
-          const card = document.createElement('article')
-          card.className = 'release-card reveal in'
-          const head = document.createElement('header')
-          head.innerHTML = '<b></b><time></time><span class="cnt"></span>'
-          head.querySelector('b').textContent = rel.tag_name
-          head.querySelector('time').textContent = new Date(rel.published_at).toLocaleDateString(isFa() ? 'fa-IR' : 'en-GB')
-          head.querySelector('.cnt').textContent = (rel.assets || []).length + (isFa() ? ' فایل' : ' assets')
-          card.appendChild(head)
-          const body = document.createElement('div')
-          body.className = 'release-body'
-          body.innerHTML = mdLite(rel.body || '')
-          card.appendChild(body)
-          relRoot.appendChild(card)
-        }
-        const tag = list[0] && list[0].tag_name
-        if (tag) {
-          fetch('https://api.github.com/repos/Manixpcshot/Naxlo-tun/actions/runs?branch=' + encodeURIComponent(tag) + '&per_page=15')
+        .then((res) => (res.ok ? res.json() : Promise.reject(new Error('http ' + res.status))))
+        .then((list) => {
+          releasesCache = Array.isArray(list) ? list : null
+          if (!releasesCache) throw new Error('unexpected payload')
+          renderReleases()
+          const tag = releasesCache[0] && releasesCache[0].tag_name
+          if (!tag) return
+          return fetch('https://api.github.com/repos/Manixpcshot/Naxlo-tun/actions/runs?branch=' + encodeURIComponent(tag) + '&per_page=15')
             .then((res) => (res.ok ? res.json() : Promise.reject(new Error('runs'))))
-            .then((runs) => {
-              const strip = document.getElementById('build-strip')
-              const latest = {}
-              for (const run of runs.workflow_runs || []) if (!latest[run.name]) latest[run.name] = run
-              strip.innerHTML = ''
-              for (const name of ['Release', 'Android', 'tauri']) {
-                const run = latest[name]
-                if (!run) continue
-                const chip = document.createElement('span')
-                const state = run.status === 'completed' ? (run.conclusion === 'success' ? 'pass' : 'fail') : 'run'
-                chip.className = 'chip ' + state
-                chip.innerHTML = '<i></i>'
-                chip.appendChild(document.createTextNode(name + ' · ' + tag))
-                strip.appendChild(chip)
-              }
-            })
-            .catch(() => { /* status strip is best-effort */ })
-        }
-      })
-      .catch(fallback)
+            .then((runs) => { runsCache = runs; renderChips() })
+            .catch(() => { /* the status strip is best-effort */ })
+        })
+        .catch(releasesFallback)
     } catch {
-      fallback()
+      releasesFallback()
     }
   }
 

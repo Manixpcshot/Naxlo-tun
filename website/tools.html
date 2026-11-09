@@ -14,6 +14,8 @@
 </head>
 <body>
 
+<a class="skip" href="#main" data-i18n="skip">پرش به محتوا</a>
+
 <header>
   <div class="wrap nav">
     <a class="brand" href="/">
@@ -36,7 +38,7 @@
   </div>
 </header>
 
-<main>
+<main id="main">
   <section>
     <div class="wrap">
       <div class="sec-head reveal">
@@ -49,7 +51,7 @@
         <!-- -------------------------------------------- validator -->
         <div class="tool-card reveal">
           <h3 data-i18n="v_title">اعتبارسنج کانفیگ</h3>
-          <p data-i18n="v_sub">لینک vless / vmess / trojan / ss را بچسبانید تا ساختارش دقیقاً مثل پارسر خود ناکسو بررسی شود.</p>
+          <p data-i18n="v_sub">لینک vless / vmess / trojan / ss را بچسبانید تا ساختارش دقیقاً مثل پارسر خود ناکسو بررسی شود — با Ctrl+Enter هم اجرا می‌شود.</p>
           <textarea id="v-input" spellcheck="false" data-i18n-ph="v_ph" placeholder="vless://uuid@host:443?type=ws&security=reality&pbk=...#name"></textarea>
           <div class="tool-actions">
             <button class="btn btn-primary" id="v-btn" data-i18n="v_btn">بررسی کن</button>
@@ -65,6 +67,8 @@
           <textarea id="q-input" spellcheck="false" data-i18n-ph="q_ph" placeholder="vless://… یا https://…"></textarea>
           <div class="tool-actions">
             <button class="btn btn-primary" id="q-btn" data-i18n="q_btn">ساخت QR</button>
+            <button class="btn btn-ghost" id="q-copy" data-i18n="q_copy">کپی لینک</button>
+            <button class="btn btn-ghost" id="q-dl" data-i18n="q_dl">دانلود QR</button>
             <label class="btn btn-ghost" style="cursor:pointer">
               <span data-i18n="q_file">خواندن تصویر QR</span>
               <input type="file" id="q-file" accept="image/*" hidden />
