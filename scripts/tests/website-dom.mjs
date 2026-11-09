@@ -17,15 +17,30 @@ const page = (file) => readFileSync(join(root, 'website', file), 'utf8')
 const appJs = readFileSync(join(root, 'website', 'app.js'), 'utf8')
 
 /**
+ * jsdom derives its default user agent from the runner's platform, so the
+ * suite pins explicit agents — otherwise the download-grid tests would expect
+ * Linux on the ubuntu runner and Windows on the release runner.
+ */
+const UA = {
+  win: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36',
+  mac: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36',
+  linux: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36',
+  android: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Mobile Safari/537.36'
+}
+
+/**
  * @param file page to load
  * @param stubFetch optional canned GitHub API responder installed before app.js runs
+ * @param userAgent visitor agent to simulate (defaults to Windows)
  */
-function load(file, stubFetch) {
+function load(file, stubFetch, userAgent = UA.win) {
   const dom = new JSDOM(page(file), {
     url: 'https://vpn.naxlo.ir/' + (file === 'index.html' ? '' : file),
     runScripts: 'dangerously',
     pretendToBeVisual: true
   })
+  // shadow navigator.userAgent on the instance before app.js is evaluated
+  Object.defineProperty(dom.window.navigator, 'userAgent', { value: userAgent, configurable: true })
   if (stubFetch) dom.window.fetch = stubFetch
   const script = dom.window.document.createElement('script')
   script.textContent = appJs
@@ -166,20 +181,41 @@ test('speedtest: gauge exists and a failed run localises the message', async () 
 })
 
 test('index: download grid renders from the API and leads with the visitor OS', async () => {
-  const { window } = load('index.html', apiFetch)
+  const { window } = load('index.html', apiFetch, UA.win)
   await tick()
   const doc = window.document
   const cards = doc.querySelectorAll('#dl-grid .dl')
   assert.equal(cards.length, RELEASE.assets.length)
-  // jsdom reports a linux UA, so the Linux cards must be first and flagged
   assert.equal(cards[0].className.includes('dl--match'), true)
-  assert.match(cards[0].getAttribute('href'), /AppImage|\.deb$/)
-  assert.match(cards[0].querySelector('.yours').textContent, /برای سیستم شما/)
+  assert.match(cards[0].getAttribute('href'), /setup\.exe$/)
+  assert.equal(cards[0].querySelector('.yours').textContent, 'برای سیستم شما')
+  // the three Windows builds lead, the other platforms follow unflagged
+  assert.equal(doc.querySelectorAll('#dl-grid .dl--match').length, 3)
+  assert.equal(cards[3].className.includes('dl--match'), false)
   assert.match(doc.getElementById('dl-version').textContent, /v9\.9\.9/)
 })
 
+test('index: every visitor OS gets its own card first and its own CTA', async () => {
+  const expect = [
+    [UA.win, /setup\.exe$/, 'دانلود برای ویندوز', 'Download for Windows'],
+    [UA.mac, /mac\.dmg$/, 'دانلود برای مک', 'Download for macOS'],
+    [UA.linux, /AppImage|\.deb$/, 'دانلود برای لینوکس', 'Download for Linux'],
+    [UA.android, /a\.apk$/, 'دانلود برای اندروید', 'Download for Android']
+  ]
+  for (const [ua, href, faCta, enCta] of expect) {
+    const { window } = load('index.html', apiFetch, ua)
+    await tick()
+    const doc = window.document
+    assert.match(doc.querySelector('#dl-grid .dl').getAttribute('href'), href)
+    assert.equal(doc.getElementById('hero-cta').textContent, faCta)
+    doc.getElementById('lang-en').click()
+    await tick()
+    assert.equal(doc.getElementById('hero-cta').textContent, enCta)
+  }
+})
+
 test('index: sizes and the "for your system" badge localise with the language', async () => {
-  const { window } = load('index.html', apiFetch)
+  const { window } = load('index.html', apiFetch, UA.win)
   await tick()
   const doc = window.document
   assert.match(doc.querySelector('#dl-grid .size').textContent, /^[۰-۹]+[٫.][۰-۹]+ MB$/)
@@ -192,14 +228,15 @@ test('index: sizes and the "for your system" badge localise with the language', 
   assert.match(doc.getElementById('dl-version').textContent, /Latest: v9\.9\.9/)
 })
 
-test('index: hero CTA names the detected platform and stays translated', async () => {
-  const { window } = load('index.html', apiFetch)
+test('index: the CTA falls back to the static label when the OS is unknown', async () => {
+  const { window } = load('index.html', apiFetch, 'SomeUnknownAgent/1.0')
   await tick()
-  const cta = window.document.getElementById('hero-cta')
-  assert.match(cta.textContent, /دانلود برای لینوکس/)
-  window.document.getElementById('lang-en').click()
+  const doc = window.document
+  assert.equal(doc.getElementById('hero-cta').textContent, 'دانلود برای ویندوز')
+  assert.equal(doc.querySelectorAll('#dl-grid .dl--match').length, 0)
+  doc.getElementById('lang-en').click()
   await tick()
-  assert.match(cta.textContent, /Download for Linux/)
+  assert.equal(doc.getElementById('hero-cta').textContent, 'Download for Windows')
 })
 
 test('index: back-to-top appears after scrolling and the skip link exists', async () => {
