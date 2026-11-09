@@ -1,6 +1,6 @@
 [package]
 name = "naxlo"
-version = "1.13.0"
+version = "1.14.0"
 description = "Naxlo — Persian VLESS client (Rust edition)"
 authors = ["Manixpcshot"]
 edition = "2021"

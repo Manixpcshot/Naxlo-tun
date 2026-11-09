@@ -244,6 +244,7 @@
 
 .pagehead__actions {
   display: flex;
+  align-items: center;
   gap: 10px;
   flex-wrap: wrap;
 }
@@ -931,9 +932,21 @@
 .modal__actions {
   display: flex;
   gap: 10px;
+  align-items: center;
   justify-content: flex-start;
   margin-top: 20px;
   flex-wrap: wrap;
+}
+
+/*
+ * Dialog buttons keep the primary action on the physical RIGHT in both
+ * directions: RTL already packs flex-start at the right edge, so the LTR
+ * (English/Turkish) layout reverses the row — Cancel on the left, the
+ * primary/danger action rightmost and right-aligned, which is the usual
+ * left-to-right dialog convention instead of a mirrored Persian order.
+ */
+html[dir='ltr'] .modal__actions {
+  flex-direction: row-reverse;
 }
 
 /* Logs -------------------------------------------------------- */
@@ -1251,6 +1264,7 @@
 
 .home-hero__actions {
   display: flex;
+  align-items: center;
   gap: 10px;
   margin-top: 20px;
   flex-wrap: wrap;
@@ -1611,6 +1625,7 @@
 
 .btn-row {
   display: flex;
+  align-items: center;
   gap: 8px;
   flex-wrap: wrap;
   margin-top: 16px;

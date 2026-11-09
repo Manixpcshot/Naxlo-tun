@@ -6,6 +6,25 @@ All notable changes to Naxlo are documented here. Releases are cut per tag
 The format follows [Keep a Changelog](https://keepachangelog.com/) and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.14.0] - 2026-11-08
+
+### Fixed
+- **جای دکمه‌ها در زبان انگلیسی درست شد:** در دیالوگ‌ها ترتیب DOM «عمل اصلی، لغو» است که در فارسی (RTL) عمل اصلی را راست‌چین می‌کند؛ در انگلیسی/ترکی همان ترتیب باعث می‌شد دکمهٔ اصلی چپ‌ترین و گروه دکمه‌ها به لبهٔ چپ بچسبد (ترتیب آینه‌شدهٔ فارسی). حالا در LTR ردیف معکوس می‌شود: «لغو» سمت چپ، عمل اصلی راست‌ترین و گروه راست‌چین — یعنی جای دکمهٔ اصلی در هر دو زبان یک طرف فیزیکی می‌ماند و کلیک اشتباه کمتر می‌شود. ردیف‌های دکمه (`btn-row`، `pagehead__actions`، `home-hero__actions`) هم `align-items: center` گرفتند تا با برچسب‌های بلند انگلیسی هم‌تراز بمانند.
+- **Dialog button placement in English is fixed:** dialogs are authored "primary, cancel", which packs the primary action at the right edge in Persian (RTL) but left it leftmost, glued to the left edge, in English/Turkish. LTR now reverses the row — Cancel on the left, the primary/danger action rightmost and right-aligned — so the primary button keeps the same physical side in every language. Button rows (`btn-row`, `pagehead__actions`, `home-hero__actions`) also centre-align, which keeps mixed-height rows tidy with longer English labels.
+- **جداکنندهٔ اعشاری فارسی در سایت:** `loc()` فقط ارقام را فارسی می‌کرد و نقطهٔ اعشار لاتین می‌ماند («۲۰.۰ MB»); حالا «۲۰٫۰ MB» با جداکنندهٔ ٫ مثل خود اپ — فقط وقتی رشته با عدد شروع شود تا نام فایل‌ها و متن‌ها دست‌نخورده بمانند. / **Persian decimal separator on the website:** `loc()` only converted digits, leaving a Latin dot ("۲۰.۰ MB"); it now renders ٫ like the app does, and only for strings that start with a number so file names and prose stay intact.
+- **کارت‌های صفحهٔ تغییرات با تعویض زبان فارسی می‌ماندند:** چون فقط یک بار هنگام fetch ساخته می‌شدند؛ حالا مثل فهرست دانلود با هر تغییر زبان بازسازی می‌شوند (دکمهٔ «دانلود/Download»، «یادداشت انتشار/Release notes»، تعداد فایل‌ها، تاریخ و چیپ‌های وضعیت بیلد). / **Changelog cards stayed Persian after switching language** because they were built once at fetch time; like the download list they are now rebuilt on every language switch (download/release-notes buttons, asset counts, dates and the build chips).
+
+### Added
+- **سایت: تشخیص سیستم‌عامل بازدیدکننده** — کارت دانلود متناسب با سیستم شما اول می‌آید، با هالهٔ تأکیدی و برچسب «برای سیستم شما / For your system»، و دکمهٔ اصلی هیرو هم همان پلتفرم را می‌گوید («دانلود برای مک» / «Download for macOS»). / **Website: visitor OS detection** — the matching download card comes first with an accent glow and a "For your system" badge, and the hero CTA names that platform.
+- **سایت: لینک فعال در ناوبری** (`aria-current` + استایل), **دکمهٔ بازگشت به بالا**, **لینک پرش به محتوا** برای کیبورد/صفحه‌خوان. / **Website: active nav link** (`aria-current` + styling), a **back-to-top button** and a **skip-to-content link** for keyboard/screen-reader users.
+- **سایت: ابزارها** — اعتبارسنج با **Ctrl+Enter** هم اجرا می‌شود؛ کنار QR دکمهٔ **کپی لینک** و **دانلود QR** (SVG) اضافه شد. / **Website tools:** the validator also runs on **Ctrl+Enter**, and the QR card gained **Copy link** and **Download QR** (SVG) buttons.
+- **سایت: صفحهٔ تغییرات** — هر انتشار دکمهٔ دانلود و یادداشت انتشار گرفت و چیپ‌های بیلد وضعیت را با کلمهٔ بومی‌شده نشان می‌دهند (موفق/ناموفق/در حال اجرا). / **Website changelog:** every release now has download and release-notes buttons, and the build chips spell out their state in the active language.
+- **`.htaccess`:** هدر HSTS و آدرس‌های بدون پسوند (`/tools`، `/changelog`، `/speedtest`) + `sitemap.xml` با دو صفحهٔ جدید. / **`.htaccess`:** HSTS header and extensionless URLs, plus the two new pages in `sitemap.xml`.
+- **۹ تست DOM جدید (jsdom) با fetch ساختگی GitHub:** رندر گرید دانلود، اولویت/برچسب سیستم بازدیدکننده، بومی‌سازی اندازه‌ها و جداکنندهٔ اعشاری، CTA هیرو، دکمهٔ بازگشت به بالا، لینک فعال ناوبری، Ctrl+Enter، رندر تغییرات + چیپ‌ها و باز-برچسب‌گذاری آن‌ها در EN، و یک تست که sitemap/.htaccess/قاعدهٔ LTR دیالوگ را قفل می‌کند — جمعاً **۱۸ تست وب‌سایت**. / **9 new jsdom DOM tests with a stubbed GitHub fetch:** download-grid rendering, visitor-OS ordering/badge, size and decimal localisation, hero CTA, back-to-top, active nav, Ctrl+Enter, changelog rendering + chips and their EN relabelling, plus a test locking sitemap/.htaccess/the LTR dialog rule — **18 website tests** in total.
+
+### Changed
+- اندروید: versionCode 2104 و versionName 1.14.0. / Android bumped to versionCode 2104 / versionName 1.14.0.
+
 ## [1.13.0] - 2026-11-07
 
 ### Added
