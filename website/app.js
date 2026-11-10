@@ -215,6 +215,9 @@
     renderDownloads()
     renderReleases()
     renderHistory()
+    // re-label the day/night toggle — but only once the theme block has run,
+    // otherwise the first call would overwrite a saved choice with "dark"
+    if (document.documentElement.dataset.theme) applyTheme(document.documentElement.dataset.theme)
     applyPlatform(lang)
   }
 
@@ -238,10 +241,6 @@
 
   document.getElementById('lang-fa')?.addEventListener('click', () => applyLang('fa'))
   document.getElementById('lang-en')?.addEventListener('click', () => applyLang('en'))
-  let saved = 'fa'
-  try { saved = localStorage.getItem('naxlo-site-lang') || 'fa' } catch { /* ignore */ }
-  if (saved !== 'fa') applyLang(saved)
-  else applyPlatform('fa')
 
   /* ------------------------------------------------ day / night theme */
   const THEME_KEY = 'naxlo-site-theme'
@@ -263,16 +262,6 @@
     if (meta) meta.setAttribute('content', mode === 'light' ? '#f4f6fa' : '#05060a')
     try { localStorage.setItem(THEME_KEY, mode) } catch { /* private mode */ }
   }
-
-  let savedTheme = 'dark'
-  try { savedTheme = localStorage.getItem(THEME_KEY) || 'dark' } catch { /* ignore */ }
-  applyTheme(savedTheme === 'light' ? 'light' : 'dark')
-  document.getElementById('theme-toggle')?.addEventListener('click', () => {
-    applyTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light')
-  })
-
-  // keep the toggle's aria-label in the current language
-  applyTheme(document.documentElement.dataset.theme === 'light' ? 'light' : 'dark')
 
   /* ------------------------------------------------- scroll reveal */
   if ('IntersectionObserver' in window) {
@@ -946,4 +935,24 @@
       btn.textContent = EN.st_again
     })
   }
+
+  /* ------------------------------------------------------------ boot
+     Deliberately the last thing in this scope: applyLang() re-renders the
+     download grid, the release list and the speed history, and those helpers
+     read consts declared above their own call site. Booting earlier hit a TDZ
+     ReferenceError ("Cannot access 'relRoot' before initialization") for every
+     visitor whose saved language was English — which aborted the rest of the
+     script, so the theme toggle, burger menu, validator and QR never wired up.
+  */
+  document.getElementById('theme-toggle')?.addEventListener('click', () => {
+    applyTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light')
+  })
+  let savedTheme = 'dark'
+  try { savedTheme = localStorage.getItem(THEME_KEY) || 'dark' } catch { /* private mode */ }
+  applyTheme(savedTheme === 'light' ? 'light' : 'dark')
+
+  let savedLang = 'fa'
+  try { savedLang = localStorage.getItem('naxlo-site-lang') || 'fa' } catch { /* private mode */ }
+  if (savedLang !== 'fa') applyLang(savedLang)
+  else applyPlatform('fa')
 })()

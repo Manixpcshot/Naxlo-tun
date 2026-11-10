@@ -357,6 +357,63 @@ test('theme: defaults to night, toggles to day and survives a reload', async () 
   assert.ok(css.includes("[data-theme='light']"), 'no light palette')
 })
 
+test('theme: the toggle label follows the language switch', async () => {
+  const { window } = load('index.html')
+  const doc = window.document
+  const btn = doc.getElementById('theme-toggle')
+  assert.equal(btn.getAttribute('aria-label'), 'حالت روز')
+  assert.equal(btn.getAttribute('title'), 'حالت روز')
+
+  doc.getElementById('lang-en').click()
+  await tick()
+  // no Persian may survive in English mode — not even in the a11y tree
+  assert.equal(btn.getAttribute('aria-label'), 'Day mode')
+  assert.equal(btn.getAttribute('title'), 'Day mode')
+  assert.equal(doc.documentElement.dataset.theme, 'dark')
+
+  btn.click()
+  await tick()
+  assert.equal(btn.getAttribute('aria-label'), 'Night mode')
+  assert.equal(doc.documentElement.dataset.theme, 'light')
+})
+
+test('theme: a saved day theme survives an English first paint', () => {
+  const { window } = load('index.html', undefined, UA.win, (w) => {
+    w.localStorage.setItem('naxlo-site-theme', 'light')
+    w.localStorage.setItem('naxlo-site-lang', 'en')
+  })
+  const doc = window.document
+  assert.equal(doc.documentElement.dataset.theme, 'light')
+  assert.equal(doc.documentElement.lang, 'en')
+  assert.equal(window.localStorage.getItem('naxlo-site-theme'), 'light')
+  assert.equal(doc.getElementById('theme-toggle').getAttribute('aria-label'), 'Night mode')
+})
+
+test('boot: a returning English visitor gets a fully wired page', async () => {
+  // Regression: applyLang() used to run before the consts its render helpers
+  // read, so a saved language of "en" threw a TDZ ReferenceError and aborted
+  // the rest of app.js — no theme toggle, no burger menu, no validator.
+  const { window } = load('tools.html', undefined, UA.win, (w) => {
+    w.localStorage.setItem('naxlo-site-lang', 'en')
+  })
+  const doc = window.document
+  assert.equal(doc.documentElement.lang, 'en')
+  assert.equal(doc.documentElement.dir, 'ltr')
+  assert.equal(doc.documentElement.dataset.theme, 'dark')
+  assert.equal(doc.getElementById('theme-toggle').getAttribute('aria-label'), 'Day mode')
+
+  // the validator still works, i.e. the code after the boot block ran
+  const input = doc.getElementById('v-input')
+  input.value = 'vless://nope@1.2.3.4:443?security=reality'
+  doc.getElementById('v-btn').click()
+  await tick()
+  assert.match(doc.getElementById('v-out').textContent, /REALITY|UUID/i)
+
+  // and the burger menu toggles the dropdown
+  doc.getElementById('burger').click()
+  assert.ok(doc.querySelector('header').classList.contains('open'))
+})
+
 test('theme: the toggle exists on every page', () => {
   for (const file of ['index.html', 'speedtest.html', 'tools.html', 'changelog.html', '404.html']) {
     const { window } = load(file)

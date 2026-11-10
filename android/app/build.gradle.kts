@@ -14,8 +14,8 @@ android {
         applicationId = "net.naxlo.android"
         minSdk = 24
         targetSdk = 35
-        versionCode = (System.getenv("ANDROID_VERSION_CODE") ?: "2105").toInt()
-        versionName = System.getenv("ANDROID_VERSION_NAME") ?: "1.15.0"
+        versionCode = (System.getenv("ANDROID_VERSION_CODE") ?: "2106").toInt()
+        versionName = System.getenv("ANDROID_VERSION_NAME") ?: "1.15.1"
     }
 
     buildTypes {
