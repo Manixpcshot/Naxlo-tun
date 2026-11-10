@@ -82,9 +82,9 @@
     s3d: 'One click for the local proxy, or TUN mode for the whole system. Status, speed and exit IP stay in view.',
     vpn_kicker: 'Knowledge base',
     vpn_title: 'What is a VPN and what does Naxlo do?',
-    vpn_p1: 'VPN means “virtual private network”: your device traffic travels through an encrypted tunnel instead of the open path; nobody along the way can see what you do, and your real destination hides behind the tunnel.',
-    vpn_p2: 'Naxlo is a client: it builds the tunnel with modern protocols (VLESS/REALITY and friends) on the Xray core, but it owns no servers. You bring a subscription link from your own provider and Naxlo manages the rest.',
-    vpn_p3: 'In proxy mode only proxy-aware apps use the tunnel; in TUN mode the entire operating system — even games and terminals — passes through it, and DNS leaks are blocked.',
+    vpn_p1: '<b>VPN means “virtual private network”:</b> your device traffic travels through an encrypted tunnel instead of the open path; nobody along the way can see what you do, and your real destination hides behind the tunnel.',
+    vpn_p2: 'Naxlo is a <b>client</b>: it builds the tunnel with modern protocols (VLESS/REALITY and friends) on the Xray core, but it owns no servers. You bring a subscription link from your own provider and Naxlo manages the rest.',
+    vpn_p3: 'In proxy mode only proxy-aware apps use the tunnel; in <b>TUN</b> mode the entire operating system — even games and terminals — passes through it, and DNS leaks are blocked.',
     vpn_la: 'Your device',
     vpn_lb: 'Encrypted tunnel',
     dl_kicker: 'Download',
@@ -116,6 +116,8 @@
     foot_speed: 'Speed test',
     foot_dl: 'Download',
     skip: 'Skip to content',
+    st_hist_title: 'Last seven days on this device',
+    st_hist_clear: 'Clear history',
     q_copy: 'Copy link',
     q_dl: 'Download QR',
     cl_get: 'Download',
@@ -181,6 +183,11 @@
   const phNodes = Array.from(document.querySelectorAll('[data-i18n-ph]'))
   phNodes.forEach((el) => { FA[el.getAttribute('data-i18n-ph')] = el.getAttribute('placeholder') || '' })
 
+  /* Paragraphs that carry inline emphasis: translated as markup so the bold
+     survives the language switch. Values come from our own dictionaries. */
+  const htmlNodes = Array.from(document.querySelectorAll('[data-i18n-html]'))
+  htmlNodes.forEach((el) => { FA[el.getAttribute('data-i18n-html')] = el.innerHTML })
+
 
   function applyLang(lang) {
     const dict = lang === 'en' ? EN : FA
@@ -196,6 +203,10 @@
       const key = el.getAttribute('data-i18n-ph')
       if (dict[key] != null) el.setAttribute('placeholder', dict[key])
     })
+    htmlNodes.forEach((el) => {
+      const key = el.getAttribute('data-i18n-html')
+      if (dict[key] != null) el.innerHTML = dict[key]
+    })
     document.documentElement.lang = lang
     document.documentElement.dir = lang === 'fa' ? 'rtl' : 'ltr'
     document.getElementById('lang-fa')?.classList.toggle('on', lang === 'fa')
@@ -203,6 +214,7 @@
     try { localStorage.setItem('naxlo-site-lang', lang) } catch { /* private mode */ }
     renderDownloads()
     renderReleases()
+    renderHistory()
     applyPlatform(lang)
   }
 
@@ -230,6 +242,37 @@
   try { saved = localStorage.getItem('naxlo-site-lang') || 'fa' } catch { /* ignore */ }
   if (saved !== 'fa') applyLang(saved)
   else applyPlatform('fa')
+
+  /* ------------------------------------------------ day / night theme */
+  const THEME_KEY = 'naxlo-site-theme'
+
+  const isFa = () => document.documentElement.lang !== 'en'
+
+  function applyTheme(mode) {
+    document.documentElement.dataset.theme = mode
+    const btn = document.getElementById('theme-toggle')
+    if (btn) {
+      btn.textContent = mode === 'light' ? '🌙' : '☀️'
+      const label = mode === 'light'
+        ? (isFa() ? 'حالت شب' : 'Night mode')
+        : (isFa() ? 'حالت روز' : 'Day mode')
+      btn.setAttribute('aria-label', label)
+      btn.setAttribute('title', label)
+    }
+    const meta = document.querySelector('meta[name="theme-color"]')
+    if (meta) meta.setAttribute('content', mode === 'light' ? '#f4f6fa' : '#05060a')
+    try { localStorage.setItem(THEME_KEY, mode) } catch { /* private mode */ }
+  }
+
+  let savedTheme = 'dark'
+  try { savedTheme = localStorage.getItem(THEME_KEY) || 'dark' } catch { /* ignore */ }
+  applyTheme(savedTheme === 'light' ? 'light' : 'dark')
+  document.getElementById('theme-toggle')?.addEventListener('click', () => {
+    applyTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light')
+  })
+
+  // keep the toggle's aria-label in the current language
+  applyTheme(document.documentElement.dataset.theme === 'light' ? 'light' : 'dark')
 
   /* ------------------------------------------------- scroll reveal */
   if ('IntersectionObserver' in window) {
@@ -330,7 +373,6 @@
     )
   }
 
-  const isFa = () => document.documentElement.lang !== 'en'
   const maskMid = (v) => (v && v.length > 12 ? v.slice(0, 5) + '…' + v.slice(-4) : v || '—')
 
   /* client-side config validator — mirrors src/main/lib/parseConfig.ts */
@@ -685,6 +727,79 @@
     }
   }
 
+  /* ------------------------------------- daily speed history (on-device) */
+  const HISTORY_KEY = 'naxlo-speed-history'
+  const HISTORY_DAYS = 7
+
+  function readHistory() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]')
+      return Array.isArray(raw) ? raw.filter((r) => r && typeof r.mbps === 'number' && typeof r.date === 'string') : []
+    } catch {
+      return []
+    }
+  }
+
+  function dayKey(date) {
+    const m = String(date.getMonth() + 1).padStart(2, '0')
+    const d = String(date.getDate()).padStart(2, '0')
+    return date.getFullYear() + '-' + m + '-' + d
+  }
+
+  function recordSpeed(mbps) {
+    const list = readHistory()
+    list.push({ date: dayKey(new Date()), mbps: Math.round(mbps * 10) / 10, at: Date.now() })
+    // keep at most 200 samples, newest last
+    try { localStorage.setItem(HISTORY_KEY, JSON.stringify(list.slice(-200))) } catch { /* private mode */ }
+    renderHistory()
+  }
+
+  function renderHistory() {
+    const panel = document.getElementById('st-history')
+    const grid = document.getElementById('st-history-grid')
+    if (!panel || !grid) return
+    const list = readHistory()
+    if (!list.length) { panel.hidden = true; return }
+
+    // best result of each of the last HISTORY_DAYS local days
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const days = []
+    for (let i = HISTORY_DAYS - 1; i >= 0; i--) {
+      const day = new Date(today)
+      day.setDate(today.getDate() - i)
+      days.push(dayKey(day))
+    }
+    const best = {}
+    for (const item of list) if (!best[item.date] || item.mbps > best[item.date]) best[item.date] = item.mbps
+    const peak = Math.max(1, ...days.map((key) => best[key] || 0))
+
+    grid.innerHTML = ''
+    for (const key of days) {
+      const value = best[key]
+      const cell = document.createElement('div')
+      cell.className = 'history__col'
+      const bar = document.createElement('i')
+      bar.style.height = Math.max(4, Math.round(((value || 0) / peak) * 100)) + '%'
+      const num = document.createElement('b')
+      num.textContent = value ? loc(value.toFixed(1)) : '—'
+      const label = document.createElement('span')
+      label.textContent = key.slice(5).replace('-', '/')
+      cell.appendChild(document.createElement('div')).className = 'history__track'
+      cell.querySelector('.history__track').appendChild(bar)
+      cell.appendChild(num)
+      cell.appendChild(label)
+      grid.appendChild(cell)
+    }
+    panel.hidden = false
+  }
+
+  document.getElementById('st-history-clear')?.addEventListener('click', () => {
+    try { localStorage.removeItem(HISTORY_KEY) } catch { /* ignore */ }
+    renderHistory()
+  })
+  renderHistory()
+
   /* --------------------------------------------------- speed test */
   /* Adaptive, speedtest.net-style: 2 MB probe → ladder size → 4 parallel
      streams for ~8 s → steady-state rate (slow-start ramp excluded). */
@@ -810,6 +925,7 @@
         if (!results.some((r) => r.ok) || total < 262144) continue
         const mbps = steadyMbps(total, ramp, elapsed)
         final = { mbps, sizeMb, base }
+        recordSpeed(mbps)
         gauge.textContent = loc(mbps.toFixed(1))
         setArc(mbps)
         bar.style.width = Math.min((mbps / scale) * 100, 100) + '%'

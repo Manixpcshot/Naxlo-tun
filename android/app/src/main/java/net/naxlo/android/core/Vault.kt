@@ -115,6 +115,7 @@ object Vault {
             .put("pinned", JSONArray().also { arr -> state.pinned.forEach { arr.put(it) } })
             .put("selectedServerId", state.selectedServerId)
             .put("language", state.language)
+            .put("theme", state.theme)
 
     fun fromJson(json: JSONObject): VaultState =
         VaultState(
@@ -173,6 +174,7 @@ object Vault {
                 (0 until arr.length()).map { arr.getString(it) }
             },
             selectedServerId = json.optString("selectedServerId", null),
-            language = json.optString("language", "fa")
+            language = json.optString("language", "fa"),
+            theme = json.optString("theme", "dark")
         )
 }

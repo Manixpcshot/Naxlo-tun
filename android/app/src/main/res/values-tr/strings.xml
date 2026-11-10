@@ -54,4 +54,11 @@
     <string name="exit_warn_body">Naxlo tüneli hâlâ etkin. Kapatmadan önce bağlantı kesilsin mi?</string>
     <string name="exit_disconnect_close">Bağlantıyı kes ve kapat</string>
     <string name="exit_stay_close">Bağlı kal ve kapat</string>
+    <string name="vpn_denied">VPN izni verilmedi; tünel için sistem penceresinin onaylanması gerekir.</string>
+    <string name="vpn_no_server">Bağlanılabilir sunucu yok — önce bir abonelik ekleyin.</string>
+    <string name="vpn_failed">Tünel başlatılamadı</string>
+    <string name="theme">Gündüz / gece teması</string>
+    <string name="theme_night">Gece (varsayılan)</string>
+    <string name="theme_day">Gündüz</string>
+    <string name="theme_hint">Gündüz modu açık bir palet kullanır; özgün görünüm koyu ve neredeyse siyahtır.</string>
 </resources>

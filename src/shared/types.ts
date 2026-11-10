@@ -224,6 +224,8 @@ export interface Settings {
   autoFailover: boolean
   logLevel: 'error' | 'warn' | 'info' | 'debug'
   accent: 'cyan' | 'violet' | 'emerald' | 'amber' | 'rose'
+  /** Day/night appearance: `dark` keeps the near-black design, `light` is the day theme. */
+  theme: 'dark' | 'light'
   reduceMotion: boolean
   corePath: string | null
   xrayLogLevel: 'none' | 'error' | 'warning'
@@ -339,6 +341,7 @@ export const DEFAULT_SETTINGS: Settings = {
   autoFailover: true,
   logLevel: 'info',
   accent: 'cyan',
+  theme: 'dark',
   reduceMotion: false,
   corePath: null,
   xrayLogLevel: 'warning',

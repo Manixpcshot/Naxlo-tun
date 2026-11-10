@@ -9,13 +9,14 @@ import { useStore } from '../lib/store'
 import { useI18n, type MsgKey } from '../lib/i18n'
 import { fa } from '../lib/format'
 
-export type PageId = 'home' | 'servers' | 'subscription' | 'stats' | 'settings' | 'logs' | 'about'
+export type PageId = 'home' | 'servers' | 'subscription' | 'stats' | 'tools' | 'settings' | 'logs' | 'about'
 
 export const PAGES: Array<{ id: PageId; label: MsgKey; icon: IconName }> = [
   { id: 'home', label: 'navHome', icon: 'bolt' },
   { id: 'servers', label: 'navServers', icon: 'servers' },
   { id: 'subscription', label: 'navSubscription', icon: 'subscription' },
   { id: 'stats', label: 'navStats', icon: 'activity' },
+  { id: 'tools', label: 'navTools', icon: 'qr' },
   { id: 'settings', label: 'navSettings', icon: 'settings' },
   { id: 'logs', label: 'navLogs', icon: 'logs' },
   { id: 'about', label: 'navAbout', icon: 'info' }
@@ -86,7 +87,7 @@ export function Sidebar({ page, onNavigate }: Props): React.ReactElement {
             <span className="navitem__icon">
               <Icon name={item.icon} size={17} />
             </span>
-            <span>{t(item.label)}</span>
+            <span className="navitem__label">{t(item.label)}</span>
             {item.id === 'servers' && state.subscriptions.reduce((acc, sub) => acc + sub.totalConfigs, 0) > 0 ? (
               <span className="badge" style={{ marginInlineStart: 'auto' }}>
                 {fa(state.subscriptions.reduce((acc, sub) => acc + sub.totalConfigs, 0))}

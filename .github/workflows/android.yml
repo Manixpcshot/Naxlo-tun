@@ -21,16 +21,39 @@ jobs:
       - name: Fetch libv2ray.aar (Xray-core bound with gomobile)
         run: |
           mkdir -p android/app/libs
-          curl -sL -o android/app/libs/libv2ray.aar \
+          # -f so a 404 fails the step instead of writing an HTML error page
+          curl -fsSL -o android/app/libs/libv2ray.aar \
             https://github.com/2dust/AndroidLibXrayLite/releases/download/v26.10.10/libv2ray.aar
+          # an AAR is a zip: verify the magic bytes and a sane size
+          test "$(head -c 2 android/app/libs/libv2ray.aar)" = "PK" || { echo "libv2ray.aar is not a zip archive"; exit 1; }
+          SIZE=$(stat -c %s android/app/libs/libv2ray.aar)
+          test "$SIZE" -gt 1000000 || { echo "libv2ray.aar is suspiciously small: $SIZE bytes"; exit 1; }
           ls -la android/app/libs
 
-      - name: Fetch geo routing assets
+      - name: Fetch geo routing assets (optional)
         run: |
           mkdir -p android/app/assets
-          curl -sL -o android/app/assets/geoip.dat https://github.com/v2fly/geoip/releases/latest/download/geoip.dat
-          curl -sL -o android/app/assets/geosite.dat https://github.com/v2fly/domain-list-community/releases/latest/download/dlc.dat
-          ls -la android/app/assets
+          # Routing keeps private traffic direct with explicit CIDRs, so these
+          # assets are a bonus, not a requirement: verify them and drop any
+          # truncated/error body instead of shipping a bogus .dat file.
+          fetch_dat() {
+            url="$1"; out="$2"
+            if curl -fsSL -o "$out" "$url"; then
+              size=$(stat -c %s "$out")
+              if [ "$size" -gt 100000 ]; then
+                echo "ok: $out ($size bytes)"
+              else
+                echo "warning: $out is only $size bytes — dropping it"
+                rm -f "$out"
+              fi
+            else
+              echo "warning: could not fetch $out — continuing without it"
+              rm -f "$out"
+            fi
+          }
+          fetch_dat https://github.com/v2fly/geoip/releases/latest/download/geoip.dat android/app/assets/geoip.dat
+          fetch_dat https://github.com/v2fly/domain-list-community/releases/latest/download/dlc.dat android/app/assets/geosite.dat
+          ls -la android/app/assets || true
 
       - uses: actions/setup-java@v4
         with:

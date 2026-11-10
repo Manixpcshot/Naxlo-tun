@@ -54,4 +54,11 @@
     <string name="exit_warn_body">The Naxlo tunnel is still active. Turn it off before closing?</string>
     <string name="exit_disconnect_close">Disconnect and close</string>
     <string name="exit_stay_close">Stay connected and close</string>
+    <string name="vpn_denied">VPN permission was not granted; the tunnel needs the system dialog to be accepted.</string>
+    <string name="vpn_no_server">No connectable server yet — add a subscription first.</string>
+    <string name="vpn_failed">The tunnel failed to start</string>
+    <string name="theme">Day / night theme</string>
+    <string name="theme_night">Night (default)</string>
+    <string name="theme_day">Day</string>
+    <string name="theme_hint">Day mode uses a light palette; the signature look stays near-black.</string>
 </resources>

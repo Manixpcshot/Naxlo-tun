@@ -384,6 +384,17 @@ export function Settings(): React.ReactElement {
                 </div>
               </Field>
 
+              <Field label={t('themeField')} hint={t('themeHint')}>
+                <Segmented<'dark' | 'light'>
+                  value={settings.theme === 'light' ? 'light' : 'dark'}
+                  options={[
+                    { value: 'dark', label: t('themeDark') },
+                    { value: 'light', label: t('themeLight') }
+                  ]}
+                  onChange={(value) => patch({ theme: value })}
+                />
+              </Field>
+
               <Field label={t('logLevelField')}>
                 <Segmented
                   value={settings.logLevel}

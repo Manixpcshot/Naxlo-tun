@@ -1,7 +1,7 @@
 {
   "name": "naxlo",
   "productName": "Naxlo",
-  "version": "1.14.0",
+  "version": "1.15.0",
   "description": "Naxlo — کلاینت فارسی‌زبان VLESS برای ویندوز، لینوکس و مک بر پایهٔ Electron و نسخهٔ Rust/Tauri با هستهٔ رسمی Xray",
   "author": {
     "name": "Naxlo Contributors",
@@ -53,12 +53,14 @@
   },
   "dependencies": {
     "electron-updater": "^6.8.9",
-    "fflate": "^0.8.3"
+    "fflate": "^0.8.3",
+    "qrcode": "^1.5.4"
   },
   "devDependencies": {
     "@tauri-apps/api": "^2.12.4",
     "@tauri-apps/cli": "^2.12.4",
     "@types/node": "^24.19.2",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",

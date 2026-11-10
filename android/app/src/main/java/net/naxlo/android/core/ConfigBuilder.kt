@@ -5,9 +5,87 @@ import org.json.JSONObject
 
 /**
  * Builds the Xray JSON config for one server — the Android twin of the
- * desktop config builder: local SOCKS/HTTP inbounds plus a single outbound.
+ * desktop config builder.
+ *
+ * Two shapes exist:
+ *  - [buildVpn] for the VpnService data plane: a single `tun` inbound. The
+ *    core picks the tunnel up from the `xray.tun.fd` environment variable that
+ *    libv2ray's `startLoop(config, fd)` sets, so the config must not carry any
+ *    local listener — a SOCKS/HTTP-only config leaves every packet the system
+ *    routes into the tunnel unread, which black-holes all device traffic.
+ *  - [build] for a local SOCKS/HTTP proxy (no tunnel), kept for parity with
+ *    the desktop editions.
  */
 object ConfigBuilder {
+
+    /** Private/loopback/multicast ranges that must never enter the tunnel. */
+    private val DIRECT_CIDRS = listOf(
+        "10.0.0.0/8",
+        "172.16.0.0/12",
+        "192.168.0.0/16",
+        "127.0.0.0/8",
+        "169.254.0.0/16",
+        "224.0.0.0/4",
+        "255.255.255.255/32",
+        "::1/128",
+        "fc00::/7",
+        "fe80::/10",
+        "ff00::/8"
+    )
+
+    /**
+     * Tunnel config for [net.naxlo.android.vpn.NaxloVpnService].
+     *
+     * The addresses, routes and DNS servers belong to the platform VpnService
+     * builder, so the core only needs the tun inbound plus routing. The private
+     * ranges are listed explicitly instead of `geoip:private` so the tunnel
+     * works even when the geo assets are missing or unreadable.
+     */
+    fun buildVpn(server: ServerConfig, mtu: Int = 1500): String {
+        val root = JSONObject()
+        root.put("log", JSONObject().put("loglevel", "warning"))
+        root.put(
+            "inbounds",
+            JSONArray().put(
+                JSONObject()
+                    .put("tag", "tun")
+                    .put("protocol", "tun")
+                    .put(
+                        "settings",
+                        JSONObject()
+                            .put("name", "naxlo0")
+                            .put("mtu", mtu)
+                            .put("userLevel", 8)
+                    )
+            )
+        )
+        root.put("outbounds", JSONArray().put(outbound(server)).put(direct()))
+        root.put("routing", routing())
+        return root.toString()
+    }
+
+    private fun routing(): JSONObject {
+        val ips = JSONArray()
+        DIRECT_CIDRS.forEach { ips.put(it) }
+        return JSONObject()
+            .put("domainStrategy", "AsIs")
+            .put(
+                "rules",
+                JSONArray()
+                    .put(
+                        JSONObject()
+                            .put("type", "field")
+                            .put("ip", ips)
+                            .put("outboundTag", "direct")
+                    )
+                    .put(
+                        JSONObject()
+                            .put("type", "field")
+                            .put("network", "tcp,udp")
+                            .put("outboundTag", "proxy")
+                    )
+            )
+    }
 
     fun build(server: ServerConfig, socksPort: Int = 10808, httpPort: Int = 10809): String {
         val root = JSONObject()
@@ -32,20 +110,7 @@ object ConfigBuilder {
 
         root.put("outbounds", JSONArray().put(outbound(server)).put(direct()))
 
-        root.put(
-            "routing",
-            JSONObject()
-                .put("domainStrategy", "AsIs")
-                .put(
-                    "rules",
-                    JSONArray().put(
-                        JSONObject()
-                            .put("type", "field")
-                            .put("ip", JSONArray().put("geoip:private"))
-                            .put("outboundTag", "direct")
-                    )
-                )
-        )
+        root.put("routing", routing())
         return root.toString()
     }
 

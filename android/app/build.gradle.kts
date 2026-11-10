@@ -14,8 +14,8 @@ android {
         applicationId = "net.naxlo.android"
         minSdk = 24
         targetSdk = 35
-        versionCode = (System.getenv("ANDROID_VERSION_CODE") ?: "2104").toInt()
-        versionName = System.getenv("ANDROID_VERSION_NAME") ?: "1.14.0"
+        versionCode = (System.getenv("ANDROID_VERSION_CODE") ?: "2105").toInt()
+        versionName = System.getenv("ANDROID_VERSION_NAME") ?: "1.15.0"
     }
 
     buildTypes {
@@ -56,4 +56,6 @@ dependencies {
     // Password-protected (ZipCrypto + AES) config archives.
     implementation("net.lingala.zip4j:zip4j:2.11.5")
     testImplementation("junit:junit:4.13.2")
+    // android.jar only ships org.json stubs, so local unit tests need the real thing.
+    testImplementation("org.json:json:20240303")
 }

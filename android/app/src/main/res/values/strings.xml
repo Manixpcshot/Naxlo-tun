@@ -54,4 +54,11 @@
     <string name="exit_warn_body">تونل ناکسلو فعال است. قبل از بستن برنامه خاموشش کنیم؟</string>
     <string name="exit_disconnect_close">خاموش کن و ببند</string>
     <string name="exit_stay_close">متصل بمان و ببند</string>
+    <string name="vpn_denied">اجازهٔ VPN داده نشد؛ بدون پذیرفتن پنجرهٔ سیستم نمی‌توان تونل ساخت.</string>
+    <string name="vpn_no_server">سرور قابل اتصالی وجود ندارد؛ ابتدا یک اشتراک اضافه کنید.</string>
+    <string name="vpn_failed">تونل شروع نشد</string>
+    <string name="theme">پوستهٔ روز / شب</string>
+    <string name="theme_night">شب (پیش‌فرض)</string>
+    <string name="theme_day">روز</string>
+    <string name="theme_hint">حالت روز پالت روشن دارد؛ ظاهر اصلی برنامه تاریک و تقریباً مشکی است.</string>
 </resources>

@@ -10,6 +10,7 @@ export type IconName =
   | 'subscription'
   | 'settings'
   | 'logs'
+  | 'qr'
   | 'info'
   | 'shield'
   | 'globe'
@@ -88,6 +89,14 @@ const PATHS: Record<IconName, React.ReactNode> = {
     <>
       <rect x="3.5" y="4.5" width="17" height="15" rx="2.5" />
       <path d="m7.5 9.5 2.5 2.5-2.5 2.5M12.5 15h4" />
+    </>
+  ),
+  qr: (
+    <>
+      <rect x="3.5" y="3.5" width="6.5" height="6.5" rx="1.6" />
+      <rect x="14" y="3.5" width="6.5" height="6.5" rx="1.6" />
+      <rect x="3.5" y="14" width="6.5" height="6.5" rx="1.6" />
+      <path d="M14 14h3.2v3.2H14zM19.4 19.4h1.1M14 19.4h1.6" />
     </>
   ),
   info: (

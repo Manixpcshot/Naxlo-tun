@@ -4,6 +4,7 @@
 import { BrowserWindow, shell } from 'electron'
 import { join } from 'node:path'
 import { log } from './lib/logger'
+import { loadSettings } from './lib/settings'
 
 const SCOPE = 'window'
 const DEV_SERVER_URL = process.env['ELECTRON_RENDERER_URL']
@@ -14,6 +15,9 @@ export interface WindowOptions {
 }
 
 export function createMainWindow(options: WindowOptions = {}): BrowserWindow {
+  // Match the pre-paint colour to the saved theme so a day-theme user never
+  // sees a black flash while the renderer boots.
+  const background = loadSettings().theme === 'light' ? '#f4f6fa' : '#05060a'
   const win = new BrowserWindow({
     width: options.width ?? 1180,
     height: options.height ?? 780,
@@ -22,7 +26,7 @@ export function createMainWindow(options: WindowOptions = {}): BrowserWindow {
     show: false,
     frame: false,
     title: 'Naxlo',
-    backgroundColor: '#05060a',
+    backgroundColor: background,
     autoHideMenuBar: true,
     fullscreenable: true,
     maximizable: true,

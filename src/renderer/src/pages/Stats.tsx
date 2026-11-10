@@ -11,9 +11,8 @@ import { Sparkline } from '../components/Sparkline'
 import { Button, Card, PageHeader } from '../components/ui'
 import { useStore } from '../lib/store'
 import { useI18n } from '../lib/i18n'
-import { extractFlagCodes, fa, stripFlags } from '../lib/format'
-import { aggregateStats } from '@shared/stats'
-import { minutesLabel } from '../lib/format'
+import { extractFlagCodes, fa, faDecimal, minutesLabel, stripFlags } from '../lib/format'
+import { aggregateStats, summarizeToday } from '@shared/stats'
 import type { StatsPayload } from '@shared/bridge'
 
 const DAYS = 14
@@ -49,9 +48,18 @@ export function Stats(): React.ReactElement {
     [speed]
   )
 
+  const today = useMemo(() => summarizeToday(stats?.sessions ?? [], speed, Date.now()), [stats, speed])
+
   const maxMinutes = Math.max(1, ...summary.daily.map((d) => d.minutes))
   const maxServer = Math.max(1, ...summary.topServers.map((s) => s.minutes))
   const empty = summary.totalSessions === 0 && speed.length === 0
+
+  const todayTiles = [
+    { icon: 'clock' as const, label: t('statsTodayMinutes'), value: minutesLabel(today.minutes) },
+    { icon: 'activity' as const, label: t('statsTodaySessions'), value: fa(today.sessions) },
+    { icon: 'bolt' as const, label: t('statsTodayBest'), value: today.bestMbps !== null ? `${faDecimal(today.bestMbps)} Mbps` : '—' },
+    { icon: 'gauge' as const, label: t('statsTodayAvg'), value: today.avgMbps !== null ? `${faDecimal(today.avgMbps)} Mbps` : '—' }
+  ]
 
   const tiles = [
     { icon: 'clock' as const, label: t('statsTotalTime'), value: minutesLabel(summary.totalMinutes) },
@@ -94,6 +102,32 @@ export function Stats(): React.ReactElement {
           </Card>
         ))}
       </div>
+
+      <Card className="statscard" style={{ marginTop: 16 }}>
+        <div className="card__title">
+          <Icon name="activity" size={15} /> {t('statsTodayTitle')}
+        </div>
+        {today.sessions === 0 && today.speedSamples === 0 ? (
+          <div className="card__subtitle">{t('statsTodayEmpty')}</div>
+        ) : (
+          <>
+            <div className="grid grid--4 statgrid" style={{ marginTop: 10 }}>
+              {todayTiles.map((tile) => (
+                <div key={tile.label} className="stattile stattile--inline">
+                  <div className="stattile__icon">
+                    <Icon name={tile.icon} size={14} />
+                  </div>
+                  <div className="stattile__value">{tile.value}</div>
+                  <div className="stattile__label">{tile.label}</div>
+                </div>
+              ))}
+            </div>
+            {today.deltaPercent !== null ? (
+              <div className="card__subtitle">{t('statsTodayDelta', { p: fa(today.deltaPercent) })}</div>
+            ) : null}
+          </>
+        )}
+      </Card>
 
       <Card className="statscard" style={{ marginTop: 16 }}>
         <div className="card__title">

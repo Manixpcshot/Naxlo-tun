@@ -56,5 +56,7 @@ data class VaultState(
     val servers: List<ServerConfig> = emptyList(),
     val pinned: List<String> = emptyList(),
     val selectedServerId: String? = null,
-    val language: String = "fa"
+    val language: String = "fa",
+    /** `dark` (default, near-black) or `light` — the day theme. */
+    val theme: String = "dark"
 )

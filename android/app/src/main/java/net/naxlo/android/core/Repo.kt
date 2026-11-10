@@ -298,6 +298,10 @@ object Repo {
         update { it.copy(language = lang) }
     }
 
+    fun setTheme(theme: String) {
+        update { it.copy(theme = if (theme == "light") "light" else "dark") }
+    }
+
     /** TCP handshake latency through plain sockets (no tunnel needed). */
     suspend fun testLatency(server: ServerConfig): Long? = withContext(Dispatchers.IO) {
         val started = System.currentTimeMillis()
