@@ -126,6 +126,72 @@ export function formatMinutes(minutes: number): string {
   return rest === 0 ? `${h}h` : `${h}h ${rest}m`
 }
 
+export interface TodaySummary {
+  /** Local-day key (`YYYY-MM-DD`) of the window being summarised. */
+  date: string
+  /** Minutes inside the tunnel during the current local day. */
+  minutes: number
+  /** Sessions that overlap the current local day (open ones included). */
+  sessions: number
+  /** Same measure for the previous local day, used for the delta. */
+  yesterdayMinutes: number
+  /** Percentage change against yesterday, null when yesterday was unused. */
+  deltaPercent: number | null
+  bestMbps: number | null
+  avgMbps: number | null
+  speedSamples: number
+}
+
+/**
+ * "Today at a glance": how long the tunnel has been up during the current
+ * local day, how that compares with yesterday, and today's speed samples.
+ * Calendar-based (never fixed 24h steps) so a DST switch cannot shift the
+ * window, and open sessions count up to `now`.
+ */
+export function summarizeToday(sessions: SessionStat[], speed: SpeedSample[], now = Date.now()): TodaySummary {
+  const startOfDay = new Date(now)
+  startOfDay.setHours(0, 0, 0, 0)
+  const startMs = startOfDay.getTime()
+  const yesterdayStart = new Date(startMs)
+  yesterdayStart.setDate(yesterdayStart.getDate() - 1)
+  const yesterdayMs = yesterdayStart.getTime()
+
+  const overlap = (from: number, to: number): { minutes: number; sessions: number } => {
+    let minutes = 0
+    let count = 0
+    for (const session of sessions) {
+      const end = session.endedAt === 0 ? now : session.endedAt
+      if (end <= from || session.startedAt >= to) continue
+      const span = Math.min(end, to) - Math.max(session.startedAt, from)
+      if (span > 0) {
+        minutes += span / 60000
+        count += 1
+      }
+    }
+    return { minutes: Math.round(minutes), sessions: count }
+  }
+
+  const today = overlap(startMs, now + 1)
+  const yesterday = overlap(yesterdayMs, startMs)
+  const todaysSpeed = speed.filter((sample) => sample.at >= startMs && sample.at <= now)
+  const best = todaysSpeed.length > 0 ? Math.max(...todaysSpeed.map((sample) => sample.mbps)) : null
+  const avg =
+    todaysSpeed.length > 0
+      ? Math.round((todaysSpeed.reduce((acc, sample) => acc + sample.mbps, 0) / todaysSpeed.length) * 10) / 10
+      : null
+
+  return {
+    date: dayKey(now),
+    minutes: today.minutes,
+    sessions: today.sessions,
+    yesterdayMinutes: yesterday.minutes,
+    deltaPercent: yesterday.minutes > 0 ? Math.round(((today.minutes - yesterday.minutes) / yesterday.minutes) * 100) : null,
+    bestMbps: best,
+    avgMbps: avg,
+    speedSamples: todaysSpeed.length
+  }
+}
+
 /** Keep only the newest `cap` samples, sorted ascending by time. */
 export function trimSpeedSamples(samples: SpeedSample[], cap = 120): SpeedSample[] {
   return [...samples].sort((a, b) => a.at - b.at).slice(-cap)

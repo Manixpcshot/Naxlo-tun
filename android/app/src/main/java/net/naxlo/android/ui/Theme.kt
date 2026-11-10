@@ -1,8 +1,8 @@
 package net.naxlo.android.ui
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
@@ -21,10 +21,25 @@ private val NaxloDark = darkColorScheme(
     error = Color(0xFFF87171)
 )
 
+/**
+ * Day theme: the same accent and hierarchy on a light surface. Opt-in from
+ * Settings — `dark` stays the default so the shipped look is unchanged.
+ */
+private val NaxloLight = lightColorScheme(
+    primary = Color(0xFF0E7490),
+    onPrimary = Color(0xFFFFFFFF),
+    secondary = Color(0xFF0369A1),
+    background = Color(0xFFF4F6FA),
+    onBackground = Color(0xFF10151F),
+    surface = Color(0xFFFFFFFF),
+    onSurface = Color(0xFF10151F),
+    surfaceVariant = Color(0xFFE8ECF3),
+    onSurfaceVariant = Color(0xFF4A5568),
+    outline = Color(0xFFC3CBD8),
+    error = Color(0xFFB91C1C)
+)
+
 @Composable
-fun NaxloTheme(content: @Composable () -> Unit) {
-    // Naxlo is dark-only, like the desktop app.
-    @Suppress("UNUSED_EXPRESSION")
-    isSystemInDarkTheme()
-    MaterialTheme(colorScheme = NaxloDark, content = content)
+fun NaxloTheme(day: Boolean = false, content: @Composable () -> Unit) {
+    MaterialTheme(colorScheme = if (day) NaxloLight else NaxloDark, content = content)
 }

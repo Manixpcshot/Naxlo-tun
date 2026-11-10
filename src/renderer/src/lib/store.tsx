@@ -207,11 +207,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }): Reac
     void reloadServers()
   }, [revision, ready, reloadServers])
 
-  /* Keep the accent + reduced-motion attributes in sync with the DOM */
+  /* Keep the theme, accent + reduced-motion attributes in sync with the DOM */
   useEffect(() => {
+    document.documentElement.dataset.theme = settings.theme ?? 'dark'
     document.documentElement.dataset.accent = settings.accent
     document.documentElement.classList.toggle('reduce-motion', settings.reduceMotion)
-  }, [settings.accent, settings.reduceMotion])
+  }, [settings.theme, settings.accent, settings.reduceMotion])
 
   const value = useMemo<StoreShape>(
     () => ({

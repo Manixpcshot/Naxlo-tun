@@ -12,6 +12,7 @@ import { Home } from './pages/Home'
 import { Servers } from './pages/Servers'
 import { Subscription } from './pages/Subscription'
 import { Stats } from './pages/Stats'
+import { Tools } from './pages/Tools'
 import { Settings } from './pages/Settings'
 import { Logs } from './pages/Logs'
 import { About } from './pages/About'
@@ -97,6 +98,7 @@ export default function App(): React.ReactElement {
                 {page === 'servers' ? <Servers /> : null}
                 {page === 'subscription' ? <Subscription onNavigate={setPage} /> : null}
                 {page === 'stats' ? <Stats /> : null}
+                {page === 'tools' ? <Tools /> : null}
                 {page === 'settings' ? <Settings /> : null}
                 {page === 'logs' ? <Logs /> : null}
                 {page === 'about' ? <About /> : null}

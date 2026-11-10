@@ -32,8 +32,10 @@ const UA = {
  * @param file page to load
  * @param stubFetch optional canned GitHub API responder installed before app.js runs
  * @param userAgent visitor agent to simulate (defaults to Windows)
+ * @param before optional hook run on the window before app.js is injected
+ *        (used to seed localStorage, like a returning visitor would have)
  */
-function load(file, stubFetch, userAgent = UA.win) {
+function load(file, stubFetch, userAgent = UA.win, before) {
   const dom = new JSDOM(page(file), {
     url: 'https://vpn.naxlo.ir/' + (file === 'index.html' ? '' : file),
     runScripts: 'dangerously',
@@ -42,6 +44,7 @@ function load(file, stubFetch, userAgent = UA.win) {
   // shadow navigator.userAgent on the instance before app.js is evaluated
   Object.defineProperty(dom.window.navigator, 'userAgent', { value: userAgent, configurable: true })
   if (stubFetch) dom.window.fetch = stubFetch
+  if (before) before(dom.window)
   const script = dom.window.document.createElement('script')
   script.textContent = appJs
   dom.window.document.body.appendChild(script)
@@ -325,6 +328,86 @@ test('static assets: sitemap, htaccess and the LTR dialog rule stay in place', (
   }
   const appCss = readFileSync(join(root, 'src/renderer/src/styles/components.css'), 'utf8')
   assert.match(appCss, /html\[dir='ltr'\] \.modal__actions \{\s*flex-direction: row-reverse/)
+})
+
+test('theme: defaults to night, toggles to day and survives a reload', async () => {
+  const { window } = load('index.html')
+  const doc = window.document
+  assert.equal(doc.documentElement.dataset.theme, 'dark')
+  const btn = doc.getElementById('theme-toggle')
+  assert.ok(btn, 'no theme toggle')
+  assert.equal(btn.textContent, '☀️')
+  assert.equal(doc.querySelector('meta[name="theme-color"]').getAttribute('content'), '#05060a')
+
+  btn.click()
+  await tick()
+  assert.equal(doc.documentElement.dataset.theme, 'light')
+  assert.equal(btn.textContent, '🌙')
+  assert.equal(doc.querySelector('meta[name="theme-color"]').getAttribute('content'), '#f4f6fa')
+  assert.equal(window.localStorage.getItem('naxlo-site-theme'), 'light')
+
+  // a returning visitor keeps the choice
+  const again = load('index.html', undefined, UA.win, (w) => {
+    w.localStorage.setItem('naxlo-site-theme', 'light')
+  })
+  assert.equal(again.window.document.documentElement.dataset.theme, 'light')
+  assert.equal(again.window.document.getElementById('theme-toggle').textContent, '🌙')
+
+  const css = readFileSync(join(root, 'website', 'styles.css'), 'utf8')
+  assert.ok(css.includes("[data-theme='light']"), 'no light palette')
+})
+
+test('theme: the toggle exists on every page', () => {
+  for (const file of ['index.html', 'speedtest.html', 'tools.html', 'changelog.html', '404.html']) {
+    const { window } = load(file)
+    assert.ok(window.document.getElementById('theme-toggle'), file + ' has no theme toggle')
+  }
+})
+
+test('speedtest: daily history shows the last seven days in local digits', async () => {
+  const key = (offset) => {
+    const d = new Date()
+    d.setHours(12, 0, 0, 0)
+    d.setDate(d.getDate() - offset)
+    return `${d.getFullYear()}-${`${d.getMonth() + 1}`.padStart(2, '0')}-${`${d.getDate()}`.padStart(2, '0')}`
+  }
+  const seed = [
+    { date: key(0), mbps: 210.5, at: Date.now() },
+    { date: key(0), mbps: 340.25, at: Date.now() },
+    { date: key(2), mbps: 88, at: Date.now() - 2 * 86400000 },
+    { date: key(9), mbps: 500, at: Date.now() - 9 * 86400000 }
+  ]
+  const { window } = load('speedtest.html', undefined, UA.win, (w) => {
+    w.localStorage.setItem('naxlo-speed-history', JSON.stringify(seed))
+  })
+  const doc = window.document
+  const panel = doc.getElementById('st-history')
+  const grid = doc.getElementById('st-history-grid')
+  assert.equal(panel.hidden, false)
+  assert.equal(grid.children.length, 7)
+  // the best of today wins over the earlier sample, in Persian digits
+  const last = grid.children[6]
+  assert.equal(last.querySelector('b').textContent, '۳۴۰٫۳')
+  // two days ago is the fifth column (oldest first), empty days render a dash,
+  // and a sample outside the seven-day window is dropped
+  assert.equal(grid.children[4].querySelector('b').textContent, '۸۸٫۰')
+  assert.equal(grid.children[3].querySelector('b').textContent, '—')
+  assert.ok(!grid.textContent.includes('۵۰۰'))
+
+  doc.getElementById('lang-en').click()
+  await tick()
+  assert.equal(grid.children[6].querySelector('b').textContent, '340.3')
+  assert.match(panel.querySelector('h3').textContent, /seven days/i)
+
+  doc.getElementById('st-history-clear').click()
+  await tick()
+  assert.equal(panel.hidden, true)
+  assert.equal(window.localStorage.getItem('naxlo-speed-history'), null)
+})
+
+test('speedtest: the history panel stays hidden for a first-time visitor', () => {
+  const { window } = load('speedtest.html')
+  assert.equal(window.document.getElementById('st-history').hidden, true)
 })
 
 let failed = 0

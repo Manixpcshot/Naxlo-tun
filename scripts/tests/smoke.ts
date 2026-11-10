@@ -32,6 +32,9 @@ import { WINTUN_VERSION, WINTUN_ZIP_SHA256, WINTUN_ZIP_URL } from '../../src/mai
 import { GEO_FILES, GEOIP_URL, GEOSITE_URL, geoAssetLocation, needsGeoAssets } from '../../src/main/lib/xray/geo'
 import { strToU8, zipSync } from 'fflate'
 import { pickBestServer } from '../../src/main/lib/autoselect'
+import { inspectLink, LINK_NETWORK_ALIASES, LINK_SECURITY_ALIASES } from '../../src/shared/linkcheck'
+import { aggregateStats, summarizeToday } from '../../src/shared/stats'
+import type { SessionStat, SpeedSample } from '../../src/shared/types'
 import type { ServerConfig } from '../../src/shared/types'
 
 let passed = 0
@@ -620,6 +623,171 @@ test('every static main-process L() string has a Turkish translation', () => {
   }
   assert.ok(checked >= 70, `expected to scan most L() calls, saw ${checked}`)
   assert.deepEqual(missing, [], 'strings without Turkish coverage')
+})
+
+/* ------------------------------------------------------- config inspector */
+
+test('inspectLink accepts a valid vless reality link', () => {
+  const link =
+    'vless://11111111-2222-3333-4444-555555555555@1.2.3.4:443?encryption=none&security=reality&pbk=Zk3nQ7vT1mXp9wLcRbYdFgHsJaKeMiNoPqRsTuVwXyZ&sni=www.microsoft.com&type=tcp&flow=xtls-rprx-vision#IR%20Tehran'
+  const report = inspectLink(link)
+  assert.ok(report.ok, JSON.stringify(report.issues))
+  assert.equal(report.protocol, 'vless')
+  const byKey = new Map(report.fields.map((f) => [f.key, f.value]))
+  assert.equal(byKey.get('address'), '1.2.3.4')
+  assert.equal(byKey.get('port'), '443')
+  assert.equal(byKey.get('name'), 'IR Tehran')
+  assert.equal(byKey.get('network'), 'tcp')
+  assert.equal(byKey.get('security'), 'reality')
+  assert.equal(byKey.get('flow'), 'xtls-rprx-vision')
+  // a long credential is cut in the middle, never rendered in full
+  assert.equal(byKey.get('uuid'), '11111…5555')
+  assert.deepEqual(
+    report.issues.map((i) => i.level),
+    []
+  )
+})
+
+test('inspectLink flags a bad host, port and uuid', () => {
+  const report = inspectLink('vless://not-a-uuid@999.1.1.1:99999?security=tls&type=ws')
+  assert.equal(report.ok, false)
+  const codes = report.issues.map((i) => i.text.en)
+  assert.ok(codes.some((c) => c.includes('UUID is not valid')), codes.join(' | '))
+  assert.ok(codes.some((c) => c.includes('Invalid port')), codes.join(' | '))
+  assert.equal(report.ok, false)
+  assert.equal(report.fields.find((f) => f.key === 'address')?.value, '999.1.1.1')
+})
+
+test('inspectLink rejects an unknown scheme and an empty paste', () => {
+  assert.equal(inspectLink('').protocol, null)
+  assert.ok(inspectLink('   ').issues.some((i) => i.text.en === 'Nothing was entered'))
+  assert.ok(inspectLink('https://example.com/sub').issues.some((i) => i.text.en.includes('are supported')))
+  assert.equal(inspectLink('https://example.com/sub').protocol, 'https')
+})
+
+test('inspectLink masks credentials in every reported field', () => {
+  const report = inspectLink(
+    'vless://11111111-2222-3333-4444-555555555555@1.2.3.4:443?security=reality&pbk=SuperSecretPublicKeyValue&type=tcp&flow=xtls-rprx-vision&sni=cdn.example-microsoft.org'
+  )
+  const blob = report.fields.map((f) => f.value).join(' ')
+  assert.ok(!blob.includes('11111111-2222-3333-4444-555555555555'), blob)
+  assert.ok(!blob.includes('SuperSecretPublicKeyValue'), blob)
+  assert.ok(!blob.includes('cdn.example-microsoft.org'), blob)
+  assert.ok(blob.includes('cdn.e….org'), blob)
+  assert.ok(blob.includes('…'), blob)
+})
+
+test('inspectLink parses vmess base64 and ss links', () => {
+  const vmess = {
+    v: '2',
+    ps: 'vmess node',
+    add: '4.5.6.7',
+    port: '443',
+    id: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
+    net: 'ws',
+    tls: 'tls',
+    sni: 'cdn.example.com'
+  }
+  const encoded = Buffer.from(JSON.stringify(vmess)).toString('base64')
+  const report = inspectLink('vmess://' + encoded)
+  assert.ok(report.ok, JSON.stringify(report.issues))
+  assert.equal(report.protocol, 'vmess')
+  assert.ok(report.fields.some((f) => f.key === 'network' && f.value === 'ws'))
+  assert.ok(report.fields.some((f) => f.key === 'name' && f.value === 'vmess node'))
+  assert.equal(report.fields.find((f) => f.key === 'address')?.value, '4.5.6.7')
+
+  const ss = inspectLink('ss://Y2hhY2hhMjAtaWV0Zi1wb2x5MTMwNTprZXk=@9.9.9.9:8388#ss-node')
+  assert.equal(ss.protocol, 'ss')
+  assert.ok(ss.ok, JSON.stringify(ss.issues))
+  assert.ok(ss.fields.some((f) => f.key === 'name' && f.value === 'ss-node'))
+  assert.equal(ss.fields.find((f) => f.key === 'method')?.value, 'chacha20-ietf-poly1305')
+})
+
+test('inspectLink warns about tls without sni and grpc without serviceName', () => {
+  const tls = inspectLink(
+    'trojan://pass@2.3.4.5:443?security=tls&type=tcp#trojan-1'
+  )
+  assert.ok(tls.ok, JSON.stringify(tls.issues))
+  assert.ok(
+    tls.issues.some((i) => i.level === 'warning' && i.text.en.toLowerCase().includes('sni')),
+    tls.issues.map((i) => i.text.en).join(' | ')
+  )
+  assert.equal(tls.fields.find((f) => f.key === 'security')?.value, 'tls')
+  assert.ok(tls.fields.some((f) => f.key === 'password'))
+
+  const grpc = inspectLink(
+    'vless://11111111-2222-3333-4444-555555555555@2.3.4.5:443?security=tls&type=grpc&sni=example.org#grpc-1'
+  )
+  assert.ok(
+    grpc.issues.some((i) => i.text.en.includes('serviceName')),
+    grpc.issues.map((i) => i.text.en).join(' | ')
+  )
+})
+
+test('inspectLink handles ipv6 hosts and keeps the alias tables in sync with the website', () => {
+  const report = inspectLink(
+    'vless://11111111-2222-3333-4444-555555555555@[2001:db8::1]:443?security=none&type=tcp#ipv6'
+  )
+  assert.ok(report.ok, JSON.stringify(report.issues))
+  assert.equal(report.fields.find((f) => f.key === 'address')?.value, '2001:db8::1')
+  assert.equal(report.fields.find((f) => f.key === 'port')?.value, '443')
+  // the website validator advertises exactly the same alias tables
+  assert.equal(LINK_NETWORK_ALIASES.grpc, 'grpc')
+  assert.equal(LINK_SECURITY_ALIASES.reality, 'reality')
+  const website = readFileSync(resolve(process.cwd(), 'website/app.js'), 'utf8')
+  for (const [alias, canonical] of [...Object.entries(LINK_NETWORK_ALIASES), ...Object.entries(LINK_SECURITY_ALIASES)]) {
+    if (!alias) continue
+    assert.ok(website.includes(`${alias}: '${canonical}'`) || website.includes(`'${alias}'`), `website alias missing: ${alias}`)
+  }
+})
+
+/* ---------------------------------------------------------- daily summary */
+
+const DAY = 24 * 60 * 60 * 1000
+
+test('summarizeToday sums open and closed sessions of the current calendar day', () => {
+  const now = new Date('2026-02-03T18:00:00Z').getTime()
+  const sessions: SessionStat[] = [
+    { serverId: 'a', serverName: 'A', country: 'IR', mode: 'proxy', startedAt: now - 2 * 60 * 60 * 1000, endedAt: now - 90 * 60 * 1000, reason: 'manual' },
+    { serverId: 'b', serverName: 'B', country: 'DE', mode: 'tun', startedAt: now - 30 * 60 * 1000, endedAt: 0, reason: null },
+    { serverId: 'c', serverName: 'C', country: 'NL', mode: 'proxy', startedAt: now - 2 * DAY, endedAt: now - 2 * DAY + 5 * 60 * 1000, reason: 'manual' }
+  ]
+  const summary = summarizeToday(sessions, [], now)
+  assert.equal(summary.date, '2026-02-03')
+  assert.equal(summary.sessions, 2)
+  // 30 min closed earlier today + 30 min still running
+  assert.equal(summary.minutes, 60)
+  assert.equal(summary.yesterdayMinutes, 0)
+  assert.equal(summary.deltaPercent, null)
+  assert.equal(summary.bestMbps, null)
+  assert.equal(summary.speedSamples, 0)
+})
+
+test('summarizeToday reports best and average speed of today only', () => {
+  const now = new Date('2026-02-03T18:00:00Z').getTime()
+  const speed: SpeedSample[] = [
+    { at: now - 3600 * 1000, mbps: 120.4, ms: 1800 },
+    { at: now - 1800 * 1000, mbps: 340.8, ms: 420 },
+    { at: now - 2 * DAY, mbps: 999, ms: 100 }
+  ]
+  const summary = summarizeToday([], speed, now)
+  assert.equal(summary.bestMbps, 340.8)
+  assert.equal(summary.avgMbps, 230.6)
+  assert.equal(summary.speedSamples, 2)
+})
+
+test('summarizeToday compares against the previous day', () => {
+  const now = new Date('2026-02-03T18:00:00Z').getTime()
+  const sessions: SessionStat[] = [
+    { serverId: 'a', serverName: 'A', country: 'IR', mode: 'proxy', startedAt: now - 60 * 60 * 1000, endedAt: now, reason: 'manual' },
+    { serverId: 'b', serverName: 'B', country: 'IR', mode: 'proxy', startedAt: now - DAY - 2 * 60 * 60 * 1000, endedAt: now - DAY, reason: 'manual' }
+  ]
+  const summary = summarizeToday(sessions, [], now)
+  assert.equal(summary.minutes, 60)
+  assert.equal(summary.yesterdayMinutes, 120)
+  assert.equal(summary.deltaPercent, -50)
+  const days = aggregateStats(sessions, 3, now)
+  assert.equal(days.daily[days.daily.length - 1].date, summary.date)
 })
 
 /* ------------------------------------------------------------------ report */

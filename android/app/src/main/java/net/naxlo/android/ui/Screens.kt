@@ -37,7 +37,6 @@ import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -48,11 +47,19 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedButton
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.net.VpnService
+import android.os.Build
 import androidx.compose.material3.OutlinedTextField
+import androidx.core.content.ContextCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -81,6 +88,7 @@ import java.util.Locale
 
 /* ------------------------------------------------------------------ shell */
 
+@Suppress("DEPRECATION") // Window.statusBarColor: ignored on API 35+, still used below it
 @Composable
 fun AppShell() {
     var tab by remember { mutableStateOf(0) }
@@ -133,7 +141,21 @@ fun AppShell() {
         )
     }
 
-    NaxloTheme {
+    // Day mode also flips the system bars, otherwise light icons sit on a
+    // light background. statusBarColor is ignored on API 35+ (edge-to-edge),
+    // but the appearance flags still control icon contrast.
+    val day = state.theme == "light"
+    LaunchedEffect(day) {
+        val window = (context as? Activity)?.window ?: return@LaunchedEffect
+        window.statusBarColor = if (day) 0xFFF4F6FA.toInt() else 0xFF050505.toInt()
+        window.navigationBarColor = if (day) 0xFFFFFFFF.toInt() else 0xFF050505.toInt()
+        WindowInsetsControllerCompat(window, window.decorView).apply {
+            isAppearanceLightStatusBars = day
+            isAppearanceLightNavigationBars = day
+        }
+    }
+
+    NaxloTheme(day = day) {
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
             bottomBar = {
@@ -167,6 +189,58 @@ fun AppShell() {
     }
 }
 
+/* ------------------------------------------------------- vpn connect flow */
+
+/** Starts the tunnel service; the caller must already hold VPN consent. */
+private fun startTunnel(context: Context, serverId: String?) {
+    val intent = Intent(context, NaxloVpnService::class.java).setAction(NaxloVpnService.ACTION_CONNECT)
+    if (serverId != null) intent.putExtra(NaxloVpnService.EXTRA_SERVER_ID, serverId)
+    ContextCompat.startForegroundService(context, intent)
+}
+
+/**
+ * Returns a `connect(serverId)` action that walks the two system prompts the
+ * tunnel needs before it can start:
+ *  - the Android 13+ notification permission (the foreground-service notice),
+ *  - [VpnService.prepare], whose dialog the user must accept once — without it
+ *    `Builder.establish()` returns null and every connect attempt fails.
+ * Denying either shows a localised error instead of a broken tunnel.
+ */
+@Composable
+fun rememberVpnConnect(): (String?) -> Unit {
+    val context = LocalContext.current
+    var pendingServer by remember { mutableStateOf<String?>(null) }
+
+    val vpnLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val serverId = pendingServer
+        pendingServer = null
+        if (result.resultCode == Activity.RESULT_OK) {
+            startTunnel(context, serverId)
+        } else {
+            AppState.setConnection(ConnectionState.ERROR, context.getString(R.string.vpn_denied))
+        }
+    }
+
+    val notificationLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        val serverId = pendingServer
+        val consent = VpnService.prepare(context)
+        if (consent == null) startTunnel(context, serverId) else vpnLauncher.launch(consent)
+    }
+
+    return { serverId ->
+        pendingServer = serverId
+        val needsNotification = Build.VERSION.SDK_INT >= 33 &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+            PackageManager.PERMISSION_GRANTED
+        if (needsNotification) {
+            notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            val consent = VpnService.prepare(context)
+            if (consent == null) startTunnel(context, serverId) else vpnLauncher.launch(consent)
+        }
+    }
+}
+
 /* ------------------------------------------------------------------- home */
 
 @Composable
@@ -177,6 +251,7 @@ fun HomeScreen(hasServers: Boolean) {
     val error by AppState.error.collectAsState()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val connect = rememberVpnConnect()
 
     val connected = connection == ConnectionState.CONNECTED
     val accent = MaterialTheme.colorScheme.primary
@@ -229,13 +304,12 @@ fun HomeScreen(hasServers: Boolean) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Button(
                 onClick = {
-                    val intent = Intent(context, NaxloVpnService::class.java)
-                    intent.action = if (connected) NaxloVpnService.ACTION_DISCONNECT else NaxloVpnService.ACTION_CONNECT
                     if (connected) {
-                        context.startService(intent)
+                        context.startService(
+                            Intent(context, NaxloVpnService::class.java).setAction(NaxloVpnService.ACTION_DISCONNECT)
+                        )
                     } else {
-                        intent.putExtra(NaxloVpnService.EXTRA_SERVER_ID, Repo.state.selectedServerId)
-                        context.startForegroundService(intent)
+                        connect(Repo.state.selectedServerId)
                     }
                 },
                 enabled = hasServers || connected,
@@ -273,7 +347,9 @@ fun ServersScreen() {
     val state = remember(revision) { Repo.state }
     var query by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current
+    // Same consent flow as the Home screen: notification permission, then the
+    // system VPN dialog, then the foreground service.
+    val connect = rememberVpnConnect()
 
     val servers = state.servers
         .filter { query.isEmpty() || it.name.contains(query, true) }
@@ -302,11 +378,7 @@ fun ServersScreen() {
                         }
                         "connect" -> {
                             Repo.select(server.id)
-                            context.startForegroundService(
-                                Intent(context, NaxloVpnService::class.java)
-                                    .setAction(NaxloVpnService.ACTION_CONNECT)
-                                    .putExtra(NaxloVpnService.EXTRA_SERVER_ID, server.id)
-                            )
+                            connect(server.id)
                         }
                     }
                 }
@@ -560,6 +632,24 @@ fun SettingsScreen(context: android.content.Context) {
                 }
             }
         }
+
+        Spacer(Modifier.height(4.dp))
+        Text(stringResource(R.string.theme), fontWeight = FontWeight.Bold)
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            listOf("dark" to R.string.theme_night, "light" to R.string.theme_day).forEach { (mode, label) ->
+                OutlinedButton(
+                    onClick = { Repo.setTheme(mode) },
+                    border = BorderStroke(1.dp, if (state.theme == mode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline)
+                ) {
+                    Text(stringResource(label))
+                }
+            }
+        }
+        Text(
+            stringResource(R.string.theme_hint),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 11.sp
+        )
 
         Spacer(Modifier.height(4.dp))
         Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {

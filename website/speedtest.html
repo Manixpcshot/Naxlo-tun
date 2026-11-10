@@ -32,6 +32,7 @@
       <button id="lang-fa" class="on">فا</button>
       <button id="lang-en">EN</button>
     </div>
+    <button class="themebtn" id="theme-toggle" aria-label="theme">☀️</button>
     <button class="burger" id="burger" aria-label="menu">☰</button>
     <a class="gh-btn" href="/" data-i18n="st_back">بازگشت به خانه</a>
   </div>
@@ -76,6 +77,12 @@
       <button class="btn btn-primary" id="st-btn" data-i18n="st_start">شروع تست</button>
     </div>
     <p class="test-log" id="st-log"></p>
+    <div class="history" id="st-history" hidden>
+      <h3 data-i18n="st_hist_title">هفت روز اخیر روی این دستگاه</h3>
+      <div class="history__grid" id="st-history-grid"></div>
+      <button class="btn btn-ghost" id="st-history-clear" data-i18n="st_hist_clear">پاک کردن تاریخچه</button>
+    </div>
+
     <p style="color:var(--text-mute); font-size:12.5px; margin-top:6px">
       <span data-i18n="st_note">منبع‌ها به ترتیب: همین سایت (فایل استاتیک + مولد on-demand)، Cloudflare و آینهٔ tele2:</span>
       <code class="file">/speedtest.bin</code>

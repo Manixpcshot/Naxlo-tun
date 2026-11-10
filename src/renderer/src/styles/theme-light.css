@@ -1,0 +1,165 @@
+/* ============================================================
+   Naxlo — day (light) theme
+   Opt-in from Settings; `dark` stays the default so the shipped
+   look remains the near-black design. Every literal dark surface
+   in the other sheets gets a light counterpart here — imported
+   last so it also wins over the accent blocks.
+   ============================================================ */
+
+[data-theme='light'] {
+  /* Base */
+  --bg: #f4f6fa;
+  --bg-deep: #e8ecf3;
+  --bg-elevated: #ffffff;
+  --surface: rgba(15, 23, 42, 0.045);
+  --surface-hover: rgba(15, 23, 42, 0.075);
+  --surface-active: rgba(15, 23, 42, 0.11);
+  --border: rgba(15, 23, 42, 0.1);
+  --border-strong: rgba(15, 23, 42, 0.2);
+
+  /* Type */
+  --text: #10151f;
+  --text-dim: #4a5568;
+  --text-mute: #71809a;
+
+  /* Accents: the bright hue is unreadable as text on white, so day mode
+     paints with the deep variant of whichever accent the user picked. The
+     soft tints stay bright — a 13% wash reads as a pale tint on light. */
+  --accent: var(--accent-dim);
+  --accent-strong: var(--accent-dim);
+  --accent-glow: rgba(15, 23, 42, 0.18);
+
+  /* Semantic colours need their deep variants for the same reason */
+  --success: #0f9d6e;
+  --warning: #b4761a;
+  --danger: #c53030;
+
+  /* Elevation */
+  --shadow-1: 0 1px 2px rgba(15, 23, 42, 0.1);
+  --shadow-2: 0 8px 24px rgba(15, 23, 42, 0.12);
+  --shadow-3: 0 24px 64px rgba(15, 23, 42, 0.18);
+
+  color-scheme: light;
+}
+
+/* App shell washes ----------------------------------------- */
+[data-theme='light'] .app {
+  background:
+    radial-gradient(1200px 700px at 85% -10%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 60%),
+    radial-gradient(900px 600px at 10% 110%, rgba(15, 23, 42, 0.05), transparent 60%),
+    var(--bg);
+}
+
+[data-theme='light'] .titlebar {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.6));
+}
+
+[data-theme='light'] .sidebar {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.75), transparent 45%);
+}
+
+[data-theme='light'] .statusbar {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+/* Sheens that were white-on-black become dark-on-white ------ */
+[data-theme='light'] .btn__shine {
+  background: linear-gradient(110deg, transparent 20%, rgba(255, 255, 255, 0.75) 45%, transparent 70%);
+}
+
+[data-theme='light'] .badge,
+[data-theme='light'] .latency {
+  background: rgba(15, 23, 42, 0.05);
+}
+
+[data-theme='light'] .switch {
+  background: rgba(15, 23, 42, 0.14);
+}
+
+[data-theme='light'] .progress {
+  background: rgba(15, 23, 42, 0.09);
+}
+
+[data-theme='light'] .progress__bar::after {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.85), transparent);
+}
+
+[data-theme='light'] .skeleton {
+  background: linear-gradient(90deg, rgba(15, 23, 42, 0.05), rgba(15, 23, 42, 0.1), rgba(15, 23, 42, 0.05));
+}
+
+[data-theme='light'] .empty,
+[data-theme='light'] .usage__cell {
+  background: rgba(15, 23, 42, 0.03);
+}
+
+/* Sunken panels (inputs, logs, endpoints) invert ------------ */
+[data-theme='light'] .input {
+  background: rgba(255, 255, 255, 0.85);
+}
+
+[data-theme='light'] .input:focus {
+  background: #ffffff;
+}
+
+[data-theme='light'] .segmented,
+[data-theme='light'] .endpoint,
+[data-theme='light'] .home-hero__spark {
+  background: rgba(15, 23, 42, 0.045);
+}
+
+[data-theme='light'] .loglist {
+  background: rgba(15, 23, 42, 0.05);
+  color: var(--text-dim);
+}
+
+[data-theme='light'] .modal {
+  background: linear-gradient(180deg, #ffffff, #f2f5fa);
+}
+
+[data-theme='light'] .server--selected {
+  background: linear-gradient(180deg, var(--accent-soft), rgba(255, 255, 255, 0.6));
+}
+
+/* Buttons keep their translucent accent fill (text stays accent-strong) */
+[data-theme='light'] .btn--primary,
+[data-theme='light'] .btn--primary:hover:not(:disabled) {
+  box-shadow: 0 6px 20px -14px var(--accent-glow), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+/* The animated grid behind the hero was white lines on black */
+[data-theme='light'] .aurora__grid {
+  background-image: linear-gradient(rgba(15, 23, 42, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.05) 1px, transparent 1px);
+  mask-image: radial-gradient(circle at 50% 40%, rgba(0, 0, 0, 0.55), transparent 72%);
+}
+
+/* The power disc reads as a light dial in day mode ---------- */
+[data-theme='light'] .power__disc {
+  background: radial-gradient(circle at 50% 22%, #ffffff, #e6ebf3 68%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -14px 30px rgba(15, 23, 42, 0.08),
+    var(--shadow-2);
+}
+
+[data-theme='light'] .power--on .power__disc {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 0 44px -14px var(--success), var(--shadow-2);
+}
+
+[data-theme='light'] .power--error .power__disc {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 0 40px -16px var(--danger), var(--shadow-2);
+}
+
+[data-theme='light'] .spinner {
+  border: 2px solid rgba(15, 23, 42, 0.16);
+  border-top-color: var(--accent);
+}
+
+[data-theme='light'] ::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.18);
+}
+
+[data-theme='light'] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(15, 23, 42, 0.3);
+}

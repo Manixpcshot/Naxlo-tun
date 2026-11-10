@@ -1248,10 +1248,17 @@ html[dir='ltr'] .modal__actions {
   padding: 10px 6px 30px;
 }
 
+/*
+ * The hero changes its copy constantly (Idle → Connected → Disconnect, in
+ * three languages of very different width). Reserving a fixed footprint for
+ * the title, the hint and the primary button keeps the action row — and
+ * everything below it — from jumping around while the state animates.
+ */
 .home-hero__title {
   font-size: 27px;
   font-weight: 800;
   letter-spacing: -0.015em;
+  min-height: 1.35em;
 }
 
 .home-hero__hint {
@@ -1260,6 +1267,7 @@ html[dir='ltr'] .modal__actions {
   margin-top: 6px;
   max-width: 56ch;
   line-height: 1.9;
+  min-height: 2.6em;
 }
 
 .home-hero__actions {
@@ -1268,6 +1276,15 @@ html[dir='ltr'] .modal__actions {
   gap: 10px;
   margin-top: 20px;
   flex-wrap: wrap;
+  min-height: 42px;
+}
+
+.home-hero__actions .btn {
+  min-width: 128px;
+}
+
+.home-hero__actions .btn--primary {
+  min-width: 172px;
 }
 
 @media (max-width: 900px) {
@@ -2140,4 +2157,168 @@ html[dir='ltr'] .logline {
 .speedwrap svg {
   max-width: 100%;
   height: auto;
+}
+
+
+/* ------------------------------------------------ narrow windows (mobile) */
+/* The desktop window can be dragged narrow and the Rust edition runs in
+   small splits, so below 860px the sidebar becomes an icon rail instead of
+   squeezing the content column. */
+@media (max-width: 860px) {
+  :root {
+    --sidebar-w: 66px;
+  }
+
+  .sidebar {
+    padding: 14px 8px;
+    align-items: center;
+  }
+
+  .sidebar__brand {
+    justify-content: center;
+  }
+
+  .sidebar__brand-text,
+  .sidebar__label,
+  .navitem__label,
+  .sidebar__footer,
+  .navitem .badge {
+    display: none;
+  }
+
+  .navitem {
+    justify-content: center;
+    gap: 0;
+    padding: 11px 0;
+    width: 44px;
+  }
+
+  .titlebar__tag,
+  .titlebar__hint,
+  .statusbar__item.mono {
+    display: none;
+  }
+
+  .pagehead {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .pagehead__actions {
+    width: 100%;
+  }
+}
+
+@media (max-width: 620px) {
+  .home-hero__actions .btn {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .home-hero__actions .btn--primary {
+    min-width: 0;
+  }
+
+  .substats {
+    grid-template-columns: 1fr;
+  }
+
+  .modal {
+    width: min(94vw, 520px);
+  }
+
+  .modal__actions .btn {
+    flex: 1 1 auto;
+  }
+}
+
+/* Tools page -------------------------------------------------- */
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+  margin-top: 4px;
+}
+
+.toolcard__input {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.8;
+  resize: vertical;
+  min-height: 92px;
+}
+
+.toolreport {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.toolchips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.toolchip {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  direction: ltr;
+}
+
+.toolqr {
+  display: grid;
+  place-items: center;
+  margin: 14px 0;
+  min-height: 232px;
+}
+
+.toolqr__img {
+  width: 220px;
+  height: 220px;
+  border-radius: var(--radius);
+  background: #fff;
+  padding: 10px;
+  box-shadow: var(--shadow-2);
+}
+
+.toolqr__empty {
+  display: grid;
+  place-items: center;
+  gap: 10px;
+  width: 220px;
+  height: 220px;
+  border-radius: var(--radius);
+  border: 1px dashed var(--border-strong);
+  color: var(--text-mute);
+  font-size: 12.5px;
+  text-align: center;
+  padding: 16px;
+}
+
+/* Today panel on the stats page: the same tile, nested inside a card */
+.stattile--inline {
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.stattile--inline .stattile__icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+}
+
+.stattile--inline .stattile__value {
+  font-size: 18px;
+}
+
+@media (max-width: 980px) {
+  .tools-grid {
+    grid-template-columns: 1fr;
+  }
 }

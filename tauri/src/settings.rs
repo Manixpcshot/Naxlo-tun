@@ -29,6 +29,8 @@ pub struct Settings {
     pub auto_failover: bool,
     pub log_level: String,
     pub accent: String,
+    /// `dark` (default, near-black) or `light` (day theme).
+    pub theme: String,
     pub reduce_motion: bool,
     pub core_path: Option<String>,
     pub xray_log_level: String,
@@ -57,6 +59,7 @@ impl Default for Settings {
             auto_failover: true,
             log_level: "info".into(),
             accent: "cyan".into(),
+            theme: "dark".into(),
             reduce_motion: false,
             core_path: None,
             xray_log_level: "warning".into(),
