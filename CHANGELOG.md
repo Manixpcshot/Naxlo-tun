@@ -6,6 +6,19 @@ All notable changes to Naxlo are documented here. Releases are cut per tag
 The format follows [Keep a Changelog](https://keepachangelog.com/) and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.15.1] - 2026-11-10
+
+### Fixed
+- **سایت: برای بازدیدکنندهٔ انگلیسی‌زبان کل جاوااسکریپت از کار می‌افتاد.** `applyLang()` هنگام بالاآمدن صفحه (وقتی زبان ذخیره‌شده `en` بود) قبل از مقداردهی ثابت‌های هم‌دامنه اجرا می‌شد و `renderReleases()` به `const relRoot` می‌رسید؛ نتیجه `ReferenceError: Cannot access 'relRoot' before initialization` بود که بقیهٔ اسکریپت را قطع می‌کرد — یعنی دکمهٔ پوسته، منوی همبرگری، اعتبارسنج، QR، گرید دانلود و صفحهٔ تغییرات برای کسی که یک بار انگلیسی را انتخاب کرده بود کار نمی‌کردند (باگ از قبل وجود داشت و فقط در «بازدید مجدد با زبان ذخیره‌شده» ظاهر می‌شد، برای همین تست‌های قبلی که بعد از بارگذاری کلیک می‌کردند آن را نمی‌دیدند). حالا بخش boot به انتهای دامنه منتقل شده تا همهٔ ثابت‌ها مقدار گرفته باشند.
+- **Website: the whole script died for returning English visitors.** At boot, when the saved language was `en`, `applyLang()` ran before the consts in its own scope were initialised, so `renderReleases()` hit `const relRoot` and threw `ReferenceError: Cannot access 'relRoot' before initialization` — aborting the rest of app.js. The theme toggle, burger menu, validator, QR, download grid and changelog therefore never wired up for anyone who had picked English once (the bug pre-dates this release and only showed on a *return* visit with a stored language, which is why the existing tests — they click after load — never saw it). The boot block now runs last, after every const exists.
+- **سایت: برچسب دسترسی دکمهٔ پوسته با تعویض زبان به‌روز می‌ماند.** زبان پیش‌فرض فارسی است، پس `aria-label`/`title` دکمهٔ ☀️/🌙 فارسی ساخته می‌شد («حالت روز») و بعد از تعویض به انگلیسی همان برچسب فارسی می‌ماند — یک متن فارسی در حالت انگلیسی (در درخت دسترس‌پذیری). حالا با هر تعویض زبان برچسب هم بازسازی می‌شود، و این بازسازی طوری گارد شده که انتخاب «روز» کاربر را در نخستین اجرا با «شب» جایگزین نکند. / **Website: the theme toggle's accessibility label stayed behind on language switch.** Persian is the default, so the ☀️/🌙 button's `aria-label`/`title` was built in Persian and remained Persian after switching to English — a Persian string in English mode (in the accessibility tree). Every language switch now rebuilds the label, guarded so it cannot overwrite a saved day-theme choice during the first paint.
+
+### Added
+- **۳ تست DOM جدید** که هر دو باگ را قفل می‌کنند: برچسب دکمهٔ پوسته با تعویض زبان، ماندگاری پوستهٔ روز در بارگذاری نخست با زبان انگلیسی، و «بازدیدکنندهٔ انگلیسی‌زبانِ بازگشتی صفحهٔ کاملاً سیم‌کشی‌شده می‌گیرد» (اعتبارسنج + منوی همبرگری + پوسته). جمعاً **۷۴ تست**. / **3 new DOM tests** locking both bugs: the toggle label following the language switch, a saved day theme surviving an English first paint, and "a returning English visitor gets a fully wired page" (validator + burger menu + theme). **74 tests** in total.
+
+### Changed
+- اندروید: versionCode 2106 و versionName 1.15.1. / Android bumped to versionCode 2106 / versionName 1.15.1.
+
 ## [1.15.0] - 2026-11-10
 
 ### Fixed
