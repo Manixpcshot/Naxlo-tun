@@ -1,10 +1,10 @@
 # Naxlo 1.15.2 — باگ‌گیری کامل / full bug-hunt release
 
 یک دور کامل باگ‌گیری روی همهٔ کلاینت‌ها (Electron، Rust/Tauri، اندروید) و وب‌سایت:
-۱۰ باگ واقعی پیدا و درست شد، با ۱۰ تست جدید که هرکدام را قفل می‌کند.
+۱۱ باگ واقعی پیدا و درست شد، با ۱۰ تست جدید که هرکدام را قفل می‌کند.
 
 A full bug-hunt across every client (Electron, Rust/Tauri, Android) and the website:
-10 real defects found and fixed, each locked down by a new test.
+11 real defects found and fixed, each locked down by a new test.
 
 ---
 
@@ -54,6 +54,11 @@ query (`?path=/@ws`) دیگر جداکننده حساب نمی‌شود (پیش�
 ### ۸. اندروید: متن تنظیمات با TUN واقعی تناقض داشت
 تنظیمات هنوز می‌گفت «بدون TUN سیستمی» و پورت‌های `127.0.0.1:10808/10809` را نشان
 می‌داد که کلاینت VPN اصلاً بازشان نمی‌کند. متن‌ها در هر سه زبان بازنویسی شد.
+
+### ۱۰. CI: دارایی‌های انتشار با یک خطای گذرا از دست نمی‌روند
+کار آپلود `naxlo-website.zip` چند ثانیه بعد از تگ تمام می‌شود؛ یک قطعیِ
+`uploads.github.com` کل انتشار را بدون zip سایت می‌گذاشت. هر دو مرحلهٔ آپلود حالا
+تا چند بار با فاصلهٔ ۲۰ ثانیه تلاش مجدد می‌کنند.
 
 ### ۹. یک باگ در خود تست‌ها
 بررسی پوشش ترکی گروه اشتباه regex را می‌خواند (`match[6]` به‌جای `match[7]`)، پس
@@ -112,6 +117,11 @@ pseudo-elements had been inverted), i.e. white on white. Now darkened.
 ### 8. Android: settings copy contradicted the real tunnel
 The screen still claimed "No system TUN" and advertised `127.0.0.1:10808/10809` ports that
 the VPN client never opens. Rewritten in all three languages.
+
+### 10. CI: a transient upload error no longer costs the release assets
+The job that attaches `naxlo-website.zip` finishes seconds after the tag push; one dropped
+`uploads.github.com` connection used to leave the release without the site zip. Both upload
+steps now retry a few times, 20 s apart.
 
 ### 9. A bug in the tests themselves
 The Turkish-coverage scanner read the wrong regex group (`match[6]` instead of `match[7]`),
