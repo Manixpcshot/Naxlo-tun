@@ -61,7 +61,16 @@ jobs:
               --notes-file "$NOTES" \
               --draft=false --prerelease=false
           fi
-          gh release upload "$TAG" release/*.exe release/latest.yml --clobber
+          # uploads.github.com hiccups from time to time; one failed attempt
+          # must not cost the whole release, so retry before giving up.
+          for attempt in 1 2 3 4 5 6; do
+            if gh release upload "$TAG" release/*.exe release/latest.yml --clobber; then
+              exit 0
+            fi
+            echo "asset upload failed (attempt ${attempt}/6) — retrying in 20s"
+            sleep 20
+          done
+          exit 1
 
   website-zip:
     name: Attach website deployment zip
@@ -81,7 +90,18 @@ jobs:
       - name: Upload to the release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "${GITHUB_REF_NAME}" naxlo-website.zip --repo "${GITHUB_REPOSITORY}" --clobber
+        run: |
+          # This job finishes seconds after the tag push, so it can reach the
+          # upload before the release exists — and uploads.github.com drops
+          # connections occasionally. Retry instead of failing the release.
+          for attempt in 1 2 3 4 5 6 7 8 9; do
+            if gh release upload "${GITHUB_REF_NAME}" naxlo-website.zip --repo "${GITHUB_REPOSITORY}" --clobber; then
+              exit 0
+            fi
+            echo "website zip upload failed (attempt ${attempt}/9) — retrying in 20s"
+            sleep 20
+          done
+          exit 1
 
   checksums:
     name: Publish SHA-256 checksums
