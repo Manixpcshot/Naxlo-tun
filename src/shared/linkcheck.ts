@@ -236,7 +236,12 @@ export function inspectLink(raw: string): LinkInspection {
   }
 
   if (scheme === 'vless' || scheme === 'trojan') {
-    const at = main.indexOf('@')
+    // Cut the credential at the LAST '@' before the query: a trojan password
+    // may contain one (`trojan://p@ss@host:443`), while a query may carry an
+    // unencoded '@' (`?path=/@ws`). Same rule as the app's parser.
+    const queryAt = main.indexOf('?')
+    const authorityPart = queryAt >= 0 ? main.slice(0, queryAt) : main
+    const at = authorityPart.lastIndexOf('@')
     if (at < 0) {
       push({
         level: 'error',
@@ -244,8 +249,8 @@ export function inspectLink(raw: string): LinkInspection {
       })
       return { ok: false, protocol: scheme, fields, issues }
     }
-    const credential = main.slice(0, at)
-    const rest = main.slice(at + 1)
+    const credential = authorityPart.slice(0, at)
+    const authority = authorityPart.slice(at + 1)
     if (scheme === 'vless') {
       fields.push({ key: 'uuid', value: display(credential) })
       if (!UUID_RE.test(credential)) {
@@ -256,9 +261,8 @@ export function inspectLink(raw: string): LinkInspection {
     } else {
       fields.push({ key: 'password', value: display(credential) })
     }
-    const query = rest.indexOf('?')
-    const params = new URLSearchParams(query >= 0 ? rest.slice(query + 1) : '')
-    readAuthority(query >= 0 ? rest.slice(0, query) : rest, fields, push)
+    const params = new URLSearchParams(queryAt >= 0 ? main.slice(queryAt + 1) : '')
+    readAuthority(authority, fields, push)
     readTransport(params, fields, push, scheme === 'vless' ? 'none' : 'tls')
     if (scheme === 'vless' && params.get('security') === 'tls' && (params.get('type') ?? 'tcp') === 'tcp' && !params.get('flow')) {
       push({

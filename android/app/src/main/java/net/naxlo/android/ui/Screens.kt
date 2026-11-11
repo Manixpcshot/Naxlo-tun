@@ -614,7 +614,7 @@ fun SettingsScreen(context: android.content.Context) {
 
     Column(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Text(stringResource(R.string.settings_ports), fontWeight = FontWeight.Bold)
-        Text(stringResource(R.string.ports_value, 10808, 10809), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+        Text(stringResource(R.string.ports_value), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
         Text(stringResource(R.string.no_tun_note), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
 
         Spacer(Modifier.height(4.dp))

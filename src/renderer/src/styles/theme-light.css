@@ -163,3 +163,8 @@
 [data-theme='light'] ::-webkit-scrollbar-thumb:hover {
   background: rgba(15, 23, 42, 0.3);
 }
+
+/* Firefox reads `scrollbar-color`, not the webkit pseudo-elements --------- */
+[data-theme='light'] * {
+  scrollbar-color: rgba(15, 23, 42, 0.24) transparent;
+}

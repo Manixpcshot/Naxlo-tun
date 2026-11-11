@@ -307,9 +307,32 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
   })
 
   /* ---------------------------------------------------------- settings */
+
+  /**
+   * Rebuild the tunnel after a setting the running core cannot pick up live
+   * (routing mode, local ports). Debounced on purpose: the port fields patch
+   * the settings on every keystroke, and each rebuild costs a full
+   * disconnect + reconnect cycle.
+   */
+  let reconnectTimer: NodeJS.Timeout | null = null
+  const scheduleReconnect = (reason: string, message: LString): void => {
+    if (reconnectTimer) clearTimeout(reconnectTimer)
+    reconnectTimer = setTimeout(() => {
+      reconnectTimer = null
+      if (!manager.isConnected) return
+      log.info(SCOPE, `${reason} while connected — rebuilding the tunnel`)
+      toast('info', L('اعمال دوبارهٔ اتصال', 'Reconnecting'), message)
+      void manager
+        .disconnect(reason)
+        .then(() => manager.connect())
+        .catch((err) => log.error(SCOPE, `reconnect after ${reason} failed`, err))
+    }, 900)
+  }
+
   handle(IPC.settingsGet, () => getSettings())
   handle(IPC.settingsSet, async (patch: Partial<Settings>) => {
-    const previousMode = getSettings().connectionMode
+    const previous = getSettings()
+    const previousMode = previous.connectionMode
     const next = updateSettings(patch)
     setLogLevel(next.logLevel)
     applyAutoStart(next.autoStart)
@@ -320,18 +343,31 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
     })
     manager.scheduleAutoRefresh()
     // Switching proxy ↔ TUN while connected must rebuild the tunnel, or the
-    // running core keeps the old (wrong) routing mode.
-    if (patch.connectionMode && patch.connectionMode !== previousMode && manager.isConnected) {
-      log.info(SCOPE, `connection mode changed to ${patch.connectionMode} — reconnecting`)
-      toast(
-        'info',
-        L('اعمال دوبارهٔ اتصال', 'Reconnecting'),
-        L('حالت اتصال تغییر کرد؛ تونل با تنظیمات جدید برقرار می‌شود.', 'The connection mode changed — the tunnel is being rebuilt.')
-      )
+    // running core keeps the old (wrong) routing mode. Moving the local
+    // SOCKS/HTTP ports is the same story: the core keeps listening on the
+    // ports it started with, so the UI would advertise ports nothing answers.
+    // Flipping the system-proxy switch while connected takes effect at once:
+    // only the OS proxy setting changes, the running core stays as it is.
+    if (patch.applySystemProxy !== undefined && next.applySystemProxy !== previous.applySystemProxy) {
       void manager
-        .disconnect('mode-changed')
-        .then(() => manager.connect())
-        .catch((err) => log.error(SCOPE, 'reconnect after mode change failed', err))
+        .refreshSystemProxy()
+        .catch((err) => log.warn(SCOPE, 'live system-proxy toggle failed', err))
+    }
+    const modeChanged = Boolean(patch.connectionMode) && next.connectionMode !== previousMode
+    const portsChanged = next.socksPort !== previous.socksPort || next.httpPort !== previous.httpPort
+    if ((modeChanged || portsChanged) && manager.isConnected) {
+      scheduleReconnect(
+        modeChanged ? 'mode-changed' : 'ports-changed',
+        modeChanged
+          ? L(
+              'حالت اتصال تغییر کرد؛ تونل با تنظیمات جدید برقرار می‌شود.',
+              'The connection mode changed — the tunnel is being rebuilt.'
+            )
+          : L(
+              'پورت‌های محلی تغییر کرد؛ تونل با پورت‌های جدید برقرار می‌شود.',
+              'The local ports changed — the tunnel is being rebuilt on the new ports.'
+            )
+      )
     }
     return next
   })

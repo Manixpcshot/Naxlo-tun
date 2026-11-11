@@ -410,6 +410,36 @@ class XrayManager {
     }
   }
 
+  /**
+   * The "apply system proxy" switch was flipped while the tunnel is up: apply
+   * or release the Windows proxy right away instead of waiting for the next
+   * connect. The running core itself does not change.
+   */
+  async refreshSystemProxy(): Promise<void> {
+    if (!this.isConnected) return
+    const settings = getSettings()
+    if (settings.applySystemProxy && settings.connectionMode !== 'tun') {
+      try {
+        await applySystemProxy(settings.listenAddress, settings.httpPort)
+        patchState({ systemProxyApplied: true })
+        log.info(SCOPE, 'system proxy applied after the live toggle')
+      } catch (err) {
+        log.warn(SCOPE, 'system proxy could not be applied — staying in manual mode', err)
+        toast(
+          'warning',
+          L('پروکسی سیستم تنظیم نشد', 'System proxy could not be applied'),
+          L(
+            'پروکسی محلی فعال است؛ می‌توانید دستی روی پورت HTTP تنظیم کنید.',
+            'The local proxy is running — you can point apps at the HTTP port manually.'
+          )
+        )
+      }
+    } else {
+      await this.restoreProxyIfOurs()
+      log.info(SCOPE, 'system proxy released after the live toggle')
+    }
+  }
+
   /** Emergency teardown used on app quit. */
   async shutdown(): Promise<void> {
     this.stopping = true

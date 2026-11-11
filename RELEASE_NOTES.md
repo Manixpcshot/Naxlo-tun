@@ -1,47 +1,123 @@
-# Naxlo 1.15.1 — the website worked only on a first visit in English 🩹
+# Naxlo 1.15.2 — باگ‌گیری کامل / full bug-hunt release
 
-> کلاینت فارسی‌زبان VLESS برای ویندوز، لینوکس، مک و اندروید بر پایهٔ هسته رسمی Xray
-> Persian-first VLESS client for Windows, Linux, macOS and Android on the official Xray core.
+یک دور کامل باگ‌گیری روی همهٔ کلاینت‌ها (Electron، Rust/Tauri، اندروید) و وب‌سایت:
+۱۰ باگ واقعی پیدا و درست شد، با ۱۰ تست جدید که هرکدام را قفل می‌کند.
 
-## 🐛 باگ اصلی / The main bug
+A full bug-hunt across every client (Electron, Rust/Tauri, Android) and the website:
+10 real defects found and fixed, each locked down by a new test.
 
-- **سایت برای بازدیدکنندهٔ انگلیسی‌زبانِ بازگشتی از کار می‌افتاد.** هنگام بالاآمدن صفحه، اگر زبان ذخیره‌شده در localStorage برابر `en` بود، `applyLang()` پیش از مقداردهی ثابت‌های هم‌دامنه اجرا می‌شد و `renderReleases()` به `const relRoot` می‌رسید:
-  `ReferenceError: Cannot access 'relRoot' before initialization` — و بقیهٔ `app.js` هرگز اجرا نمی‌شد.
-- **The website died for returning English visitors.** At boot, when the stored language was `en`, `applyLang()` ran before the consts in its own scope were initialised and `renderReleases()` touched `const relRoot`:
-  `ReferenceError: Cannot access 'relRoot' before initialization` — and the rest of `app.js` never ran.
-- نتیجه: دکمهٔ پوستهٔ روز/شب، منوی همبرگری موبایل، اعتبارسنج کانفیگ، QR، گرید دانلود و صفحهٔ تغییرات برای کسی که **یک بار** انگلیسی را انتخاب کرده بود کار نمی‌کردند. بار اول (زبان پیش‌فرض فارسی) همه‌چیز درست بود، برای همین دیده نمی‌شد.
-- Result: the day/night toggle, the mobile burger menu, the config validator, the QR tools, the download grid and the changelog never wired up for anyone who had picked English **once**. A first visit (default Persian) worked, which is why it went unnoticed.
-- اصلاح: بخش boot به انتهای دامنه منتقل شد تا همهٔ ثابت‌ها پیش از اجرای `applyLang()` مقدار گرفته باشند. / Fix: the boot block moved to the end of the scope, so every const exists before `applyLang()` runs.
-- این باگ پیش از ۱.۱۵.۰ هم وجود داشت (در `origin/main` بازتولید شد) و فقط در «بازدید مجدد با زبان ذخیره‌شده» ظاهر می‌شد — تست‌های DOM قبلی همه بعد از بارگذاری کلیک می‌کردند، پس آن را نمی‌دیدند.
-- The bug pre-dates 1.15.0 (reproduced against `origin/main`) and only appeared on a *return* visit with a stored language — the previous DOM tests all click after load, so none of them saw it.
+---
 
-## ♿ دسترس‌پذیری / Accessibility
+## فارسی
 
-- برچسب `aria-label`/`title` دکمهٔ ☀️/🌙 با تعویض زبان به‌روز نمی‌شد و در حالت انگلیسی فارسی می‌ماند («حالت روز»)؛ حالا با هر تعویض زبان بازسازی می‌شود — با گاردی که انتخاب «روز» کاربر را در نخستین اجرا بازنویسی نکند.
-- The ☀️/🌙 button's `aria-label`/`title` was not rebuilt on a language switch, so English mode kept the Persian label («حالت روز»). It now follows the language, guarded so it cannot overwrite a saved day-theme choice during the first paint.
+### ۱. رمز trojan با `@` — در سه کلاینت آدرس سرور خراب می‌شد
+برش اعتبارنامه در **وب‌سایت**، **اعتبارسنج داخل اپ** و **پارسر اندروید** روی نخستین `@`
+انجام می‌شد، پس `trojan://p@ss@host:443` به آدرس `ss@host` و خطای «پورت معتبر نیست»
+تبدیل می‌شد — درحالی‌که پارسر دسکتاپ درست کار می‌کرد و وصل می‌شد. حالا هر چهار مورد
+اعتبارنامه را در **واپسین `@` پیش از query** قطع می‌کنند و یک `@` رمزنگاری‌نشده داخل
+query (`?path=/@ws`) دیگر جداکننده حساب نمی‌شود (پیش‌تر همان لینک حتی در دسکتاپ یک
+سرور با آدرس `@ws` می‌ساخت).
 
-## 🧪 تست‌ها / Tests
+### ۲. صفحهٔ آمار زنده شد
+کارت «امروز» که طبق توضیح خودش جلسهٔ باز را هم می‌شمارد، در طول اتصال زنده تکان
+نمی‌خورد و نمودار ۱۴ روزه جلسهٔ در حال اجرا را کامل نادیده می‌گرفت. حالا جلسهٔ باز در
+هر دو تا «همین لحظه» شمرده می‌شود، صفحه هر ۱۰ ثانیه هنگام اتصال بی‌صدا vault را
+دوباره می‌خواند و سطل‌های روزانه نیمه‌شب بدون رفرش جابه‌جا می‌شوند.
 
-- **۷۴ تست** (از ۷۱) — سه تست DOM جدید که هر دو باگ را قفل می‌کنند:
-  برچسب دکمهٔ پوسته با تعویض زبان، ماندگاری پوستهٔ روز در بارگذاری نخست با زبان انگلیسی، و «بازدیدکنندهٔ انگلیسی‌زبانِ بازگشتی صفحهٔ کاملاً سیم‌کشی‌شده می‌گیرد» (اعتبارسنج + منوی همبرگری + پوسته).
-- **74 tests** (up from 71) — three new DOM tests lock both bugs: the toggle label following the language switch, a saved day theme surviving an English first paint, and "a returning English visitor gets a fully wired page" (validator + burger menu + theme).
+### ۳. تغییر پورت محلی در حالت متصل = بازسازی تونل
+عوض‌کردن پورت SOCKS/HTTP هنگام اتصال فقط عدد داخل UI را عوض می‌کرد؛ هسته روی پورت‌های
+قبلی می‌ماند و هیچ‌کس روی پورت جدید پاسخ نمی‌داد. حالا در Electron و Rust/Tauri تونل
+بازسازی می‌شود — با debounce ۹۰۰ms تا تایپ رقم‌به‌رقم باعث قطع‌وصل پیاپی نشود.
 
-## 📦 دانلود / Downloads
+### ۴. کلید «پروکسی سیستم» بلافاصله اثر می‌کند
+این تنظیم فقط هنگام ساخت تونل خوانده می‌شد: روشن‌کردنش تا اتصال بعدی بی‌اثر بود و
+خاموش‌کردنش پروکسی ویندوز را تا قطع‌شدن روی ناکسو نگه می‌داشت. حالا در همان لحظه
+اعمال/آزاد می‌شود (در هر دو نسخه).
 
-| فایل / File | برای / For |
-|---|---|
-| `Naxlo-Setup-1.15.1.exe` | ویندوز — نصب‌کنندهٔ نسخهٔ اصلی / Windows main installer |
-| `Naxlo-Portable-1.15.1.exe` | ویندوز — پرتابل / Windows portable |
-| `Naxlo-Rust-Setup-1.15.1.exe` | ویندوز — نسخهٔ سبک Rust / Windows lean Rust edition |
-| `Naxlo-Rust-v1.15.1-linux-amd64.AppImage` / `.deb` | لینوکس / Linux |
-| `Naxlo-Rust-v1.15.1-macos-arm64.dmg` | مک (Apple Silicon) / macOS |
-| `Naxlo-android-v1.15.1-debug.apk` / `-unsigned.apk` | اندروید / Android |
-| `naxlo-website.zip` | کل وب‌سایت آمادهٔ cPanel — **همین را جایگزین کنید** / full cPanel-ready website — **replace your copy with this one** |
+### ۵. پیام فارسی در حالت انگلیسی: «این کانفیگ پشتیبانی نمی‌شود»
+`unsupportedReason` یک رشتهٔ فارسی خام بود و `validateConfig` همان متن را به‌عنوان
+**هر دو** زبان می‌داد (`L(reason, reason)`)؛ پس اتصال به یک کانفیگ پشتیبانی‌نشده
+(مثلاً `ss://`) در حالت انگلیسی با پیام فارسی شکست می‌خورد و کارت سرور هم همان دلیل
+فارسی را در EN/TR نشان می‌داد. حالا `{fa, en, tr}` است و ورودی‌های قدیمی vault هم
+درست رندر می‌شوند.
 
-همهٔ فایل‌ها با `SHA256SUMS.txt` و checksum تکی. / Every asset ships with `SHA256SUMS.txt` plus per-file checksums.
+### ۶. سایت: اعتبارسنج vmess v2 و نتیجهٔ چندزبانه
+فیلدهای `path` (برای ws)، `serviceName` (برای gRPC) و `sni` در لینک‌های vmess v2
+نمایش داده نمی‌شدند و رمز trojan هرگز به‌عنوان چیپ پوشیده نشان داده نمی‌شد؛ ضمن اینکه
+نتیجهٔ اعتبارسنجی بعد از تعویض زبان به زبان قبلی می‌ماند («کانفیگ معتبر است» فارسی
+روی صفحهٔ انگلیسی). هر دو درست شد.
 
-## 🧾 یادداشت‌ها / Notes
+### ۷. پوستهٔ روز: اسکرول‌بار نامرئی در فایرفاکس
+`scrollbar-color` که فایرفاکس می‌خواند سفید مانده بود (فقط شبه‌عنصرهای webkit معکوس
+شده بودند) → سفید روی سفید. حالا تیره شد.
 
-- تغییرات این نسخه فقط در وب‌سایت است؛ اپ دسکتاپ، نسخهٔ Rust و اندروید از نظر عملکردی مثل ۱.۱۵.۰ هستند (فقط شمارهٔ نسخه). اگر وب‌سایت را روی cPanel دارید، زیپ جدید را جایگزین کنید.
-- This release only changes the website; the desktop app, the Rust edition and Android are functionally identical to 1.15.0 (version bump only). If you host the site on cPanel, replace it with the new zip.
-- اندروید: versionCode 2106 / versionName 1.15.1. / Android: versionCode 2106 / versionName 1.15.1.
+### ۸. اندروید: متن تنظیمات با TUN واقعی تناقض داشت
+تنظیمات هنوز می‌گفت «بدون TUN سیستمی» و پورت‌های `127.0.0.1:10808/10809` را نشان
+می‌داد که کلاینت VPN اصلاً بازشان نمی‌کند. متن‌ها در هر سه زبان بازنویسی شد.
+
+### ۹. یک باگ در خود تست‌ها
+بررسی پوشش ترکی گروه اشتباه regex را می‌خواند (`match[6]` به‌جای `match[7]`)، پس
+آرگومان سوم صریح هرگز تشخیص داده نمی‌شد و برای رشته‌های `"..."` کنترل ترجمه بی‌صدا
+رد می‌شد.
+
+### تست‌ها
+**۸۲ تست محلی** (۵۲ smoke + ۳۰ DOM وب‌سایت) و **۱۳ تست واحد اندروید** در CI — همه سبز.
+`npm run typecheck`، `npm test` و `npm run build` هم سبز.
+
+---
+
+## English
+
+### 1. A trojan password containing `@` broke the address in three clients
+The credential split used the **first** `@` in the website validator, the in-app
+validator and the Android parser, so `trojan://p@ss@host:443` turned into the address
+`ss@host` with an "invalid port" error — while the desktop parser connected fine. All
+four now cut at the **last `@` before the query**, and an unencoded `@` inside the query
+(`?path=/@ws`) is no longer treated as a separator (that link used to create a server
+whose address was `@ws`, even on the desktop).
+
+### 2. The Stats page is live
+The "Today" card — which says it includes the open session — never moved during a live
+session, and the 14-day chart ignored the running session entirely. The open session now
+counts up to `now` in both, the page silently re-reads the vault every 10 s while
+connected (60 s idle), and the day buckets roll over at midnight without a reload.
+
+### 3. Changing a local port while connected rebuilds the tunnel
+Editing the SOCKS/HTTP port during a session changed only the number in the UI: the core
+kept the old ports and nothing answered on the new ones. Electron and Rust/Tauri now
+rebuild the tunnel — debounced by 900 ms so typing digit by digit cannot cause a
+reconnect per keystroke.
+
+### 4. The system-proxy switch applies immediately
+It was only read while building the tunnel, so enabling it did nothing until the next
+reconnect and disabling it left Windows pointing at Naxlo until disconnect. It is applied
+or released on the spot now, in both editions.
+
+### 5. Persian text in English mode: "this config is not supported"
+`unsupportedReason` was a bare Persian string and `validateConfig` passed it as **both**
+languages (`L(reason, reason)`), so connecting to an unsupported config (an `ss://` link)
+failed with a Persian message in English mode, and the server card showed the same Persian
+reason in EN/TR. It is now `{fa, en, tr}`, with legacy vault entries still rendering.
+
+### 6. Website: vmess v2 fields and a multilingual result
+`path` (ws), `serviceName` (gRPC) and `sni` were not reported for vmess v2 links and the
+trojan password was never shown as a masked chip; on top of that a validation result stayed
+in the previous language after a switch (a Persian "config is valid" on an English page).
+Both fixed.
+
+### 7. Day theme: invisible scrollbar in Firefox
+`scrollbar-color` — the property Firefox reads — was still white (only the webkit
+pseudo-elements had been inverted), i.e. white on white. Now darkened.
+
+### 8. Android: settings copy contradicted the real tunnel
+The screen still claimed "No system TUN" and advertised `127.0.0.1:10808/10809` ports that
+the VPN client never opens. Rewritten in all three languages.
+
+### 9. A bug in the tests themselves
+The Turkish-coverage scanner read the wrong regex group (`match[6]` instead of `match[7]`),
+so an explicit third argument was never detected and, for double-quoted English strings, the
+translation check was silently skipped.
+
+### Tests
+**82 local tests** (52 smoke + 30 website DOM) and **13 Android unit tests** in CI — all
+green, along with `npm run typecheck`, `npm test` and `npm run build`.

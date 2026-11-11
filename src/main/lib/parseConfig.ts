@@ -8,6 +8,8 @@
  */
 import { createHash } from 'node:crypto'
 import type { NetworkType, Protocol, SecurityType, ServerConfig } from '../../shared/types'
+import { L } from '../../shared/i18n'
+import type { LString } from '../../shared/i18n'
 
 const NETWORK_ALIASES: Record<string, NetworkType> = {
   tcp: 'tcp',
@@ -60,18 +62,35 @@ export function parseProxyLink(link: string, source: ServerConfig['source'] = 's
       break
     case 'ss':
     case 'shadowsocks':
-      result = unsupported('shadowsocks', raw, 'پروتکل Shadowsocks در این نسخه پشتیبانی نمی‌شود')
+      result = unsupported(
+        'shadowsocks',
+        raw,
+        L(
+          'پروتکل Shadowsocks در این نسخه پشتیبانی نمی‌شود',
+          'The Shadowsocks protocol is not supported in this release'
+        )
+      )
       break
     default:
-      result = unsupported('unknown', raw, `پروتکل «${scheme}» شناخته نشد`)
+      result = unsupported(
+        'unknown',
+        raw,
+        L(
+          `پروتکل «${scheme}» شناخته نشد`,
+          `The "${scheme}" protocol is not recognised`,
+          `"${scheme}" protokolü tanınmadı`
+        )
+      )
+      break
   }
   if (result) result.server.source = source
   return result
 }
 
-function unsupported(protocol: Protocol, raw: string, reason: string): ParseResult {
+function unsupported(protocol: Protocol, raw: string, reason: LString): ParseResult {
   return {
-    warnings: [reason],
+    // Warnings are log-only and stay Persian; the UI reads `unsupportedReason`.
+    warnings: [reason.fa],
     server: {
       id: fingerprint(protocol, raw),
       name: nameFrom(raw) || 'کانفیگ ناشناخته',
@@ -92,6 +111,26 @@ function unsupported(protocol: Protocol, raw: string, reason: string): ParseResu
   }
 }
 
+/**
+ * Split `<credential>@<host>:<port>?<query>` (fragment already removed).
+ *
+ * The credential is cut at the LAST '@' **before** the query: trojan
+ * passwords may contain one (`trojan://p@ss@host:443`), while a query may
+ * carry an unencoded '@' (`?path=/@ws`) that must not be mistaken for the
+ * separator. Returns null when there is no credential section at all.
+ */
+function splitCredential(body: string): { credential: string; authority: string; params: URLSearchParams } | null {
+  const queryIndex = body.indexOf('?')
+  const authorityPart = queryIndex >= 0 ? body.slice(0, queryIndex) : body
+  const atIndex = authorityPart.lastIndexOf('@')
+  if (atIndex < 0) return null
+  return {
+    credential: authorityPart.slice(0, atIndex),
+    authority: authorityPart.slice(atIndex + 1),
+    params: parseQuery(queryIndex >= 0 ? body.slice(queryIndex + 1) : '')
+  }
+}
+
 /** vless://<uuid>@<host>:<port>?<query>#<remark> */
 function parseVless(raw: string): ParseResult | null {
   const warnings: string[] = []
@@ -100,15 +139,9 @@ function parseVless(raw: string): ParseResult | null {
   const withoutFragment = hashIndex >= 0 ? rest.slice(0, hashIndex) : rest
   const fragment = hashIndex >= 0 ? decodeFragment(rest.slice(hashIndex + 1)) : ''
 
-  const atIndex = withoutFragment.lastIndexOf('@')
-  if (atIndex < 0) return null
-  const credential = withoutFragment.slice(0, atIndex)
-  const hostPart = withoutFragment.slice(atIndex + 1)
-
-  const queryIndex = hostPart.indexOf('?')
-  const authority = queryIndex >= 0 ? hostPart.slice(0, queryIndex) : hostPart
-  const query = queryIndex >= 0 ? hostPart.slice(queryIndex + 1) : ''
-  const params = parseQuery(query)
+  const split = splitCredential(withoutFragment)
+  if (!split) return null
+  const { credential, authority, params } = split
 
   const { address, port } = splitAuthority(authority)
   if (!address || !port) return null
@@ -174,13 +207,9 @@ function parseTrojan(raw: string): ParseResult | null {
   const hashIndex = rest.indexOf('#')
   const body = hashIndex >= 0 ? rest.slice(0, hashIndex) : rest
   const fragment = hashIndex >= 0 ? decodeFragment(rest.slice(hashIndex + 1)) : ''
-  const atIndex = body.lastIndexOf('@')
-  if (atIndex < 0) return null
-  const credential = body.slice(0, atIndex)
-  const hostPart = body.slice(atIndex + 1)
-  const queryIndex = hostPart.indexOf('?')
-  const authority = queryIndex >= 0 ? hostPart.slice(0, queryIndex) : hostPart
-  const params = parseQuery(queryIndex >= 0 ? hostPart.slice(queryIndex + 1) : '')
+  const split = splitCredential(body)
+  if (!split) return null
+  const { credential, authority, params } = split
   const { address, port } = splitAuthority(authority)
   if (!address || !port) return null
 
@@ -278,7 +307,10 @@ function validate(server: ServerConfig, warnings: string[]): void {
   if (server.security === 'reality' && !server.pbk) {
     warnings.push('کلید عمومی REALITY (pbk) در لینک وجود ندارد')
     server.supported = false
-    server.unsupportedReason = 'کانفیگ REALITY بدون کلید عمومی کامل نیست'
+    server.unsupportedReason = L(
+      'کانفیگ REALITY بدون کلید عمومی کامل نیست',
+      'A REALITY config without a public key is incomplete'
+    )
   }
   if (server.security === 'tls' && !server.sni) {
     server.sni = server.address

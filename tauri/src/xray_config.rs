@@ -355,10 +355,8 @@ fn build_routing(mode: &str, block_ads: bool) -> Value {
 /// Sanity checks before handing a config to Xray (port of `validateConfig`).
 pub fn validate_config(server: &ServerConfig) -> Result<(), LString> {
     if !server.supported {
-        let reason = server.unsupported_reason.clone();
-        return Err(l(
-            &reason.clone().unwrap_or_else(|| "این کانفیگ پشتیبانی نمی‌شود".into()),
-            &reason.unwrap_or_else(|| "This config is not supported".into()),
+        return Err(crate::l10n::unsupported_reason(
+            server.unsupported_reason.as_deref(),
         ));
     }
     if server.address.is_empty() {

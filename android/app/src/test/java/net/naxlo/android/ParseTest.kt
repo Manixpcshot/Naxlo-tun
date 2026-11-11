@@ -48,4 +48,31 @@ class ParseTest {
         val body = "junk vless://uuid@host:443?type=tcp#n more trojan://pw@h2:8443#t"
         assertEquals(2, Parse.extractLinks(body).size)
     }
+
+    @Test
+    fun keepsATrojanPasswordThatContainsAtSign() {
+        val link = "trojan://p@ssw0rd@trojan.example.com:443?security=tls&sni=trojan.example.com&type=tcp#at"
+        val server = Parse.parseLink(link)
+        assertNotNull(server)
+        server!!
+        assertEquals("trojan", server.protocol)
+        assertEquals("trojan.example.com", server.address)
+        assertEquals(443, server.port)
+        assertEquals("p@ssw0rd", server.credential)
+        assertEquals("trojan.example.com", server.sni)
+        assertTrue(server.supported)
+    }
+
+    @Test
+    fun ignoresAnAtSignInsideTheQuery() {
+        val link = "vless://1b6e8c2a-4f3d-4a5b-9c1e-7d2f8a6b5c4d@example.server.com:443?security=tls&type=ws&path=/@ws&sni=example.server.com#q"
+        val server = Parse.parseLink(link)
+        assertNotNull(server)
+        server!!
+        assertEquals("example.server.com", server.address)
+        assertEquals(443, server.port)
+        assertEquals("1b6e8c2a-4f3d-4a5b-9c1e-7d2f8a6b5c4d", server.credential)
+        assertEquals("ws", server.network)
+        assertEquals("/@ws", server.path)
+    }
 }
