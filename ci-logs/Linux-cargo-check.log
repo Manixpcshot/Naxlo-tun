@@ -9,22 +9,24 @@
 [1m[92m      Adding[0m toml v0.8.2 [1m[33m(available: v0.8.23)[0m
 [1m[92m      Adding[0m toml_datetime v0.6.3 [1m[33m(available: v0.6.11)[0m
 [1m[92m      Adding[0m toml_edit v0.20.2 [1m[33m(available: v0.20.7)[0m
-[1m[92m      Adding[0m zip v2.6.1 [1m[33m(available: v9.5.0)[0m
+[1m[92m      Adding[0m zip v2.6.1 [1m[33m(available: v9.5.1)[0m
 [1m[92m Downloading[0m crates ...
+[1m[92m  Downloaded[0m crc32fast v1.5.5
+[1m[92m  Downloaded[0m brotli-decompressor v6.3.1
+[1m[92m  Downloaded[0m cc v1.11.1
 [1m[92m  Downloaded[0m flate2 v1.1.11
 [1m[92m  Downloaded[0m fixedbitset v0.5.9
-[1m[92m  Downloaded[0m crc32fast v1.5.5
-[1m[92m  Downloaded[0m cc v1.11.1
-[1m[92m  Downloaded[0m brotli-decompressor v6.3.1
 [1m[92m  Downloaded[0m itoa v1.0.19
-[1m[92m  Downloaded[0m jiff-core v0.1.4
-[1m[92m  Downloaded[0m jiff v0.2.42
+[1m[92m  Downloaded[0m jiff-core v0.1.5
+[1m[92m  Downloaded[0m jiff v0.2.43
+[1m[92m  Downloaded[0m rustls-pki-types v1.16.0
 [1m[92m  Downloaded[0m serde_spanned v1.1.3
 [1m[92m  Downloaded[0m smallvec v1.16.5
 [1m[92m  Downloaded[0m syn v3.0.10
 [1m[92m  Downloaded[0m toml v1.2.1+spec-1.1.0
 [1m[92m  Downloaded[0m toml_datetime v1.1.3+spec-1.1.0
 [1m[92m  Downloaded[0m uuid v1.29.2
+[1m[92m  Downloaded[0m webpki-roots v1.0.12
 [1m[92m  Downloaded[0m wry v0.57.2
 [1m[92m   Compiling[0m smallvec v1.16.5
 [1m[92m   Compiling[0m syn v3.0.10
@@ -50,7 +52,6 @@
 [1m[92m   Compiling[0m synstructure v0.14.0
 [1m[92m   Compiling[0m darling_core v0.24.1
 [1m[92m   Compiling[0m brotli v9.1.1
-[1m[92m   Compiling[0m embed-resource v3.0.12
 [1m[92m   Compiling[0m serde_derive v1.0.229
 [1m[92m   Compiling[0m zerofrom-derive v0.1.8
 [1m[92m   Compiling[0m yoke-derive v0.8.4
@@ -64,27 +65,27 @@
 [1m[92m   Compiling[0m serde v1.0.229
 [1m[92m    Checking[0m futures-util v0.3.34
 [1m[92m   Compiling[0m tinystr v0.8.5
-[1m[92m   Compiling[0m icu_locale_core v2.4.0
 [1m[92m   Compiling[0m toml_datetime v0.6.3
 [1m[92m   Compiling[0m serde_spanned v0.6.9
-[1m[92m   Compiling[0m toml_edit v0.20.2
+[1m[92m   Compiling[0m icu_locale_core v2.4.0
 [1m[92m   Compiling[0m potential_utf v0.1.6
+[1m[92m   Compiling[0m toml_edit v0.20.2
 [1m[92m   Compiling[0m zerotrie v0.2.5
 [1m[92m   Compiling[0m icu_collections v2.4.0
-[1m[92m   Compiling[0m icu_provider v2.4.0
 [1m[92m   Compiling[0m darling_macro v0.24.1
-[1m[92m   Compiling[0m icu_properties v2.4.0
+[1m[92m   Compiling[0m icu_provider v2.4.0
 [1m[92m   Compiling[0m darling v0.24.1
 [1m[92m   Compiling[0m serde_with_macros v3.24.0
+[1m[92m   Compiling[0m icu_properties v2.4.0
 [1m[92m   Compiling[0m icu_normalizer v2.4.0
 [1m[92m   Compiling[0m toml v0.8.2
 [1m[92m   Compiling[0m proc-macro-crate v2.0.2
 [1m[92m   Compiling[0m system-deps v6.2.2
-[1m[92m   Compiling[0m idna_adapter v1.2.2
-[1m[92m   Compiling[0m idna v1.1.0
 [1m[92m   Compiling[0m cssparser-macros v0.7.1
-[1m[92m   Compiling[0m glib-macros v0.18.5
+[1m[92m   Compiling[0m idna_adapter v1.2.2
 [1m[92m   Compiling[0m cssparser v0.37.0
+[1m[92m   Compiling[0m glib-macros v0.18.5
+[1m[92m   Compiling[0m idna v1.1.0
 [1m[92m   Compiling[0m glib-sys v0.18.1
 [1m[92m   Compiling[0m gobject-sys v0.18.0
 [1m[92m   Compiling[0m gio-sys v0.18.1
@@ -101,51 +102,53 @@
 [1m[92m   Compiling[0m jsonptr v0.7.1
 [1m[92m   Compiling[0m indexmap v1.9.3
 [1m[92m   Compiling[0m cargo-platform v0.1.9
-[1m[92m   Compiling[0m dom_query v0.28.0
-[1m[92m   Compiling[0m schemars v0.8.22
 [1m[92m   Compiling[0m cargo_metadata v0.19.2
 [1m[92m    Checking[0m glib v0.18.5
+[1m[92m   Compiling[0m dom_query v0.28.0
+[1m[92m   Compiling[0m schemars v0.8.22
 [1m[92m   Compiling[0m json-patch v4.2.0
 [1m[92m   Compiling[0m urlpattern v0.6.0
 [1m[92m   Compiling[0m serde_with v3.24.0
 [1m[92m   Compiling[0m plist v1.10.3
 [1m[92m   Compiling[0m toml_edit v0.19.15
 [1m[92m   Compiling[0m tauri-utils v2.10.2
-[1m[92m   Compiling[0m proc-macro-crate v1.3.1
 [1m[92m    Checking[0m gio v0.18.4
 [1m[92m    Checking[0m cairo-rs v0.18.5
+[1m[92m   Compiling[0m proc-macro-crate v1.3.1
 [1m[92m   Compiling[0m tokio-macros v2.7.2
+[1m[92m   Compiling[0m embed-resource v3.0.12
 [1m[92m   Compiling[0m gtk v0.18.2
-[1m[92m   Compiling[0m gtk3-macros v0.18.2
+[1m[92m   Compiling[0m tauri-winres v0.3.7
 [1m[92m    Checking[0m tokio v1.54.1
+[1m[92m    Checking[0m flate2 v1.1.11
+[1m[92m   Compiling[0m gtk3-macros v0.18.2
 [1m[92m    Checking[0m atk v0.18.2
 [1m[92m   Compiling[0m cargo_toml v1.0.1
-[1m[92m   Compiling[0m tauri-winres v0.3.7
-[1m[92m    Checking[0m flate2 v1.1.11
-[1m[92m   Compiling[0m javascriptcore-rs-sys v1.1.1
 [1m[92m   Compiling[0m soup3-sys v0.5.0
-[1m[92m   Compiling[0m webkit2gtk-sys v2.0.2
+[1m[92m   Compiling[0m javascriptcore-rs-sys v1.1.1
 [1m[92m   Compiling[0m tauri-plugin v2.7.2
 [1m[92m   Compiling[0m tauri-build v2.7.4
+[1m[92m   Compiling[0m webkit2gtk-sys v2.0.2
 [1m[92m    Checking[0m dpi v0.1.2
 [1m[92m   Compiling[0m gdkx11-sys v0.18.2
 [1m[92m    Checking[0m javascriptcore-rs v1.1.2
-[1m[92m    Checking[0m png v0.18.1
-[1m[92m    Checking[0m gdk-pixbuf v0.18.5
 [1m[92m    Checking[0m pango v0.18.3
+[1m[92m    Checking[0m gdk-pixbuf v0.18.5
 [1m[92m    Checking[0m soup3 v0.5.0
+[1m[92m    Checking[0m png v0.18.1
 [1m[92m    Checking[0m gdk v0.18.2
 [1m[92m   Compiling[0m tauri v2.12.5
-[1m[92m   Compiling[0m ring v0.17.14
 [1m[92m   Compiling[0m wayland-backend v0.3.17
+[1m[92m   Compiling[0m ring v0.17.14
 [1m[92m   Compiling[0m wry v0.57.2
 [1m[92m   Compiling[0m ico v0.6.0
 [1m[92m    Checking[0m libappindicator-sys v0.9.0
+[1m[92m    Checking[0m gdkx11 v0.18.2
 [1m[92m    Checking[0m gdkwayland-sys v0.18.2
 [1m[92m    Checking[0m keyboard-types v0.8.3
 [1m[92m    Checking[0m image v0.25.10
-[1m[92m    Checking[0m gdkx11 v0.18.2
 [1m[92m   Compiling[0m tauri-codegen v2.7.4
+[1m[92m    Checking[0m rustls-pki-types v1.16.0
 [1m[92m    Checking[0m http-body v1.1.0
 [1m[92m   Compiling[0m tauri-macros v2.7.4
 [1m[92m    Checking[0m serialize-to-javascript v0.1.2
@@ -153,38 +156,39 @@
 [1m[92m   Compiling[0m tauri-plugin-fs v2.7.1
 [1m[92m   Compiling[0m serde_repr v0.1.21
 [1m[92m    Checking[0m fixedbitset v0.5.9
-[1m[92m   Compiling[0m rustls v0.23.46
-[1m[92m    Checking[0m wayland-protocols v0.32.13
 [1m[92m    Checking[0m petgraph v0.8.3
+[1m[92m    Checking[0m wayland-protocols v0.32.13
+[1m[92m   Compiling[0m rustls v0.23.46
 [1m[92m    Checking[0m rustls-webpki v0.103.16
 [1m[92m    Checking[0m hyper v1.12.0
 [1m[92m    Checking[0m compression-codecs v0.4.47
 [1m[92m    Checking[0m tree_magic_mini v3.2.2
-[1m[92m   Compiling[0m tauri-plugin-autostart v2.7.0
 [1m[92m   Compiling[0m tauri-plugin-dialog v2.8.4
+[1m[92m   Compiling[0m tauri-plugin-autostart v2.7.0
 [1m[92m   Compiling[0m tauri-plugin-clipboard-manager v2.5.0
-[1m[92m    Checking[0m tower v0.5.3
-[1m[92m    Checking[0m hyper-util v0.1.21
-[1m[92m    Checking[0m wayland-protocols-wlr v0.3.12
 [1m[92m   Compiling[0m rfd v0.17.2
 [1m[92m    Checking[0m tokio-util v0.7.20
+[1m[92m    Checking[0m tower v0.5.3
+[1m[92m    Checking[0m wayland-protocols-wlr v0.3.12
+[1m[92m    Checking[0m hyper-util v0.1.21
 [1m[92m    Checking[0m tokio-rustls v0.26.6
 [1m[92m    Checking[0m async-compression v0.4.52
-[1m[92m    Checking[0m http-body-util v0.1.5
 [1m[92m    Checking[0m wl-clipboard-rs v0.9.5
+[1m[92m    Checking[0m http-body-util v0.1.5
+[1m[92m    Checking[0m webpki-roots v1.0.12
 [1m[92m    Checking[0m zopfli v0.8.4
-[1m[92m    Checking[0m tower-http v0.6.11
+[1m[92m    Checking[0m hyper-rustls v0.27.10
 [1m[92m    Checking[0m arboard v3.7.0
 [1m[92m    Checking[0m serde_urlencoded v0.7.1
 [1m[92m    Checking[0m auto-launch v0.6.0
-[1m[92m    Checking[0m hyper-rustls v0.27.10
-[1m[92m   Compiling[0m naxlo v1.15.1 (/home/runner/work/Naxlo-tun/Naxlo-tun/tauri)
-[1m[92m    Checking[0m reqwest v0.12.28
+[1m[92m    Checking[0m tower-http v0.6.11
+[1m[92m   Compiling[0m naxlo v1.15.2 (/home/runner/work/Naxlo-tun/Naxlo-tun/tauri)
 [1m[92m    Checking[0m zip v2.6.1
+[1m[92m    Checking[0m reqwest v0.12.28
 [1m[92m    Checking[0m webkit2gtk v2.0.2
-[1m[92m    Checking[0m libappindicator v0.9.0
 [1m[92m    Checking[0m muda v0.20.0
 [1m[92m    Checking[0m tao v0.37.2
+[1m[92m    Checking[0m libappindicator v0.9.0
 [1m[92m    Checking[0m tray-icon v0.25.1
 [1m[92m    Checking[0m tauri-runtime v2.12.2
 [1m[92m    Checking[0m tauri-runtime-wry v2.12.3
@@ -197,9 +201,9 @@
   [1m[94m= [0m[1mnote[0m: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
 
 [1m[33mwarning[0m[1m: function `err_str` is never used[0m
-  [1m[94m--> [0msrc/l10n.rs:37:8
+  [1m[94m--> [0msrc/l10n.rs:61:8
    [1m[94m|[0m
-[1m[94m37[0m [1m[94m|[0m pub fn err_str(message: LString) -> String {
+[1m[94m61[0m [1m[94m|[0m pub fn err_str(message: LString) -> String {
    [1m[94m|[0m        [1m[33m^^^^^^^[0m
    [1m[94m|[0m
    [1m[94m= [0m[1mnote[0m: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
@@ -239,7 +243,7 @@
 
 [1m[33mwarning[0m: `naxlo` (lib) generated 6 warnings (run `cargo fix --lib -p naxlo` to apply 1 suggestion)
 [1m[33mwarning[0m: `naxlo` (lib test) generated 6 warnings (6 duplicates)
-[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 45.30s
+[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 54.82s
 [1m[92m   Compiling[0m toml_edit v0.20.2
 [1m[92m   Compiling[0m zerofrom v0.1.8
 [1m[92m   Compiling[0m itoa v1.0.19
@@ -257,48 +261,48 @@
 [1m[92m   Compiling[0m toml v0.8.2
 [1m[92m   Compiling[0m icu_provider v2.4.0
 [1m[92m   Compiling[0m parking_lot_core v0.9.12
-[1m[92m   Compiling[0m system-deps v6.2.2
-[1m[92m   Compiling[0m parking_lot v0.12.5
 [1m[92m   Compiling[0m icu_properties v2.4.0
 [1m[92m   Compiling[0m icu_normalizer v2.4.0
+[1m[92m   Compiling[0m system-deps v6.2.2
+[1m[92m   Compiling[0m parking_lot v0.12.5
 [1m[92m   Compiling[0m string_cache v0.9.0
+[1m[92m   Compiling[0m serde_json v1.0.154
 [1m[92m   Compiling[0m brotli-decompressor v6.3.1
 [1m[92m   Compiling[0m glib-sys v0.18.1
 [1m[92m   Compiling[0m gobject-sys v0.18.0
 [1m[92m   Compiling[0m gio-sys v0.18.1
 [1m[92m   Compiling[0m gdk-sys v0.18.2
 [1m[92m   Compiling[0m idna_adapter v1.2.2
-[1m[92m   Compiling[0m atk-sys v0.18.2
-[1m[92m   Compiling[0m cairo-sys-rs v0.18.2
 [1m[92m   Compiling[0m pango-sys v0.18.0
 [1m[92m   Compiling[0m gdk-pixbuf-sys v0.18.0
-[1m[92m   Compiling[0m serde_json v1.0.154
-[1m[92m   Compiling[0m toml_datetime v1.1.3+spec-1.1.0
+[1m[92m   Compiling[0m atk-sys v0.18.2
+[1m[92m   Compiling[0m cairo-sys-rs v0.18.2
 [1m[92m   Compiling[0m serde_spanned v1.1.3
+[1m[92m   Compiling[0m toml_datetime v1.1.3+spec-1.1.0
 [1m[92m   Compiling[0m uuid v1.29.2
 [1m[92m   Compiling[0m toml v1.2.1+spec-1.1.0
 [1m[92m   Compiling[0m idna v1.1.0
 [1m[92m   Compiling[0m brotli v9.1.1
 [1m[92m   Compiling[0m web_atoms v0.2.6
 [1m[92m   Compiling[0m proc-macro-crate v2.0.2
-[1m[92m   Compiling[0m cssparser v0.37.0
 [1m[92m   Compiling[0m glib-macros v0.18.5
 [1m[92m   Compiling[0m markup5ever v0.39.0
+[1m[92m   Compiling[0m cssparser v0.37.0
 [1m[92m   Compiling[0m url v2.5.8
 [1m[92m   Compiling[0m futures-executor v0.3.34
 [1m[92m   Compiling[0m selectors v0.38.0
 [1m[92m   Compiling[0m html5ever v0.39.0
 [1m[92m   Compiling[0m serde v1.0.229
-[1m[92m   Compiling[0m jsonptr v0.7.1
 [1m[92m   Compiling[0m cfb v0.14.0
-[1m[92m   Compiling[0m gtk-sys v0.18.2
+[1m[92m   Compiling[0m jsonptr v0.7.1
 [1m[92m   Compiling[0m glib v0.18.5
+[1m[92m   Compiling[0m gtk-sys v0.18.2
 [1m[92m   Compiling[0m dom_query v0.28.0
 [1m[92m   Compiling[0m infer v0.22.0
+[1m[92m   Compiling[0m json-patch v4.2.0
 [1m[92m   Compiling[0m schemars v0.8.22
 [1m[92m   Compiling[0m cargo_metadata v0.19.2
 [1m[92m   Compiling[0m plist v1.10.3
-[1m[92m   Compiling[0m json-patch v4.2.0
 [1m[92m   Compiling[0m urlpattern v0.6.0
 [1m[92m   Compiling[0m serde_with v3.24.0
 [1m[92m   Compiling[0m crc32fast v1.5.5
@@ -317,16 +321,16 @@
 [1m[92m   Compiling[0m cargo_toml v1.0.1
 [1m[92m   Compiling[0m tauri-build v2.7.4
 [1m[92m   Compiling[0m tauri-plugin v2.7.2
-[1m[92m   Compiling[0m soup3-sys v0.5.0
 [1m[92m   Compiling[0m javascriptcore-rs-sys v1.1.1
+[1m[92m   Compiling[0m soup3-sys v0.5.0
 [1m[92m   Compiling[0m webkit2gtk-sys v2.0.2
 [1m[92m   Compiling[0m dpi v0.1.2
 [1m[92m   Compiling[0m gdkx11-sys v0.18.2
-[1m[92m   Compiling[0m javascriptcore-rs v1.1.2
 [1m[92m   Compiling[0m tauri v2.12.5
 [1m[92m   Compiling[0m gdk-pixbuf v0.18.5
 [1m[92m   Compiling[0m pango v0.18.3
 [1m[92m   Compiling[0m soup3 v0.5.0
+[1m[92m   Compiling[0m javascriptcore-rs v1.1.2
 [1m[92m   Compiling[0m gdk v0.18.2
 [1m[92m   Compiling[0m png v0.18.1
 [1m[92m   Compiling[0m wry v0.57.2
@@ -335,9 +339,10 @@
 [1m[92m   Compiling[0m gdkx11 v0.18.2
 [1m[92m   Compiling[0m gdkwayland-sys v0.18.2
 [1m[92m   Compiling[0m keyboard-types v0.8.3
-[1m[92m   Compiling[0m image v0.25.10
 [1m[92m   Compiling[0m wayland-backend v0.3.17
+[1m[92m   Compiling[0m image v0.25.10
 [1m[92m   Compiling[0m tauri-codegen v2.7.4
+[1m[92m   Compiling[0m rustls-pki-types v1.16.0
 [1m[92m   Compiling[0m http-body v1.1.0
 [1m[92m   Compiling[0m ring v0.17.14
 [1m[92m   Compiling[0m serialize-to-javascript v0.1.2
@@ -345,41 +350,42 @@
 [1m[92m   Compiling[0m wayland-client v0.31.15
 [1m[92m   Compiling[0m tauri-plugin-fs v2.7.1
 [1m[92m   Compiling[0m fixedbitset v0.5.9
-[1m[92m   Compiling[0m petgraph v0.8.3
 [1m[92m   Compiling[0m wayland-protocols v0.32.13
+[1m[92m   Compiling[0m petgraph v0.8.3
 [1m[92m   Compiling[0m rustls-webpki v0.103.16
+[1m[92m   Compiling[0m compression-codecs v0.4.47
 [1m[92m   Compiling[0m hyper v1.12.0
 [1m[92m   Compiling[0m wayland-protocols-wlr v0.3.12
-[1m[92m   Compiling[0m compression-codecs v0.4.47
 [1m[92m   Compiling[0m tree_magic_mini v3.2.2
 [1m[92m   Compiling[0m rustls v0.23.46
+[1m[92m   Compiling[0m tauri-plugin-autostart v2.7.0
 [1m[92m   Compiling[0m tauri-plugin-clipboard-manager v2.5.0
 [1m[92m   Compiling[0m tauri-plugin-dialog v2.8.4
-[1m[92m   Compiling[0m tauri-plugin-autostart v2.7.0
-[1m[92m   Compiling[0m rfd v0.17.2
 [1m[92m   Compiling[0m tokio-util v0.7.20
 [1m[92m   Compiling[0m tower v0.5.3
 [1m[92m   Compiling[0m hyper-util v0.1.21
+[1m[92m   Compiling[0m rfd v0.17.2
 [1m[92m   Compiling[0m wl-clipboard-rs v0.9.5
 [1m[92m   Compiling[0m async-compression v0.4.52
 [1m[92m   Compiling[0m http-body-util v0.1.5
-[1m[92m   Compiling[0m zopfli v0.8.4
-[1m[92m   Compiling[0m serde_urlencoded v0.7.1
-[1m[92m   Compiling[0m auto-launch v0.6.0
 [1m[92m   Compiling[0m tokio-rustls v0.26.6
-[1m[92m   Compiling[0m tower-http v0.6.11
+[1m[92m   Compiling[0m webpki-roots v1.0.12
+[1m[92m   Compiling[0m serde_urlencoded v0.7.1
+[1m[92m   Compiling[0m zopfli v0.8.4
+[1m[92m   Compiling[0m auto-launch v0.6.0
 [1m[92m   Compiling[0m hyper-rustls v0.27.10
+[1m[92m   Compiling[0m tower-http v0.6.11
 [1m[92m   Compiling[0m arboard v3.7.0
-[1m[92m   Compiling[0m naxlo v1.15.1 (/home/runner/work/Naxlo-tun/Naxlo-tun/tauri)
 [1m[92m   Compiling[0m webkit2gtk v2.0.2
+[1m[92m   Compiling[0m muda v0.20.0
 [1m[92m   Compiling[0m libappindicator v0.9.0
 [1m[92m   Compiling[0m tao v0.37.2
-[1m[92m   Compiling[0m muda v0.20.0
 [1m[92m   Compiling[0m tray-icon v0.25.1
-[1m[92m   Compiling[0m zip v2.6.1
-[1m[92m   Compiling[0m reqwest v0.12.28
+[1m[92m   Compiling[0m naxlo v1.15.2 (/home/runner/work/Naxlo-tun/Naxlo-tun/tauri)
 [1m[92m   Compiling[0m tauri-runtime v2.12.2
+[1m[92m   Compiling[0m reqwest v0.12.28
 [1m[92m   Compiling[0m tauri-runtime-wry v2.12.3
+[1m[92m   Compiling[0m zip v2.6.1
 [1m[33mwarning[0m[1m: unused import: `AtomicU16`[0m
  [1m[94m--> [0msrc/net.rs:3:25
   [1m[94m|[0m
@@ -389,9 +395,9 @@
   [1m[94m= [0m[1mnote[0m: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
 
 [1m[33mwarning[0m[1m: function `err_str` is never used[0m
-  [1m[94m--> [0msrc/l10n.rs:37:8
+  [1m[94m--> [0msrc/l10n.rs:61:8
    [1m[94m|[0m
-[1m[94m37[0m [1m[94m|[0m pub fn err_str(message: LString) -> String {
+[1m[94m61[0m [1m[94m|[0m pub fn err_str(message: LString) -> String {
    [1m[94m|[0m        [1m[33m^^^^^^^[0m
    [1m[94m|[0m
    [1m[94m= [0m[1mnote[0m: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
@@ -431,27 +437,27 @@
 
 [1m[33mwarning[0m: `naxlo` (lib test) generated 6 warnings (6 duplicates)
 [1m[33mwarning[0m: `naxlo` (lib) generated 6 warnings (run `cargo fix --lib -p naxlo` to apply 1 suggestion)
-[1m[92m    Finished[0m `test` profile [unoptimized + debuginfo] target(s) in 48.27s
-[1m[92m     Running[0m unittests src/lib.rs (target/debug/deps/naxlo_lib-d44e0845c4eb812a)
+[1m[92m    Finished[0m `test` profile [unoptimized + debuginfo] target(s) in 1m 03s
+[1m[92m     Running[0m unittests src/lib.rs (target/debug/deps/naxlo_lib-b49a622bbd7f4f62)
 
 running 13 tests
-test net::speed_tests::steady_rate_excludes_the_ramp ... ok
 test net::speed_tests::ladder_follows_the_probe_rate ... ok
-test parse::tests::base64_detector_rejects_garbage ... ok
+test net::speed_tests::steady_rate_excludes_the_ramp ... ok
 test mask::tests::masks_like_the_ts_helpers ... ok
-test parse::tests::query_roundtrip_is_stable ... ok
+test parse::tests::base64_detector_rejects_garbage ... ok
 test parse::tests::extract_links_handles_base64_payloads ... ok
 test parse::tests::parses_vless_tls_ws ... ok
 test parse::tests::parses_vmess_base64 ... ok
-test parse::tests::reality_without_pbk_is_unsupported ... ok
+test parse::tests::query_roundtrip_is_stable ... ok
 test submeta::tests::parses_profile_titles ... ok
+test parse::tests::reality_without_pbk_is_unsupported ... ok
 test submeta::tests::parses_userinfo_header ... ok
 test xray_config::tests::builds_a_complete_config ... ok
 test xray_config::tests::iran_direct_adds_local_rules ... ok
 
 test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-[1m[92m     Running[0m unittests src/main.rs (target/debug/deps/naxlo-f1c626f52c54e6d1)
+[1m[92m     Running[0m unittests src/main.rs (target/debug/deps/naxlo-e306e752e6ab816e)
 
 running 0 tests
 
