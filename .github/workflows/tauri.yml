@@ -50,8 +50,20 @@ jobs:
       - name: Install Linux system dependencies
         if: matrix.platform == 'ubuntu-22.04'
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev libfuse2
+          # The Ubuntu archive on hosted runners stalls from time to time and a
+          # hung `apt-get update` used to burn the whole job timeout, costing the
+          # Linux AppImage/deb assets. Retry with short acquire timeouts instead.
+          export DEBIAN_FRONTEND=noninteractive
+          APT_OPTS="-o Acquire::Retries=4 -o Acquire::http::Timeout=45 -o Acquire::https::Timeout=45"
+          PKGS="libwebkit2gtk-4.1-dev libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev libfuse2"
+          for attempt in 1 2 3; do
+            if sudo apt-get $APT_OPTS update && sudo apt-get $APT_OPTS install -y $PKGS; then
+              exit 0
+            fi
+            echo "apt failed (attempt ${attempt}/3) — retrying in 30s"
+            sleep 30
+          done
+          exit 1
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -130,8 +142,20 @@ jobs:
       - name: Install Linux system dependencies
         if: matrix.platform == 'ubuntu-22.04'
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev libfuse2
+          # The Ubuntu archive on hosted runners stalls from time to time and a
+          # hung `apt-get update` used to burn the whole job timeout, costing the
+          # Linux AppImage/deb assets. Retry with short acquire timeouts instead.
+          export DEBIAN_FRONTEND=noninteractive
+          APT_OPTS="-o Acquire::Retries=4 -o Acquire::http::Timeout=45 -o Acquire::https::Timeout=45"
+          PKGS="libwebkit2gtk-4.1-dev libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev libfuse2"
+          for attempt in 1 2 3; do
+            if sudo apt-get $APT_OPTS update && sudo apt-get $APT_OPTS install -y $PKGS; then
+              exit 0
+            fi
+            echo "apt failed (attempt ${attempt}/3) — retrying in 30s"
+            sleep 30
+          done
+          exit 1
 
       - uses: dtolnay/rust-toolchain@stable
 
