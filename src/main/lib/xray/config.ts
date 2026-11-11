@@ -423,7 +423,10 @@ function buildRouting(mode: RouteMode, blockAds: boolean, tun = false): Json {
  */
 export function validateConfig(server: ServerConfig): LString | null {
   if (!server.supported) {
-    return L(server.unsupportedReason ?? 'این کانفیگ پشتیبانی نمی‌شود', server.unsupportedReason ?? 'This config is not supported')
+    const reason = server.unsupportedReason
+    // Vaults written before 1.15.2 stored a plain Persian sentence.
+    if (typeof reason === 'string') return L(reason, reason)
+    return reason ?? L('این کانفیگ پشتیبانی نمی‌شود', 'This config is not supported')
   }
   if (!server.address) return L('آدرس سرور خالی است', 'Server address is empty')
   if (!server.port) return L('پورت سرور معتبر نیست', 'Server port is invalid')

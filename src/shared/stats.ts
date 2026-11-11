@@ -36,10 +36,13 @@ export function dayKey(ts: number): string {
 }
 
 /**
- * Aggregate closed sessions into `days` local-day buckets ending today.
+ * Aggregate sessions into `days` local-day buckets ending today.
  * Sessions that span midnight contribute to every day they overlap.
- * Open sessions (`reason === ''`) are ignored — a running session is still
- * heartbeating its `endedAt`; crashed ones are closed as `stale` at startup.
+ *
+ * The session that is open right now (`reason === ''`) counts up to `now`,
+ * exactly like `summarizeToday` does: it heartbeats its `endedAt` while
+ * connected, and anything left open by a crash is closed as `stale` at
+ * startup — so an open record is always the live one.
  *
  * Day arithmetic is calendar-based (`setDate`), never fixed 24h steps: a DST
  * switch inside the window would otherwise duplicate or skip a local date.
@@ -64,8 +67,10 @@ export function aggregateStats(sessions: SessionStat[], days = 14, now = Date.no
   let totalSessions = 0
 
   for (const s of sessions) {
-    if (!s.reason || !(s.endedAt > s.startedAt)) continue
-    const minutes = (s.endedAt - s.startedAt) / 60000
+    // An open session is timed up to `now`; a closed one up to its `endedAt`.
+    const endedAt = s.reason ? s.endedAt : Math.max(s.endedAt, now)
+    if (!(endedAt > s.startedAt)) continue
+    const minutes = (endedAt - s.startedAt) / 60000
     totalMinutes += minutes
     totalSessions += 1
 
@@ -87,14 +92,14 @@ export function aggregateStats(sessions: SessionStat[], days = 14, now = Date.no
     // a DST day is 23h or 25h long, so never step by a fixed 24h).
     const cursor = new Date(s.startedAt)
     cursor.setHours(0, 0, 0, 0)
-    while (cursor.getTime() <= s.endedAt) {
+    while (cursor.getTime() <= endedAt) {
       const dayStart = cursor.getTime()
       const next = new Date(cursor)
       next.setDate(cursor.getDate() + 1)
       const dayEnd = next.getTime()
       const bucket = index.get(dayKey(dayStart))
       if (bucket) {
-        const overlap = Math.min(s.endedAt, dayEnd) - Math.max(s.startedAt, dayStart)
+        const overlap = Math.min(endedAt, dayEnd) - Math.max(s.startedAt, dayStart)
         if (overlap > 0) bucket.minutes += overlap / 60000
         if (s.startedAt >= dayStart && s.startedAt < dayEnd) bucket.sessions += 1
       }

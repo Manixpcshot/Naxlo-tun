@@ -100,13 +100,15 @@ object Parse {
         }
 
     private fun parseVless(body: String, name: String, subscriptionId: String?): ServerConfig? {
-        val at = body.indexOf('@')
+        // The credential ends at the last '@' *before* the query: a password may
+        // contain one, and a query may carry an unencoded '@' (path=/@ws).
+        val q = body.indexOf('?')
+        val head = if (q >= 0) body.substring(0, q) else body
+        val at = head.lastIndexOf('@')
         if (at < 0) return null
-        val uuid = body.substring(0, at)
-        val rest = body.substring(at + 1)
-        val q = rest.indexOf('?')
-        val hostPort = if (q >= 0) rest.substring(0, q) else rest
-        val params = if (q >= 0) query(rest.substring(q + 1)) else emptyMap()
+        val uuid = head.substring(0, at)
+        val hostPort = head.substring(at + 1)
+        val params = if (q >= 0) query(body.substring(q + 1)) else emptyMap()
         val hp = hostPort.split(':')
         if (hp.size != 2) return null
         val port = hp[1].toIntOrNull() ?: return null
@@ -137,13 +139,14 @@ object Parse {
     }
 
     private fun parseTrojan(body: String, name: String, subscriptionId: String?): ServerConfig? {
-        val at = body.indexOf('@')
+        // Same rule as parseVless: cut at the last '@' before the query.
+        val q = body.indexOf('?')
+        val head = if (q >= 0) body.substring(0, q) else body
+        val at = head.lastIndexOf('@')
         if (at < 0) return null
-        val password = body.substring(0, at)
-        val rest = body.substring(at + 1)
-        val q = rest.indexOf('?')
-        val hostPort = if (q >= 0) rest.substring(0, q) else rest
-        val params = if (q >= 0) query(rest.substring(q + 1)) else emptyMap()
+        val password = head.substring(0, at)
+        val hostPort = head.substring(at + 1)
+        val params = if (q >= 0) query(body.substring(q + 1)) else emptyMap()
         val hp = hostPort.split(':')
         if (hp.size != 2) return null
         val port = hp[1].toIntOrNull() ?: return null

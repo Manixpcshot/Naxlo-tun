@@ -219,6 +219,9 @@
     // otherwise the first call would overwrite a saved choice with "dark"
     if (document.documentElement.dataset.theme) applyTheme(document.documentElement.dataset.theme)
     applyPlatform(lang)
+    // Output the visitor triggered themselves (a validation result, the QR
+    // reader's button) was built in the previous language — let it re-render.
+    document.dispatchEvent(new CustomEvent('naxlo:lang', { detail: lang }))
   }
 
   /** Lead the hero CTA with the visitor's own platform when we can detect it. */
@@ -405,15 +408,21 @@
       const hash = body.indexOf('#')
       const main = hash >= 0 ? body.slice(0, hash) : body
       if (hash >= 0) fields.name = decodeURIComponent(body.slice(hash + 1).replace(/[%20]/g, ' ')).slice(0, 24) || undefined
-      const at = main.indexOf('@')
+      // Cut the credential at the last '@' *before* the query, exactly like
+      // the app's parser: a trojan password may contain one
+      // (trojan://p@ss@host:443), while a query may carry an unencoded '@'
+      // (?path=/@ws) that is not a separator.
+      const q = main.indexOf('?')
+      const head = q >= 0 ? main.slice(0, q) : main
+      const at = head.lastIndexOf('@')
       if (at < 0) { err('بخش اعتبارنامه (@) وجود ندارد', 'Missing credential (@) section'); return { fields, issues } }
-      const credential = main.slice(0, at)
-      const rest = main.slice(at + 1)
+      const credential = head.slice(0, at)
+      const authority = head.slice(at + 1)
       if (isVless) { fields.uuid = credential ? credential.slice(0, 8) + '…' : '—'; if (!UUID_RE.test(credential)) err('UUID معتبر نیست', 'UUID is not valid') }
       else if (!credential) err('رمز trojan خالی است', 'Trojan password is empty')
-      const q = rest.indexOf('?')
-      const params = new URLSearchParams(q >= 0 ? rest.slice(q + 1) : '')
-      parseAuthority(q >= 0 ? rest.slice(0, q) : rest, fields, err)
+      else fields.password = maskMid(credential)
+      const params = new URLSearchParams(q >= 0 ? main.slice(q + 1) : '')
+      parseAuthority(authority, fields, err)
       const netRaw = (params.get('type') || params.get('network') || 'tcp').toLowerCase()
       const network = NET_ALIASES[netRaw]
       if (!network) err('شبکه ناشناخته: ' + netRaw, 'Unknown network: ' + netRaw)
@@ -453,6 +462,17 @@
       const security = SEC_ALIASES[String(data.tls ?? 'none').toLowerCase()] ?? 'none'
       fields.security = security
       if (security === 'tls' && !data.sni && !data.host) warn('SNI نبود؛ ناکسو آدرس سرور را جایگزین می‌کند', 'No SNI; Naxlo falls back to the server address')
+      const vmSni = data.sni ?? data.host
+      if (vmSni) fields.sni = maskMid(String(vmSni))
+      // vmess v2 keeps the transport in a top-level `path`; gRPC carries its
+      // serviceName there too (the app's parser reads it the same way).
+      if (network === 'grpc') {
+        const serviceName = String(data.serviceName ?? data.path ?? '')
+        if (serviceName) fields.serviceName = serviceName
+        else warn('serviceName برای gRPC خالی است', 'serviceName is empty for gRPC')
+      } else if (data.path) {
+        fields.path = String(data.path)
+      }
       if (data.ps) fields.name = String(data.ps).slice(0, 24)
     } else if (raw.startsWith('ss://')) {
       fields.protocol = 'shadowsocks'
@@ -520,6 +540,14 @@
     document.getElementById('v-clear').addEventListener('click', () => {
       document.getElementById('v-input').value = ''
       out.innerHTML = ''
+    })
+    // A language switch must not leave a Persian result on an English page
+    // (or the other way round): re-render what is already on screen.
+    document.addEventListener('naxlo:lang', () => {
+      if (out.childElementCount > 0) render()
+      document.querySelectorAll('#q-decoded .btn').forEach((btn) => {
+        btn.textContent = isFa() ? 'بفرست به اعتبارسنج' : 'Send to validator'
+      })
     })
   }
 

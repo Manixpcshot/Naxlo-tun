@@ -37,9 +37,9 @@
     <string name="empty_subs">Henüz abonelik yok.</string>
     <string name="configs_count">%1$d yapılandırma · %2$d bağlanılabilir</string>
     <string name="about_privacy">Abonelik bağlantıları ve anahtarlar yalnızca cihazın şifreli deposunda tutulur, günlüklere yazılmaz.</string>
-    <string name="settings_ports">Yerel proxy</string>
-    <string name="ports_value">SOCKS5 127.0.0.1:%1$d · HTTP 127.0.0.1:%2$d</string>
-    <string name="no_tun_note">Sistem TUN’u yok: tünel yalnızca Android sandbox içinde, root’suz.</string>
+    <string name="settings_ports">Cihaz tüneli</string>
+    <string name="ports_value">Tüm trafik Android\'in kendi VPN\'i üzerinden geçer — root yok, elle proxy ayarı yok.</string>
+    <string name="no_tun_note">Anahtarlar yalnızca uygulama sandbox\'ı içinde çözülür; hiçbir yerel port açılmaz.</string>
     <string name="add_from_file">Dosyadan ekle</string>
     <string name="file_label">Dosya</string>
     <string name="file_password_title">Dosya parola korumalı</string>

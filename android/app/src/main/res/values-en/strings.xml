@@ -37,9 +37,9 @@
     <string name="empty_subs">No subscriptions yet.</string>
     <string name="configs_count">%1$d configs · %2$d connectable</string>
     <string name="about_privacy">Subscription links and keys live only in the device encrypted storage and never reach logs.</string>
-    <string name="settings_ports">Local proxy</string>
-    <string name="ports_value">SOCKS5 127.0.0.1:%1$d · HTTP 127.0.0.1:%2$d</string>
-    <string name="no_tun_note">No system TUN: the tunnel lives inside the Android sandbox, no root.</string>
+    <string name="settings_ports">Device tunnel</string>
+    <string name="ports_value">All traffic goes through Android\'s own VPN — no root and no manual proxy setup.</string>
+    <string name="no_tun_note">Keys are decrypted only inside the app sandbox; no local port is opened.</string>
     <string name="add_from_file">Add from file</string>
     <string name="file_label">File</string>
     <string name="file_password_title">Password-protected file</string>

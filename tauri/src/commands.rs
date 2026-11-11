@@ -5,6 +5,7 @@
 //! renderer code sees exactly what the Electron preload bridge throws.
 
 use std::collections::HashMap;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use tauri::{AppHandle, Manager};
 use tauri_plugin_clipboard_manager::ClipboardExt;
@@ -20,6 +21,10 @@ use crate::settings::Settings;
 use crate::state::AppCore;
 use crate::subscription;
 use crate::vault::VaultPayload;
+
+/// Generation counter for the debounced reconnect after a settings change:
+/// only the newest scheduled rebuild runs, the older ones drop out.
+static RECONNECT_GEN: AtomicUsize = AtomicUsize::new(0);
 
 fn err(message: LString) -> String {
     message.to_json()
@@ -526,6 +531,15 @@ pub async fn settings_get(app: AppHandle) -> Result<Settings, String> {
 #[tauri::command]
 pub async fn settings_set(app: AppHandle, patch: serde_json::Value) -> Result<Settings, String> {
     let core = core_of(&app)?;
+    // What the running core was started with, so a change can be spotted.
+    let (previous_socks, previous_http, previous_proxy) = {
+        let g = core.lock();
+        (
+            g.settings.socks_port,
+            g.settings.http_port,
+            g.settings.apply_system_proxy,
+        )
+    };
     let next = {
         let mut g = core.lock();
         g.settings = crate::settings::merge_patch(&g.settings, patch);
@@ -554,6 +568,93 @@ pub async fn settings_set(app: AppHandle, patch: serde_json::Value) -> Result<Se
     }
     core.emit_state();
     manager::schedule_auto_refresh(&app);
+    // Flipping the system-proxy switch while connected takes effect at once:
+    // only the OS proxy setting changes, the running core stays as it is.
+    if next.apply_system_proxy != previous_proxy && core.is_connected() {
+        let base = core.base_dir.clone();
+        let host = next.listen_address.clone();
+        let port = next.http_port;
+        let enable = next.apply_system_proxy;
+        let app2 = app.clone();
+        tauri::async_runtime::spawn(async move {
+            let Some(core) = app2.try_state::<AppCore>() else {
+                return;
+            };
+            if !core.is_connected() {
+                return;
+            }
+            let outcome = tauri::async_runtime::spawn_blocking(move || {
+                if enable {
+                    crate::sysproxy::apply(&base, &host, port)
+                } else {
+                    crate::sysproxy::restore(&base)
+                }
+            })
+            .await;
+            match outcome {
+                Ok(Ok(())) => {
+                    core.patch_state(|s| s.system_proxy_applied = enable);
+                    core.lock().sysproxy_applied = enable;
+                    core.log(
+                        "info",
+                        "proxy",
+                        if enable {
+                            "system proxy applied after the live toggle"
+                        } else {
+                            "system proxy released after the live toggle"
+                        },
+                    );
+                }
+                Ok(Err(message)) => {
+                    core.log("warn", "proxy", "system proxy toggle failed");
+                    core.toast("warning", message, None);
+                }
+                Err(join_error) => {
+                    core.log(
+                        "warn",
+                        "proxy",
+                        &format!("system proxy task failed: {}", join_error),
+                    );
+                }
+            }
+        });
+    }
+    // Moving the local SOCKS/HTTP ports while connected must rebuild the
+    // tunnel: the running core keeps the ports it started with, so the UI
+    // would otherwise advertise ports nothing answers on.
+    let ports_changed = next.socks_port != previous_socks || next.http_port != previous_http;
+    let connected = core.lock().state.connection == "connected";
+    if ports_changed && connected {
+        // Debounced: the port fields patch the settings on every keystroke and
+        // each rebuild costs a full disconnect + reconnect cycle.
+        let generation = RECONNECT_GEN.fetch_add(1, Ordering::SeqCst) + 1;
+        core.log(
+            "info",
+            "settings",
+            "local ports changed while connected — reconnecting",
+        );
+        let app2 = app.clone();
+        tauri::async_runtime::spawn(async move {
+            tokio::time::sleep(std::time::Duration::from_millis(900)).await;
+            if RECONNECT_GEN.load(Ordering::SeqCst) != generation {
+                return;
+            }
+            let Some(core) = app2.try_state::<AppCore>() else {
+                return;
+            };
+            if core.lock().state.connection != "connected" {
+                return;
+            }
+            manager::do_disconnect(&app2, "ports-changed").await;
+            if let Err(message) = manager::do_connect(&app2, None).await {
+                core.log(
+                    "warn",
+                    "settings",
+                    &format!("reconnect after the port change failed: {}", message.en),
+                );
+            }
+        });
+    }
     core.log("info", "settings", "settings updated");
     Ok(next)
 }

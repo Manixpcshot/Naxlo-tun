@@ -37,9 +37,9 @@
     <string name="empty_subs">هنوز اشتراکی اضافه نکرده‌اید.</string>
     <string name="configs_count">%1$d کانفیگ · %2$d قابل اتصال</string>
     <string name="about_privacy">لینک اشتراک و کلیدها فقط در حافظهٔ رمزنگاری‌شدهٔ دستگاه نگه داشته می‌شوند و هرگز در لاگ نمی‌آیند.</string>
-    <string name="settings_ports">پروکسی محلی</string>
-    <string name="ports_value">SOCKS5 127.0.0.1:%1$d · HTTP 127.0.0.1:%2$d</string>
-    <string name="no_tun_note">بدون TUN سیستمی: تونل فقط داخل sandbox خود اندروید و بدون روت ساخته می‌شود.</string>
+    <string name="settings_ports">تونل دستگاه</string>
+    <string name="ports_value">همهٔ ترافیک از VPN خود اندروید می‌گذرد — بدون روت و بدون تنظیم دستی پروکسی.</string>
+    <string name="no_tun_note">کلیدها فقط داخل sandbox برنامه رمزگشایی می‌شوند و هیچ پورت محلی باز نمی‌شود.</string>
     <string name="add_from_file">افزودن از فایل</string>
     <string name="file_label">فایل</string>
     <string name="file_password_title">فایل رمز دارد</string>

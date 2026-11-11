@@ -34,8 +34,11 @@ export interface ServerConfig {
   protocol: Protocol
   /** Whether Naxlo knows how to build an Xray outbound for it. */
   supported: boolean
-  /** Human readable reason when `supported` is false. */
-  unsupportedReason?: string
+  /**
+   * Human readable reason when `supported` is false. Localized; entries saved
+   * by an older release are plain Persian text, so readers must accept both.
+   */
+  unsupportedReason?: string | LString
   address: string
   port: number
   /** UUID (vless/vmess) or password (trojan/ss). Sensitive. */

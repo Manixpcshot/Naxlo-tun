@@ -20,6 +20,30 @@ pub fn l(fa: &str, en: &str) -> LString {
     LString { fa: fa.to_string(), en: en.to_string(), tr: tr_map(en).map(str::to_string) }
 }
 
+/// Bilingual text for a stored "unsupported config" reason.
+///
+/// The vault keeps whatever the parser wrote — a Persian sentence, and older
+/// releases stored nothing else — so the known reasons are mapped here and the
+/// renderer receives `{ fa, en, tr }` instead of Persian-only text.
+pub fn unsupported_reason(reason: Option<&str>) -> LString {
+    let text = reason.unwrap_or_default();
+    let fa = if text.is_empty() {
+        "این کانفیگ پشتیبانی نمی‌شود"
+    } else {
+        text
+    };
+    let en = if text.contains("Shadowsocks") {
+        "The Shadowsocks protocol is not supported in this release"
+    } else if text.contains("REALITY") {
+        "A REALITY config without a public key is incomplete"
+    } else if text.contains("شناخته نشد") {
+        "That protocol is not recognised"
+    } else {
+        "This config is not supported"
+    };
+    l(fa, en)
+}
+
 /// Like `l`, with an explicit Turkish variant for interpolated messages.
 pub fn lt(fa: &str, en: &str, tr: &str) -> LString {
     LString { fa: fa.to_string(), en: en.to_string(), tr: Some(tr.to_string()) }
@@ -42,6 +66,7 @@ pub fn err_str(message: LString) -> String {
 
 fn tr_map(en: &str) -> Option<&'static str> {
     let tr = match en {
+        "A REALITY config without a public key is incomplete" => "Genel anahtarı olmayan bir REALITY yapılandırması eksiktir",
         "AES-encrypted zips are not supported; save the archive with a classic (ZipCrypto) password" => "AES ile şifrelenmiş zip dosyaları desteklenmiyor; arşivi klasik (ZipCrypto) bir parolayla kaydedin",
         "Add a subscription first" => "Önce bir abonelik ekleyin",
         "Another operation is already running" => "Başka bir işlem zaten sürüyor",
@@ -117,6 +142,8 @@ fn tr_map(en: &str) -> Option<&'static str> {
         "TLS error while contacting the subscription server" => "Abonelik sunucusuna bağlanırken TLS hatası",
         "TUN mode needs administrator rights — allow the elevated relaunch from the Settings page" => "TUN modu yönetici hakları gerektirir — Ayarlar sayfasından yönetici olarak yeniden başlatmaya izin verin",
         "TUN mode needs administrator rights — reopen Naxlo as administrator." => "TUN modu yönetici hakları gerektirir — Naxlo'yu yönetici olarak yeniden açın.",
+        "That protocol is not recognised" => "Bu protokol tanınmıyor",
+        "The Shadowsocks protocol is not supported in this release" => "Shadowsocks protokolü bu sürümde desteklenmiyor",
         "The UAC prompt was dismissed — staying in the current instance" => "UAC istemi kapatıldı — geçerli örnekte kalınıyor",
         "The Xray core archive is not a valid zip" => "Xray çekirdeği arşivi geçerli bir zip değil",
         "The Xray core digest did not match; the download was rejected" => "Xray çekirdeği özeti eşleşmedi; indirme reddedildi",
@@ -139,6 +166,7 @@ fn tr_map(en: &str) -> Option<&'static str> {
         "The subscription server denied access (401/403)" => "Abonelik sunucusu erişimi reddetti (401/403)",
         "The zip archive is corrupted (bad CRC)" => "Zip arşivi bozuk (hatalı CRC)",
         "The zip archive is malformed" => "Zip arşivi hatalı biçimlenmiş",
+        "This config is not supported" => "Bu yapılandırma desteklenmiyor",
         "This file is password-protected; enter its password via \"Import from file\" so it can be stored" => "Bu dosya parolayla korunuyor; saklanabilmesi için parolasını \"Dosyadan içe aktar\" ile girin",
         "This happens only once" => "Bu yalnızca bir kez olur",
         "Too many requests — try again in a moment" => "Çok fazla istek — birazdan yeniden deneyin",

@@ -6,6 +6,7 @@
  * to English in the renderer.
  */
 export const TR_MAIN: Record<string, string> = {
+  'A REALITY config without a public key is incomplete': 'Genel anahtarı olmayan bir REALITY yapılandırması eksiktir',
   'AES-encrypted zips are not supported; save the archive with a classic (ZipCrypto) password': 'AES ile şifrelenmiş zip dosyaları desteklenmiyor; arşivi klasik (ZipCrypto) bir parolayla kaydedin',
   'Add a subscription first': 'Önce bir abonelik ekleyin',
   'Another operation is already running': 'Başka bir işlem zaten sürüyor',
@@ -81,6 +82,7 @@ export const TR_MAIN: Record<string, string> = {
   'TLS error while contacting the subscription server': 'Abonelik sunucusuna bağlanırken TLS hatası',
   'TUN mode needs administrator rights — allow the elevated relaunch from the Settings page': 'TUN modu yönetici hakları gerektirir — Ayarlar sayfasından yönetici olarak yeniden başlatmaya izin verin',
   'TUN mode needs administrator rights — reopen Naxlo as administrator.': 'TUN modu yönetici hakları gerektirir — Naxlo\'yu yönetici olarak yeniden açın.',
+  'The Shadowsocks protocol is not supported in this release': 'Shadowsocks protokolü bu sürümde desteklenmiyor',
   'The UAC prompt was dismissed — staying in the current instance': 'UAC istemi kapatıldı — geçerli örnekte kalınıyor',
   'The Xray core archive is not a valid zip': 'Xray çekirdeği arşivi geçerli bir zip değil',
   'The Xray core digest did not match; the download was rejected': 'Xray çekirdeği özeti eşleşmedi; indirme reddedildi',
@@ -90,6 +92,7 @@ export const TR_MAIN: Record<string, string> = {
   'The app is not ready yet': 'Uygulama henüz hazır değil',
   'The archive was empty': 'Arşiv boştu',
   'The connection mode changed — the tunnel is being rebuilt.': 'Bağlantı modu değişti — tünel yeniden kuruluyor.',
+  'The local ports changed — the tunnel is being rebuilt on the new ports.': 'Yerel portlar değişti — tünel yeni portlarla yeniden kuruluyor',
   'The dialog failed': 'İletişim kutusu başarısız oldu',
   'The link for this config is unavailable': 'Bu yapılandırmanın bağlantısı kullanılamıyor',
   'The local proxy did not start in time': 'Yerel proxy zamanında başlamadı',
@@ -103,6 +106,7 @@ export const TR_MAIN: Record<string, string> = {
   'The subscription server denied access (401/403)': 'Abonelik sunucusu erişimi reddetti (401/403)',
   'The zip archive is corrupted (bad CRC)': 'Zip arşivi bozuk (hatalı CRC)',
   'The zip archive is malformed': 'Zip arşivi hatalı biçimlenmiş',
+  'This config is not supported': 'Bu yapılandırma desteklenmiyor',
   'This file is password-protected; enter its password via "Import from file" so it can be stored': 'Bu dosya parolayla korunuyor; saklanabilmesi için parolasını "Dosyadan içe aktar" ile girin',
   'This happens only once': 'Bu yalnızca bir kez olur',
   'Too many requests — try again in a moment': 'Çok fazla istek — birazdan yeniden deneyin',

@@ -154,8 +154,10 @@ pub struct ServerView {
     pub name: String,
     pub protocol: String,
     pub supported: bool,
+    /// Localized for the renderer: the stored config keeps the Persian text
+    /// that older vaults wrote, the view translates it (see `unsupported_reason`).
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub unsupported_reason: Option<String>,
+    pub unsupported_reason: Option<LString>,
     pub port: u16,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub flow: Option<String>,
@@ -447,7 +449,10 @@ pub fn to_server_view(server: &ServerConfig, reveal: bool, pinned: bool) -> Serv
         name: server.name.clone(),
         protocol: server.protocol.clone(),
         supported: server.supported,
-        unsupported_reason: server.unsupported_reason.clone(),
+        unsupported_reason: server
+            .unsupported_reason
+            .as_deref()
+            .map(|text| crate::l10n::unsupported_reason(Some(text))),
         port: server.port,
         flow: server.flow.clone(),
         encryption: server.encryption.clone(),

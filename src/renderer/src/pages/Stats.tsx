@@ -22,11 +22,23 @@ export function Stats(): React.ReactElement {
   const { t } = useI18n()
   const reduce = settings.reduceMotion
   const [stats, setStats] = useState<StatsPayload | null>(null)
+  /** Re-read clock: the day buckets and the live session must follow real time. */
+  const [nowTs, setNowTs] = useState(() => Date.now())
 
   const reload = useCallback(async (): Promise<void> => {
     const next = await run(() => window.naxlo.stats.get(), t('errorTitle'))
     if (next) setStats(next)
   }, [run, t])
+
+  /** Background refresh: no busy flag, no toast — the vault may be mid-write. */
+  const refresh = useCallback(async (): Promise<void> => {
+    try {
+      const next = await window.naxlo.stats.get()
+      if (next) setStats(next)
+    } catch {
+      /* a failed poll must never interrupt the page */
+    }
+  }, [])
 
   useEffect(() => {
     void reload()
@@ -38,9 +50,24 @@ export function Stats(): React.ReactElement {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.connection])
 
+  // While connected the open session keeps growing, so re-read the vault on a
+  // short beat; when idle a slower beat is enough to roll the day buckets over
+  // at midnight. Both also advance `nowTs`, which the memos below depend on.
+  useEffect(() => {
+    const live = state.connection === 'connected'
+    const id = window.setInterval(
+      () => {
+        setNowTs(Date.now())
+        if (live) void refresh()
+      },
+      live ? 10_000 : 60_000
+    )
+    return () => window.clearInterval(id)
+  }, [state.connection, refresh])
+
   const summary = useMemo(
-    () => aggregateStats(stats?.sessions ?? [], DAYS, Date.now()),
-    [stats]
+    () => aggregateStats(stats?.sessions ?? [], DAYS, nowTs),
+    [stats, nowTs]
   )
   const speed = useMemo(() => stats?.speed ?? [], [stats])
   const bestSpeed = useMemo(
@@ -48,7 +75,7 @@ export function Stats(): React.ReactElement {
     [speed]
   )
 
-  const today = useMemo(() => summarizeToday(stats?.sessions ?? [], speed, Date.now()), [stats, speed])
+  const today = useMemo(() => summarizeToday(stats?.sessions ?? [], speed, nowTs), [stats, speed, nowTs])
 
   const maxMinutes = Math.max(1, ...summary.daily.map((d) => d.minutes))
   const maxServer = Math.max(1, ...summary.topServers.map((s) => s.minutes))

@@ -168,6 +168,73 @@ test('tools: vmess with corrupt base64 is an error, not a crash', () => {
   assert.match(doc.getElementById('v-out').textContent, /Base64|ناشطة|نامعتبر/)
 })
 
+test('tools: validator keeps a trojan password that contains @', () => {
+  const { window } = load('tools.html')
+  const doc = window.document
+  doc.getElementById('v-input').value =
+    'trojan://p@ssw0rd@example.com:443?security=tls&sni=example.com&type=tcp#at-in-password'
+  doc.getElementById('v-btn').click()
+  const out = doc.getElementById('v-out').textContent
+  // The credential is cut at the LAST '@', so the authority survives intact.
+  assert.match(out, /address: example\.com/)
+  assert.match(out, /port: 443/)
+  assert.match(out, /password: p@ssw0rd/)
+  assert.ok(!out.includes('Invalid port'), 'the password must not be read as the address')
+  assert.ok(!out.includes('\u067e\u0648\u0631\u062a \u0645\u0639\u062a\u0628\u0631 \u0646\u06cc\u0633\u062a'))
+})
+
+test('tools: an unencoded @ inside the query is not a credential separator', () => {
+  const { window } = load('tools.html')
+  const doc = window.document
+  doc.getElementById('v-input').value =
+    'vless://12345678-1234-1234-1234-123456789012@example.com:443?type=ws&security=tls&sni=example.com&path=/@ws'
+  doc.getElementById('v-btn').click()
+  const out = doc.getElementById('v-out').textContent
+  assert.match(out, /address: example\.com/)
+  assert.match(out, /uuid: 12345678\u2026/)
+  assert.ok(!out.includes('Invalid port'))
+})
+
+test('tools: vmess v2 transport fields are shown (ws path, grpc serviceName)', () => {
+  const { window } = load('tools.html')
+  const doc = window.document
+  const link = (cfg) => 'vmess://' + Buffer.from(JSON.stringify(cfg)).toString('base64')
+  doc.getElementById('v-input').value = link({
+    v: '2', ps: 'ws-node', add: 'example.com', port: '443',
+    id: '12345678-1234-1234-1234-123456789012', aid: '0', net: 'ws',
+    host: 'cdn.example.com', path: '/websocket', tls: 'tls', sni: 'cdn.example.com'
+  })
+  doc.getElementById('v-btn').click()
+  const out = doc.getElementById('v-out').textContent
+  assert.match(out, /network: ws/)
+  assert.match(out, /path: \/websocket/)
+  // long values are masked for display, exactly like the app's validator
+  assert.match(out, /sni: cdn\.e…\.com/)
+
+  doc.getElementById('v-input').value = link({
+    v: '2', ps: 'grpc-node', add: 'example.com', port: '8443',
+    id: '12345678-1234-1234-1234-123456789012', net: 'grpc', tls: 'tls'
+  })
+  doc.getElementById('v-btn').click()
+  const grpc = doc.getElementById('v-out').textContent
+  assert.match(grpc, /network: grpc/)
+  assert.match(grpc, /serviceName|gRPC/)
+})
+
+test('tools: a validation result follows the language switch', async () => {
+  const { window } = load('tools.html')
+  const doc = window.document
+  doc.getElementById('v-input').value =
+    'vless://12345678-1234-1234-1234-123456789012@example.com:443?type=ws&security=reality&pbk=abcdefghijklmnop&sni=cdn.example.com&path=/x#ok'
+  doc.getElementById('v-btn').click()
+  assert.match(doc.getElementById('v-out').textContent, /معتبر/)
+  doc.getElementById('lang-en').click()
+  await tick()
+  const out = doc.getElementById('v-out').textContent
+  assert.match(out, /The config is valid/)
+  assert.ok(!/[؀-ۿ]/.test(out), 'no Persian may remain once the page is English: ' + out)
+})
+
 test('changelog: shows the fallback message when the API is unreachable', () => {
   const { window } = load('changelog.html')
   const rootEl = window.document.getElementById('releases')

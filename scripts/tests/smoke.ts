@@ -189,6 +189,47 @@ test('trojan links are parsed and marked supported', () => {
   assert.equal(parsed.server.name, 'Trojan')
 })
 
+test('a query containing @ does not move the credential split', () => {
+  // Some panels emit an unencoded '@' inside the ws path; the separator is the
+  // last '@' *before* the query, never one inside it.
+  const parsed = parseProxyLink(
+    'vless://1b6e8c2a-4f3d-4a5b-9c1e-7d2f8a6b5c4d@example.server.com:443?encryption=none&security=tls&type=ws&path=/@ws&host=cdn.example.com#at-query'
+  )
+  assert.ok(parsed)
+  assert.equal(parsed.server.address, 'example.server.com')
+  assert.equal(parsed.server.port, 443)
+  assert.equal(parsed.server.credential, '1b6e8c2a-4f3d-4a5b-9c1e-7d2f8a6b5c4d')
+  assert.equal(parsed.server.path, '/@ws')
+  assert.equal(parsed.server.supported, true)
+})
+
+test('unsupported configs carry a localized reason — no Persian in EN mode', () => {
+  const ss = parseProxyLink('ss://YWVzLTI1Ni1nY206cGFzcw==@1.2.3.4:8388#ss-link')
+  assert.ok(ss)
+  assert.equal(ss.server.supported, false)
+  const reason = ss.server.unsupportedReason
+  assert.ok(typeof reason !== 'string', 'the reason must be localized, not a bare Persian string')
+  if (typeof reason !== 'string') {
+    assert.match(reason.en, /Shadowsocks/)
+    assert.ok(!/[؀-ۿ]/.test(reason.en), 'English text must not contain Persian characters')
+    assert.ok(reason.tr, 'Turkish comes from the generated table')
+    // The connect-time error the UI shows is the very same localized reason.
+    const message = validateConfig(ss.server)
+    assert.ok(message)
+    assert.equal(message.en, reason.en)
+    assert.equal(message.fa, reason.fa)
+  }
+
+  const unknown = parseProxyLink('hysteria2://x@1.2.3.4:443#unknown-scheme')
+  assert.ok(unknown)
+  const unknownReason = unknown.server.unsupportedReason
+  assert.ok(typeof unknownReason !== 'string')
+  if (typeof unknownReason !== 'string') {
+    assert.match(unknownReason.en, /hysteria2/)
+    assert.ok(!/[؀-ۿ]/.test(unknownReason.en))
+  }
+})
+
 test('vmess links are decoded from base64 JSON', () => {
   const payload = {
     v: '2',
@@ -560,7 +601,7 @@ test('stats: daily buckets are consecutive calendar days (DST-safe)', () => {
   }
 })
 
-test('stats: open heartbeating sessions are ignored, stale ones keep their time', () => {
+test('stats: the live session counts up to now, stale ones keep their heartbeat time', () => {
   const { aggregateStats } = require('../../src/shared/stats') as typeof import('../../src/shared/stats')
   const now = Date.now()
   const sessions = [
@@ -576,9 +617,28 @@ test('stats: open heartbeating sessions are ignored, stale ones keep their time'
     }
   ]
   const summary = aggregateStats(sessions, 14, now)
-  assert.equal(summary.totalSessions, 1, 'the open session must not be counted')
-  assert.equal(summary.totalMinutes, 30, 'the crashed session keeps its heartbeat duration')
-  assert.equal(summary.topServers[0].serverId, 'crashed')
+  assert.equal(summary.totalSessions, 2, 'the session that is open right now belongs to the totals')
+  assert.equal(summary.totalMinutes, 90, '60 live minutes (up to now) + the 30 minutes before the crash')
+  const live = summary.topServers.find((srv) => srv.serverId === 'open')
+  assert.equal(live?.minutes, 60, 'the live session is timed to now, not to its last heartbeat')
+  assert.equal(summary.topServers.find((srv) => srv.serverId === 'crashed')?.minutes, 30)
+})
+
+test('stats: a session that has not heartbeated yet still counts its first minutes', () => {
+  const { aggregateStats, summarizeToday } = require('../../src/shared/stats') as typeof import('../../src/shared/stats')
+  const now = Date.now()
+  // Written with endedAt: 0 the moment the tunnel comes up.
+  const sessions: SessionStat[] = [
+    {
+      serverId: 'fresh', serverName: 'FRESH', country: null, mode: 'tun' as const,
+      startedAt: now - 300000, endedAt: 0, reason: ''
+    }
+  ]
+  const summary = aggregateStats(sessions, 7, now)
+  assert.equal(summary.totalMinutes, 5, 'endedAt: 0 must not zero the elapsed time')
+  assert.equal(summary.daily[summary.daily.length - 1].sessions, 1)
+  // The chart and the "Today" card must agree on the same open session.
+  assert.equal(summarizeToday(sessions, [], now).minutes, summary.totalMinutes)
 })
 
 test('stats: speed samples are trimmed to the newest window', () => {
@@ -610,6 +670,7 @@ test('every static main-process L() string has a Turkish translation', () => {
   for (const file of files) {
     const src = readFileSync(file, 'utf8')
     // L('fa', 'en') or L("fa", "en") with optional explicit third argument.
+    // Groups: 1/4 = the two strings, 7 = the comma that introduces `tr`.
     const pattern = /(?<![\w.])L\(\s*('([^'\\]|\\.)*'|"([^"\\]|\\.)*")\s*,\s*('([^'\\]|\\.)*'|"([^"\\]|\\.)*")\s*(,)?/g
     for (const match of src.matchAll(pattern)) {
       const enRaw = (match[4] ?? match[5] ?? '').trim()
@@ -617,7 +678,7 @@ test('every static main-process L() string has a Turkish translation', () => {
       const en = enRaw.slice(1, -1).replace(/\\(['"])/g, '$1')
       if (quote === '`') continue
       checked++
-      const hasThird = Boolean(match[6])
+      const hasThird = Boolean(match[7])
       if (!hasThird && !(en in TR_MAIN)) missing.push(`${file}: ${en}`)
     }
   }
@@ -675,6 +736,22 @@ test('inspectLink masks credentials in every reported field', () => {
   assert.ok(!blob.includes('cdn.example-microsoft.org'), blob)
   assert.ok(blob.includes('cdn.e….org'), blob)
   assert.ok(blob.includes('…'), blob)
+})
+
+test('inspectLink splits a trojan password that contains @', () => {
+  const report = inspectLink('trojan://p@ssw0rd@trojan.example.com:443?security=tls&sni=trojan.example.com&type=tcp#at')
+  assert.ok(report.ok, JSON.stringify(report.issues))
+  assert.equal(report.protocol, 'trojan')
+  assert.equal(report.fields.find((f) => f.key === 'address')?.value, 'troja….com')
+  assert.equal(report.fields.find((f) => f.key === 'port')?.value, '443')
+  assert.ok(
+    report.fields.some((f) => f.key === 'password'),
+    'the password must be reported, not swallowed by the address'
+  )
+  assert.ok(
+    !report.issues.some((i) => i.level === 'error'),
+    report.issues.map((i) => i.text.en).join(' | ')
+  )
 })
 
 test('inspectLink parses vmess base64 and ss links', () => {
