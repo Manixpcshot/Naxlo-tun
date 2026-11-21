@@ -15,6 +15,7 @@ import { buildXrayConfig, validateConfig } from '../../src/main/lib/xray/config'
 import { pickSizeMb, steadyMbps, tele2SizeMb, SPEED_LADDER_MB } from '../../src/shared/speed'
 import { fa, minutesLabel, setFormatLocale } from '../../src/renderer/src/lib/format'
 import { DEFAULT_SETTINGS } from '../../src/shared/types'
+import { languageFromLocale } from '../../src/shared/i18n'
 import { maskAddress, maskIp, maskMiddle, maskUrl } from '../../src/shared/mask'
 import { redact, registerSecret } from '../../src/main/lib/redact'
 import { parseProfileTitle, parseSubscriptionUserinfo } from '../../src/main/lib/submeta'
@@ -201,6 +202,20 @@ test('a query containing @ does not move the credential split', () => {
   assert.equal(parsed.server.credential, '1b6e8c2a-4f3d-4a5b-9c1e-7d2f8a6b5c4d')
   assert.equal(parsed.server.path, '/@ws')
   assert.equal(parsed.server.supported, true)
+})
+
+test('first launch maps the OS locale onto fa/en/tr', () => {
+  assert.equal(languageFromLocale('en-US'), 'en')
+  assert.equal(languageFromLocale('en-GB'), 'en')
+  assert.equal(languageFromLocale('EN_us'), 'en')
+  assert.equal(languageFromLocale('tr-TR'), 'tr')
+  assert.equal(languageFromLocale('fa-IR'), 'fa')
+  assert.equal(languageFromLocale('de-DE'), 'fa', 'any other locale keeps the Persian default')
+  assert.equal(languageFromLocale(''), 'fa')
+  assert.equal(languageFromLocale(null), 'fa')
+  assert.equal(languageFromLocale(undefined), 'fa')
+  // The default settings stay Persian: detection only runs on a first launch.
+  assert.equal(DEFAULT_SETTINGS.language, 'fa')
 })
 
 test('unsupported configs carry a localized reason — no Persian in EN mode', () => {

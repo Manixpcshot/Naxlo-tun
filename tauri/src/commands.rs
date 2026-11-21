@@ -424,10 +424,18 @@ pub async fn subscription_import_file(
         Some(path) => path,
         None => {
             // Native picker (tauri-plugin-dialog); cancelled → empty report.
+            // The OS draws this dialog, so it needs a plain string in the
+            // language the user picked.
+            let lang = app
+                .try_state::<AppCore>()
+                .map(|core| core.lock().settings.language.clone())
+                .unwrap_or_else(|| "fa".to_string());
+            let title =
+                crate::l10n::pick(&l("انتخاب فایل کانفیگ", "Choose a config file"), &lang);
             let (tx, rx) = tokio::sync::oneshot::channel();
             app.dialog()
                 .file()
-                .set_title("انتخاب فایل کانفیگ")
+                .set_title(title)
                 .add_filter("Config / archive", &["txt", "text", "conf", "json", "sub", "zip"])
                 .pick_file(move |picked| {
                     let _ = tx.send(picked);
@@ -671,12 +679,14 @@ pub async fn core_ensure(app: AppHandle) -> Result<CoreStatus, String> {
 #[tauri::command]
 pub async fn core_pick(app: AppHandle) -> Result<CoreStatus, String> {
     let core = core_of(&app)?;
+    let lang = core.lock().settings.language.clone();
+    let title = crate::l10n::pick(&l("انتخاب فایل اجرایی Xray", "Choose the Xray executable"), &lang);
     let (tx, rx) = tokio::sync::oneshot::channel();
     // No extension filter: core binaries are `xray.exe` on Windows but often
     // extension-less executables on Linux/macOS.
     app.dialog()
         .file()
-        .set_title("انتخاب فایل اجرایی Xray")
+        .set_title(title)
         .pick_file(move |picked| {
             let _ = tx.send(picked);
         });

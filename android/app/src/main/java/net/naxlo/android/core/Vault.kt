@@ -38,11 +38,13 @@ object Vault {
     }
 
     fun load(): VaultState {
-        val raw = prefs?.getString(KEY, null) ?: return VaultState()
+        // Nothing stored yet (or unreadable JSON) means a first launch, so the
+        // language follows the device instead of forcing Persian.
+        val raw = prefs?.getString(KEY, null) ?: return VaultState(language = defaultLanguage())
         return try {
             fromJson(JSONObject(raw))
         } catch (_: Exception) {
-            VaultState()
+            VaultState(language = defaultLanguage())
         }
     }
 
@@ -117,6 +119,18 @@ object Vault {
             .put("language", state.language)
             .put("theme", state.theme)
 
+    /**
+     * First launch follows the system language instead of forcing Persian: an
+     * English or Turkish device should not have to hunt for the switch first.
+     * Any later launch reads the stored choice.
+     */
+    private fun defaultLanguage(): String =
+        when (java.util.Locale.getDefault().language) {
+            "en" -> "en"
+            "tr" -> "tr"
+            else -> "fa"
+        }
+
     fun fromJson(json: JSONObject): VaultState =
         VaultState(
             subscriptions = (json.optJSONArray("subscriptions") ?: JSONArray()).let { arr ->
@@ -174,7 +188,7 @@ object Vault {
                 (0 until arr.length()).map { arr.getString(it) }
             },
             selectedServerId = json.optString("selectedServerId", null),
-            language = json.optString("language", "fa"),
+            language = json.optString("language", "").ifEmpty { defaultLanguage() },
             theme = json.optString("theme", "dark")
         )
 }
