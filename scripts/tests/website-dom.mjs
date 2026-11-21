@@ -43,6 +43,10 @@ function load(file, stubFetch, userAgent = UA.win, before) {
   })
   // shadow navigator.userAgent on the instance before app.js is evaluated
   Object.defineProperty(dom.window.navigator, 'userAgent', { value: userAgent, configurable: true })
+  // jsdom reports "en-US", and a first visit now follows the browser language.
+  // Pin a Persian browser so the suite keeps testing the default experience;
+  // a test that wants the auto-English path overrides this in `before`.
+  Object.defineProperty(dom.window.navigator, 'language', { value: 'fa-IR', configurable: true })
   if (stubFetch) dom.window.fetch = stubFetch
   if (before) before(dom.window)
   const script = dom.window.document.createElement('script')
@@ -233,6 +237,42 @@ test('tools: a validation result follows the language switch', async () => {
   const out = doc.getElementById('v-out').textContent
   assert.match(out, /The config is valid/)
   assert.ok(!/[؀-ۿ]/.test(out), 'no Persian may remain once the page is English: ' + out)
+})
+
+test('index: an English browser gets English on the very first visit', async () => {
+  const { window } = load('index.html', null, UA.win, (w) => {
+    Object.defineProperty(w.navigator, 'language', { value: 'en-US', configurable: true })
+  })
+  const doc = window.document
+  await tick()
+  assert.equal(doc.documentElement.lang, 'en')
+  assert.equal(doc.documentElement.dir, 'ltr')
+  assert.equal(doc.getElementById('lang-en').classList.contains('on'), true)
+  assert.equal(doc.getElementById('hero-cta').textContent, 'Download for Windows')
+  // the choice is remembered, so the next visit does not re-detect
+  assert.equal(window.localStorage.getItem('naxlo-site-lang'), 'en')
+})
+
+test('index: a stored language wins over the browser language', async () => {
+  const { window } = load('index.html', null, UA.win, (w) => {
+    Object.defineProperty(w.navigator, 'language', { value: 'en-US', configurable: true })
+    w.localStorage.setItem('naxlo-site-lang', 'fa')
+  })
+  const doc = window.document
+  await tick()
+  assert.equal(doc.documentElement.lang, 'fa')
+  assert.equal(doc.documentElement.dir, 'rtl')
+  assert.equal(doc.getElementById('hero-cta').textContent.includes('دانلود برای ویندوز'), true)
+})
+
+test('index: a Turkish browser keeps Persian (the site ships fa + en only)', async () => {
+  const { window } = load('index.html', null, UA.win, (w) => {
+    Object.defineProperty(w.navigator, 'language', { value: 'tr-TR', configurable: true })
+  })
+  const doc = window.document
+  await tick()
+  assert.equal(doc.documentElement.lang, 'fa')
+  assert.equal(doc.documentElement.dir, 'rtl')
 })
 
 test('changelog: shows the fallback message when the API is unreachable', () => {

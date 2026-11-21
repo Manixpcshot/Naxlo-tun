@@ -9,6 +9,7 @@ import { app } from 'electron'
 import { readFileSync, writeFileSync, existsSync, mkdirSync, renameSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { DEFAULT_SETTINGS, type Settings } from '../../shared/types'
+import { languageFromLocale } from '../../shared/i18n'
 import { log } from './logger'
 
 const SCOPE = 'settings'
@@ -26,7 +27,16 @@ export function loadSettings(): Settings {
       const parsed = JSON.parse(readFileSync(file(), 'utf8')) as Partial<Settings>
       cache = { ...DEFAULT_SETTINGS, ...parsed }
     } else {
-      cache = { ...DEFAULT_SETTINGS }
+      // First launch: follow the operating system's language. `app.getLocale()`
+      // returns a BCP-47 tag such as "en-GB" or "tr-TR".
+      let locale = ''
+      try {
+        locale = app.getLocale()
+      } catch {
+        /* app not ready (tests) — keep the Persian default */
+      }
+      cache = { ...DEFAULT_SETTINGS, language: languageFromLocale(locale) }
+      log.info(SCOPE, `first launch — locale "${locale}" mapped to language "${cache.language}"`)
       persist()
     }
   } catch (err) {

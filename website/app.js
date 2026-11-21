@@ -979,8 +979,17 @@
   try { savedTheme = localStorage.getItem(THEME_KEY) || 'dark' } catch { /* private mode */ }
   applyTheme(savedTheme === 'light' ? 'light' : 'dark')
 
-  let savedLang = 'fa'
-  try { savedLang = localStorage.getItem('naxlo-site-lang') || 'fa' } catch { /* private mode */ }
+  let savedLang = ''
+  try { savedLang = localStorage.getItem('naxlo-site-lang') || '' } catch { /* private mode */ }
+  if (!savedLang) {
+    // First visit: follow the browser language instead of assuming Persian, so
+    // an English visitor does not land on a page they cannot read. The site
+    // ships fa + en only — every other locale (Turkish included) keeps the
+    // Persian default, because applyLang() would pair the Persian dictionary
+    // with the wrong writing direction.
+    const browserLang = ((navigator.language || '') + '').toLowerCase()
+    savedLang = browserLang.startsWith('en') ? 'en' : 'fa'
+  }
   if (savedLang !== 'fa') applyLang(savedLang)
   else applyPlatform('fa')
 })()

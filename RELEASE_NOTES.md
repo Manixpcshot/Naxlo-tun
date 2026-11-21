@@ -1,133 +1,148 @@
-# Naxlo 1.15.2 — باگ‌گیری کامل / full bug-hunt release
+# Naxlo 1.16.0 — speaks your language from the first launch / نخستین اجرا به زبان خودتان
 
-یک دور کامل باگ‌گیری روی همهٔ کلاینت‌ها (Electron، Rust/Tauri، اندروید) و وب‌سایت:
-۱۱ باگ واقعی پیدا و درست شد، با ۱۰ تست جدید که هرکدام را قفل می‌کند.
+Naxlo now opens in the language of your operating system, the native file dialogs follow
+that choice, and the repository front page is fully bilingual. Everything else keeps
+working exactly as before: encrypted storage, no secrets in logs, proxy and optional TUN
+mode, stats, tools and the day theme.
 
-A full bug-hunt across every client (Electron, Rust/Tauri, Android) and the website:
-11 real defects found and fixed, each locked down by a new test.
-
----
-
-## فارسی
-
-### ۱. رمز trojan با `@` — در سه کلاینت آدرس سرور خراب می‌شد
-برش اعتبارنامه در **وب‌سایت**، **اعتبارسنج داخل اپ** و **پارسر اندروید** روی نخستین `@`
-انجام می‌شد، پس `trojan://p@ss@host:443` به آدرس `ss@host` و خطای «پورت معتبر نیست»
-تبدیل می‌شد — درحالی‌که پارسر دسکتاپ درست کار می‌کرد و وصل می‌شد. حالا هر چهار مورد
-اعتبارنامه را در **واپسین `@` پیش از query** قطع می‌کنند و یک `@` رمزنگاری‌نشده داخل
-query (`?path=/@ws`) دیگر جداکننده حساب نمی‌شود (پیش‌تر همان لینک حتی در دسکتاپ یک
-سرور با آدرس `@ws` می‌ساخت).
-
-### ۲. صفحهٔ آمار زنده شد
-کارت «امروز» که طبق توضیح خودش جلسهٔ باز را هم می‌شمارد، در طول اتصال زنده تکان
-نمی‌خورد و نمودار ۱۴ روزه جلسهٔ در حال اجرا را کامل نادیده می‌گرفت. حالا جلسهٔ باز در
-هر دو تا «همین لحظه» شمرده می‌شود، صفحه هر ۱۰ ثانیه هنگام اتصال بی‌صدا vault را
-دوباره می‌خواند و سطل‌های روزانه نیمه‌شب بدون رفرش جابه‌جا می‌شوند.
-
-### ۳. تغییر پورت محلی در حالت متصل = بازسازی تونل
-عوض‌کردن پورت SOCKS/HTTP هنگام اتصال فقط عدد داخل UI را عوض می‌کرد؛ هسته روی پورت‌های
-قبلی می‌ماند و هیچ‌کس روی پورت جدید پاسخ نمی‌داد. حالا در Electron و Rust/Tauri تونل
-بازسازی می‌شود — با debounce ۹۰۰ms تا تایپ رقم‌به‌رقم باعث قطع‌وصل پیاپی نشود.
-
-### ۴. کلید «پروکسی سیستم» بلافاصله اثر می‌کند
-این تنظیم فقط هنگام ساخت تونل خوانده می‌شد: روشن‌کردنش تا اتصال بعدی بی‌اثر بود و
-خاموش‌کردنش پروکسی ویندوز را تا قطع‌شدن روی ناکسو نگه می‌داشت. حالا در همان لحظه
-اعمال/آزاد می‌شود (در هر دو نسخه).
-
-### ۵. پیام فارسی در حالت انگلیسی: «این کانفیگ پشتیبانی نمی‌شود»
-`unsupportedReason` یک رشتهٔ فارسی خام بود و `validateConfig` همان متن را به‌عنوان
-**هر دو** زبان می‌داد (`L(reason, reason)`)؛ پس اتصال به یک کانفیگ پشتیبانی‌نشده
-(مثلاً `ss://`) در حالت انگلیسی با پیام فارسی شکست می‌خورد و کارت سرور هم همان دلیل
-فارسی را در EN/TR نشان می‌داد. حالا `{fa, en, tr}` است و ورودی‌های قدیمی vault هم
-درست رندر می‌شوند.
-
-### ۶. سایت: اعتبارسنج vmess v2 و نتیجهٔ چندزبانه
-فیلدهای `path` (برای ws)، `serviceName` (برای gRPC) و `sni` در لینک‌های vmess v2
-نمایش داده نمی‌شدند و رمز trojan هرگز به‌عنوان چیپ پوشیده نشان داده نمی‌شد؛ ضمن اینکه
-نتیجهٔ اعتبارسنجی بعد از تعویض زبان به زبان قبلی می‌ماند («کانفیگ معتبر است» فارسی
-روی صفحهٔ انگلیسی). هر دو درست شد.
-
-### ۷. پوستهٔ روز: اسکرول‌بار نامرئی در فایرفاکس
-`scrollbar-color` که فایرفاکس می‌خواند سفید مانده بود (فقط شبه‌عنصرهای webkit معکوس
-شده بودند) → سفید روی سفید. حالا تیره شد.
-
-### ۸. اندروید: متن تنظیمات با TUN واقعی تناقض داشت
-تنظیمات هنوز می‌گفت «بدون TUN سیستمی» و پورت‌های `127.0.0.1:10808/10809` را نشان
-می‌داد که کلاینت VPN اصلاً بازشان نمی‌کند. متن‌ها در هر سه زبان بازنویسی شد.
-
-### ۱۰. CI: دارایی‌های انتشار با یک خطای گذرا از دست نمی‌روند
-کار آپلود `naxlo-website.zip` چند ثانیه بعد از تگ تمام می‌شود؛ یک قطعیِ
-`uploads.github.com` کل انتشار را بدون zip سایت می‌گذاشت. هر دو مرحلهٔ آپلود حالا
-تا چند بار با فاصلهٔ ۲۰ ثانیه تلاش مجدد می‌کنند.
-
-### ۹. یک باگ در خود تست‌ها
-بررسی پوشش ترکی گروه اشتباه regex را می‌خواند (`match[6]` به‌جای `match[7]`)، پس
-آرگومان سوم صریح هرگز تشخیص داده نمی‌شد و برای رشته‌های `"..."` کنترل ترجمه بی‌صدا
-رد می‌شد.
-
-### تست‌ها
-**۸۲ تست محلی** (۵۲ smoke + ۳۰ DOM وب‌سایت) و **۱۳ تست واحد اندروید** در CI — همه سبز.
-`npm run typecheck`، `npm test` و `npm run build` هم سبز.
+ناکسلو حالا با زبان خود سیستم‌عامل باز می‌شود، دیالوگ‌های بومی انتخاب فایل همان زبان را
+دنبال می‌کنند و صفحهٔ اصلی مخزن کاملاً دوزبانه شد. بقیهٔ چیزها دقیقاً مثل قبل کار
+می‌کنند: ذخیرهٔ رمزنگاری‌شده، بدون ثبت هیچ رازی در لاگ، پروکسی و حالت TUN اختیاری، آمار،
+ابزارها و پوستهٔ روز.
 
 ---
 
 ## English
 
-### 1. A trojan password containing `@` broke the address in three clients
-The credential split used the **first** `@` in the website validator, the in-app
-validator and the Android parser, so `trojan://p@ss@host:443` turned into the address
-`ss@host` with an "invalid port" error — while the desktop parser connected fine. All
-four now cut at the **last `@` before the query**, and an unencoded `@` inside the query
-(`?path=/@ws`) is no longer treated as a separator (that link used to create a server
-whose address was `@ws`, even on the desktop).
+### 1. First launch follows the system language — all four clients plus the website
 
-### 2. The Stats page is live
-The "Today" card — which says it includes the open session — never moved during a live
-session, and the 14-day chart ignored the running session entirely. The open session now
-counts up to `now` in both, the page silently re-reads the vault every 10 s while
-connected (60 s idle), and the day buckets roll over at midnight without a reload.
+Every client used to hard-code Persian on a fresh install, so an English or Turkish desktop
+opened in Persian and you had to hunt for the language switch first. Naxlo now maps the OS
+locale onto the languages it ships:
 
-### 3. Changing a local port while connected rebuilds the tunnel
-Editing the SOCKS/HTTP port during a session changed only the number in the UI: the core
-kept the old ports and nothing answered on the new ones. Electron and Rust/Tauri now
-rebuild the tunnel — debounced by 900 ms so typing digit by digit cannot cause a
-reconnect per keystroke.
+| Client | Locale source | Result |
+| --- | --- | --- |
+| Electron (Windows) | `app.getLocale()` → `languageFromLocale()` | `en…` → English, `tr…` → Turkish, anything else → Persian |
+| Rust / Tauri (Windows, Linux, macOS) | `LC_ALL`, then `LC_MESSAGES`, then `LANG` (`C`/`POSIX` ignored) | same mapping |
+| Android | `Locale.getDefault().language` | same mapping |
+| Website (vpn.naxlo.ir) | `navigator.language` | `en…` → English, everything else → Persian (the site ships fa + en only) |
 
-### 4. The system-proxy switch applies immediately
-It was only read while building the tunnel, so enabling it did nothing until the next
-reconnect and disabling it left Windows pointing at Naxlo until disconnect. It is applied
-or released on the spot now, in both editions.
+Detection happens **only** when nothing is stored yet. A saved choice always wins, an
+existing install is untouched, and Persian stays the fallback everywhere — including on
+Windows, where the Rust edition reads no locale variables at all.
 
-### 5. Persian text in English mode: "this config is not supported"
-`unsupportedReason` was a bare Persian string and `validateConfig` passed it as **both**
-languages (`L(reason, reason)`), so connecting to an unsupported config (an `ss://` link)
-failed with a Persian message in English mode, and the server card showed the same Persian
-reason in EN/TR. It is now `{fa, en, tr}`, with legacy vault entries still rendering.
+### 2. Native OS dialogs are localized
 
-### 6. Website: vmess v2 fields and a multilingual result
-`path` (ws), `serviceName` (gRPC) and `sni` were not reported for vmess v2 links and the
-trojan password was never shown as a masked chip; on top of that a validation result stayed
-in the previous language after a switch (a Persian "config is valid" on an English page).
-Both fixed.
+The two Electron dialogs — the config-file import picker and the Xray-core picker — and the
+two Rust/Tauri equivalents were always Persian, whatever language the app was running in.
+That was the last place an English user could still meet Persian text. Titles and button
+labels now go through the new `pickL()` (TypeScript) and `l10n::pick()` (Rust) helpers and
+render in the active language, and `tr_map` gained the two Turkish strings
+("Choose a config file", "Choose the Xray executable").
 
-### 7. Day theme: invisible scrollbar in Firefox
-`scrollbar-color` — the property Firefox reads — was still white (only the webkit
-pseudo-elements had been inverted), i.e. white on white. Now darkened.
+### 3. A complete English README
 
-### 8. Android: settings copy contradicted the real tunnel
-The screen still claimed "No system TUN" and advertised `127.0.0.1:10808/10809` ports that
-the VPN client never opens. Rewritten in all three languages.
+The repository front page was Persian-only apart from a handful of headings. It now has an
+English tagline, a **فارسی · English** switcher in the header, and a full English section:
 
-### 10. CI: a transient upload error no longer costs the release assets
-The job that attaches `naxlo-website.zip` finishes seconds after the tag push; one dropped
-`uploads.github.com` connection used to leave the release without the site zip. Both upload
-steps now retry a few times, 20 s apart.
+- the feature table (subscriptions, servers, connection, TUN, stats, tools, UI, Android, updates)
+- an install table per platform, with the unsigned-macOS Gatekeeper note and the website zip
+- the connection flow, from subscription link to `SOCKS5 127.0.0.1:10808` / `HTTP :10809`
+- the privacy guarantees (encrypted vault, log redaction, client-side validator and QR)
+- build-from-source commands for all four targets, plus the offline Xray-core fetch
+- project layout, contributing rules and license
 
-### 9. A bug in the tests themselves
-The Turkish-coverage scanner read the wrong regex group (`match[6]` instead of `match[7]`),
-so an explicit third argument was never detected and, for double-quoted English strings, the
-translation check was silently skipped.
+### 4. Tests: 86 local (was 82)
 
-### Tests
-**82 local tests** (52 smoke + 30 website DOM) and **13 Android unit tests** in CI — all
-green, along with `npm run typecheck`, `npm test` and `npm run build`.
+- one new smoke test locks the `languageFromLocale` mapping — including that
+  `DEFAULT_SETTINGS.language` stays `fa`, so detection can never silently change an install
+- three new website DOM tests: an English browser gets English on the very first visit (and
+  the choice is remembered), a stored language always beats the browser language, and a
+  Turkish browser keeps Persian because the site has no Turkish build
+- the jsdom harness now pins `navigator.language` to `fa-IR`, so the existing 30 site tests
+  keep measuring the default Persian experience instead of jsdom's built-in `en-US`
+
+### Downloads
+
+| Platform | File | Notes |
+| --- | --- | --- |
+| Windows | `Naxlo-Setup-1.16.0.exe` | Electron edition, full feature set, silent self-update |
+| Windows | `Naxlo-Portable-1.16.0.exe` | Portable Electron build |
+| Windows | `Naxlo-Rust-Setup-1.16.0.exe` | Rust/Tauri edition (lean, proxy mode) |
+| Linux | `Naxlo-Rust-1.16.0-linux-amd64.AppImage` / `.deb` | Rust/Tauri edition |
+| macOS | `Naxlo-Rust-1.16.0-macos-arm64.dmg` | Unsigned — run `xattr -cr /Applications/naxlo.app` once |
+| Android | `Naxlo-android-v1.16.0-debug.apk` | Native Kotlin client, no root, Quick Settings tile |
+| Website | `naxlo-website.zip` | Unzip into cPanel's `public_html` for vpn.naxlo.ir |
+
+`SHA256SUMS.txt` covers every binary in this release.
+
+### Tests & build
+
+**86 local tests** (53 smoke + 33 website DOM), **13 Android unit tests** and **13 Rust
+tests** in CI — all green, together with `npm run typecheck`, `npm test` and `npm run build`.
+
+---
+
+## فارسی
+
+### ۱. نخستین اجرا زبان خود سیستم‌عامل را دنبال می‌کند — هر چهار کلاینت و وب‌سایت
+
+تا امروز همهٔ کلاینت‌ها در نصب تازه فارسی را ثابت می‌کردند؛ یعنی یک دسکتاپ انگلیسی یا
+ترکی با فارسی باز می‌شد و کاربر باید اول کلید تعویض زبان را پیدا می‌کرد. حالا locale
+سیستم به زبان‌های موجود نگاشت می‌شود:
+
+| کلاینت | منبع locale | نتیجه |
+| --- | --- | --- |
+| Electron (ویندوز) | `app.getLocale()` ← `languageFromLocale()` | `en…` ← انگلیسی، `tr…` ← ترکی، بقیه ← فارسی |
+| Rust / Tauri (ویندوز، لینوکس، مک) | `LC_ALL` سپس `LC_MESSAGES` سپس `LANG` (بدون `C`/`POSIX`) | همان نگاشت |
+| اندروید | `Locale.getDefault().language` | همان نگاشت |
+| وب‌سایت (vpn.naxlo.ir) | `navigator.language` | `en…` ← انگلیسی، بقیه ← فارسی (سایت فقط fa + en دارد) |
+
+تشخیص **فقط** وقتی انجام می‌شود که هنوز چیزی ذخیره نشده باشد. انتخاب ذخیره‌شده همیشه
+اولویت دارد، نصب‌های قبلی دست‌نخورده می‌مانند و فارسی همه‌جا فالبک است — از جمله روی
+ویندوز که نسخهٔ Rust هیچ متغیر locale نمی‌خواند.
+
+### ۲. دیالوگ‌های بومی سیستم‌عامل بومی‌سازی شدند
+
+دو دیالوگ Electron (انتخاب فایل کانفیگ برای واردکردن و انتخاب فایل اجرایی Xray) و دو
+معادل Rust/Tauri همیشه فارسی بودند، هر زبانی که اپ داشت. این آخرین جایی بود که یک کاربر
+انگلیسی‌زبان می‌توانست متن فارسی ببیند. حالا عنوان و برچسب دکمه از `pickL()` (تایپ‌اسکریپت)
+و `l10n::pick()` (راست) رد می‌شوند و به زبان فعال نمایش داده می‌شوند؛ دو رشتهٔ ترکی هم به
+`tr_map` اضافه شد.
+
+### ۳. README انگلیسی کامل
+
+صفحهٔ اصلی مخزن جز چند سرفصل فقط فارسی بود. حالا تگ‌لاین انگلیسی، کلید **فارسی · English**
+در سربرگ و یک بخش کامل انگلیسی دارد: جدول امکانات، جدول نصب برای هر پلتفرم (با نکتهٔ
+Gatekeeper مک و zip سایت)، مسیر اتصال از لینک اشتراک تا `SOCKS5 127.0.0.1:10808`، تضمین‌های
+حریم خصوصی، دستورهای ساخت از سورس برای هر چهار هدف، ساختار پروژه، قوانین مشارکت و پروانه.
+
+### ۴. تست‌ها: ۸۶ تست محلی (پیش‌تر ۸۲)
+
+- یک تست smoke جدید نگاشت `languageFromLocale` را قفل می‌کند — از جمله اینکه
+  `DEFAULT_SETTINGS.language` همان `fa` می‌ماند، پس تشخیص زبان هرگز بی‌صدا یک نصب موجود را
+  عوض نمی‌کند
+- سه تست DOM جدید برای سایت: مرورگر انگلیسی در نخستین بازدید انگلیسی می‌گیرد (و انتخابش
+  ذخیره می‌شود)، زبان ذخیره‌شده همیشه بر زبان مرورگر می‌چربد، و مرورگر ترکی فارسی می‌ماند
+  چون سایت نسخهٔ ترکی ندارد
+- محیط jsdom حالا `navigator.language` را روی `fa-IR` قفل می‌کند تا همان ۳۰ تست قبلی سایت،
+  تجربهٔ پیش‌فرض فارسی را بسنجند نه `en-US` داخلی jsdom را
+
+### دانلود
+
+| پلتفرم | فایل | توضیح |
+| --- | --- | --- |
+| ویندوز | `Naxlo-Setup-1.16.0.exe` | نسخهٔ Electron با همهٔ امکانات و به‌روزرسانی خاموش خودکار |
+| ویندوز | `Naxlo-Portable-1.16.0.exe` | ساخت پرتابل Electron |
+| ویندوز | `Naxlo-Rust-Setup-1.16.0.exe` | نسخهٔ Rust/Tauri (سبک، حالت پروکسی) |
+| لینوکس | `Naxlo-Rust-1.16.0-linux-amd64.AppImage` / `.deb` | نسخهٔ Rust/Tauri |
+| مک | `Naxlo-Rust-1.16.0-macos-arm64.dmg` | بدون امضا — یک‌بار `xattr -cr /Applications/naxlo.app` |
+| اندروید | `Naxlo-android-v1.16.0-debug.apk` | کلاینت بومی Kotlin، بدون روت، با کاشی Quick Settings |
+| وب‌سایت | `naxlo-website.zip` | بازکردن در `public_html` سی‌پنل برای vpn.naxlo.ir |
+
+`SHA256SUMS.txt` همهٔ باینری‌های این انتشار را پوشش می‌دهد.
+
+### تست و ساخت
+
+**۸۶ تست محلی** (۵۳ smoke + ۳۳ DOM سایت)، **۱۳ تست واحد اندروید** و **۱۳ تست Rust** در CI —
+همه سبز، همراه با `npm run typecheck`، `npm test` و `npm run build`.

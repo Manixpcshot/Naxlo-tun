@@ -26,6 +26,20 @@ export const L = (fa: string, en: string, tr?: string): LString => {
   return value ? { fa, en, tr: value } : { fa, en }
 }
 
+/**
+ * Map an OS / BCP-47 locale tag onto the languages Naxlo ships.
+ *
+ * Used on the very first launch only: an English or Turkish desktop should not
+ * open in Persian and force the user to hunt for the language switch. Every
+ * later launch reads the stored choice, and Persian stays the fallback.
+ */
+export function languageFromLocale(tag: string | null | undefined): Lang {
+  const code = (tag ?? '').toLowerCase().replace('_', '-')
+  if (code.startsWith('en')) return 'en'
+  if (code.startsWith('tr')) return 'tr'
+  return 'fa'
+}
+
 export function isLString(value: unknown): value is LString {
   return (
     typeof value === 'object' &&

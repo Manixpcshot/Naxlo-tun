@@ -6,6 +6,10 @@
 
 **کلاینت فارسی‌زبان VLESS برای ویندوز، لینوکس و مک — سبک، تاریک، با نسخهٔ Rust و حالت TUN اختیاری**
 
+*A Persian-first VLESS client for Windows, Linux, macOS and Android — lean, near-black, with a Rust edition and an optional TUN mode.*
+
+**فارسی** · [English](#-english)
+
 Electron + React (ویندوز) • **Rust + Tauri (ویندوز/لینوکس/مک)** • Xray-core در حالت پروکسی محلی
 
 [![release](https://img.shields.io/github/v/release/Manixpcshot/Naxlo-tun?style=flat-square&label=release&color=22d3ee)](https://github.com/Manixpcshot/Naxlo-tun/releases)
@@ -39,6 +43,7 @@ Electron + React (ویندوز) • **Rust + Tauri (ویندوز/لینوکس/م
 | 🔒 حریم خصوصی | خزانهٔ رمزنگاری‌شده (DPAPI)، نمایش پوشیدهٔ همهٔ مقادیر حساس، و **عدم ثبت هرگز** آن‌ها در لاگ |
 | 📊 آمار | صفحهٔ آمار مصرف: کارت **امروز** (دقیقه‌ها، نشست‌ها، بهترین/میانگین سرعت و تغییر نسبت به دیروز)، نمودار ۱۴ روزهٔ مدت اتصال، سرورهای پراستفاده با پرچم کشورها و تاریخچهٔ تست سرعت — داخل همان خزانهٔ رمزنگاری‌شده |
 | 🧰 ابزارها | صفحهٔ ابزارها: اعتبارسنج کانفیگ کاملاً local (vless/vmess/trojan/ss با فیلدهای پوشیده) و ساخت **QR** از لینک یا از یکی از سرورهای خودتان — بدون آپلود هیچ چیز |
+| 🗣️ زبان | سه زبان کامل — **فارسی** (پیش‌فرض)، **انگلیسی** و **ترکی** — در اپ، نسخهٔ Rust، اندروید و وب‌سایت. از v1.16.0 نخستین اجرا زبان خود سیستم‌عامل را دنبال می‌کند، دیالوگ‌های بومی انتخاب فایل هم به زبان انتخابی شما هستند؛ فارسی فالبک دیگر زبان‌هاست |
 | 🌙 طراحی | تم مشکی با یک رنگ تأکیدی، **پوستهٔ روز (روشن) اختیاری** در اپ/سایت/اندروید، رابط کاملاً راست‌چین با قلم وزیرمتن و انیمیشن‌های نرم |
 
 ## 🧭 ناکسلو چگونه کار می‌کند؟
@@ -162,13 +167,15 @@ cd tauri && npx tauri build   # خروجی‌ها در tauri/target/release/bund
 npm test
 ```
 
-این دستور **۸۲ تست** را اجرا می‌کند: ۵۲ تست smoke که با Vite باندل و با Node اجرا می‌شوند (تجزیهٔ
+این دستور **۸۶ تست** را اجرا می‌کند: ۵۳ تست smoke که با Vite باندل و با Node اجرا می‌شوند (تجزیهٔ
 لینک‌های واقعی VLESS با TLS/WS/REALITY/Flow و موارد مرزی مثل رمز trojan دارای `@`، `@` داخل query، لینک
 ناشناخته، REALITY بدون کلید و Base64 خراب، دلیل بومی‌شدهٔ کانفیگ پشتیبانی‌نشده، اعتبارسنج مشترک `linkcheck`،
-شمارش جلسهٔ باز تا «حالا» در `aggregateStats` و خلاصهٔ آمار روزانهٔ `summarizeToday`) + **۳۰ تست DOM وب‌سایت** با
-jsdom (تعویض زبان، پوستهٔ روز، تاریخچهٔ سرعت، اعتبارسنج/QR از جمله vmess v2 و رمز trojan با `@`، صفحهٔ تغییرات و
-گرید دانلود با fetch ساختگی GitHub و بازدیدکنندهٔ انگلیسی‌زبانِ بازگشتی). در CI هم **۱۳ تست واحد
-اندروید** (`ParseTest` + `ConfigBuilderTest`) اجرا می‌شود.
+شمارش جلسهٔ باز تا «حالا» در `aggregateStats`، خلاصهٔ آمار روزانهٔ `summarizeToday` و نگاشت `languageFromLocale`
+برای تشخیص زبان سیستم در نخستین اجرا) + **۳۳ تست DOM وب‌سایت** با jsdom (تعویض زبان، پوستهٔ
+روز، تاریخچهٔ سرعت، اعتبارسنج/QR از جمله vmess v2 و رمز trojan با `@`، صفحهٔ تغییرات، گرید
+دانلود با fetch ساختگی GitHub، بازدیدکنندهٔ انگلیسی‌زبانِ بازگشتی و تشخیص زبان مرورگر در
+نخستین بازدید). در CI هم **۱۳ تست واحد اندروید** (`ParseTest` + `ConfigBuilderTest`) و **۱۳ تست Rust**
+(نسخهٔ Tauri: `mask`، `net`، `parse`، `submeta`، `xray_config`) اجرا می‌شود.
 
 ## 🗂️ ساختار پروژه
 
@@ -235,3 +242,114 @@ always asks first. Secrets live in an encrypted vault, are masked in the UI and 
 AppImage, DEB, unsigned DMG, APKs) are published on every tag via GitHub Actions with SHA-256 checksums.
 
 </div>
+
+
+---
+
+## 🇬🇧 English
+
+**Naxlo** is a desktop (and Android) client for VLESS/Trojan/VMess subscriptions. You paste a
+subscription link; Naxlo fetches the TXT payload, Base64-decodes it, parses the configs into a
+searchable server list and runs **Xray-core** with one click. Everything is stored encrypted on
+the device, and nothing about your servers ever reaches a log file.
+
+Three languages ship in every client: **Persian (default, RTL)**, **English** and **Turkish**.
+Since 1.16.0 the *first* launch follows the operating-system language, so an English desktop
+opens in English while Persian stays the fallback for every other locale.
+
+### Features
+
+| Area | What you get |
+| --- | --- |
+| 🔗 Subscriptions | Multiple subscriptions at once, Base64/TXT/ZIP import (including password-protected archives), quota and expiry from the userinfo header, auto-refresh |
+| 🖥️ Servers | Live list with search, filters (REALITY/WS/gRPC), country flags, single and batch latency tests, speed-based sorting, pins, per-server notes |
+| ⚡ Connection | Xray with local SOCKS5 + HTTP inbounds, a real traffic probe, connection state, exit IP and uptime, auto-pick of the best server and automatic failover |
+| 🌐 TUN mode | Optional system-wide tunnel through Xray's own TUN inbound and the official Wintun driver (one UAC prompt), with TUN-aware DNS |
+| 📊 Stats | Daily usage card (minutes, sessions, best/average speed, day-over-day delta), a 14-day chart, most-used servers and the speed-test history — all inside the encrypted vault |
+| 🛠️ Tools | Fully client-side config validator and QR generator (nothing is uploaded) |
+| 🎨 UI | Near-black animated theme, optional day theme, accent colours, reduced-motion mode, panic hotkey, tray icon, exit warnings while connected |
+| 📱 Android | Native Kotlin client on Android's own VpnService (no root), a Quick Settings tile, day/night themes and fa/en/tr |
+| 🔄 Updates | Silent self-update on launch (one relaunch), plus a live changelog page fed by the GitHub API |
+
+### Install
+
+Download from the **[latest release](https://github.com/Manixpcshot/Naxlo-tun/releases/latest)** — or from
+**[vpn.naxlo.ir](https://vpn.naxlo.ir)**, which shows the right asset for your operating system:
+
+| Platform | File | Notes |
+| --- | --- | --- |
+| Windows | `Naxlo-Setup-<version>.exe`, `Naxlo-Portable-<version>.exe` | Electron edition, full feature set; TUN mode asks for UAC once |
+| Windows | `Naxlo-Rust-Setup-<version>.exe` | Rust/Tauri edition (lean, proxy mode) |
+| Linux | `Naxlo-Rust-<version>-linux-amd64.AppImage`, `.deb` | Rust/Tauri edition |
+| macOS | `Naxlo-Rust-<version>-macos-arm64.dmg` | Unsigned — see the Gatekeeper note in the release body |
+| Android | `Naxlo-android-<version>-debug.apk` | Native Kotlin client, no root |
+| Website | `naxlo-website.zip` | The static site, ready to unzip into cPanel's `public_html` |
+
+`SHA256SUMS.txt` in every release covers all binaries.
+
+### How a connection is made
+
+```
+subscription link ──► fetch TXT ──► Base64 decode ──► parse vless/trojan/vmess
+                                                          │
+                              pick a server ──► build the Xray config ──► start the core
+                                                          │
+                            SOCKS5 127.0.0.1:10808 + HTTP 127.0.0.1:10809
+                                                          │
+             (optional) Windows system proxy ──► traffic probe ──► "connected"
+```
+
+### Privacy
+
+- The subscription URL, server addresses, UUIDs, keys and short IDs live **only** in an
+  AES/DPAPI-encrypted store; the UI shows masked values until you explicitly reveal them.
+- A redaction layer strips secrets from every log line, and the core's access log stays off.
+- The validator and the QR generator run entirely client-side — no upload, no third party.
+
+### Build from source
+
+```bash
+npm ci
+npm run typecheck        # main + preload + renderer
+npm test                 # 86 local tests: 53 smoke + 33 website DOM (jsdom)
+npm run dev              # Electron with hot reload
+npm run build            # production bundles
+npm run dist:win         # Windows installers (electron-builder)
+
+# Rust/Tauri edition (Windows, Linux, macOS) — 13 unit tests
+npm run build:tauri-ui
+cd tauri && cargo check --all-targets && cargo test
+
+# Android (native Kotlin client) — 13 unit tests
+cd android && ./gradlew testDebugUnitTest assembleDebug
+
+# Static website (vpn.naxlo.ir) — zip website/ and upload to cPanel's public_html
+```
+
+On first launch the desktop app downloads a pinned, checksum-verified Xray core; for offline
+development run `npm run xray:fetch` (or `node scripts/fetch-xray.mjs --platform win32 --arch x64`).
+
+### Project layout
+
+```
+src/main        Electron main process: vault, Xray manager, IPC, updater, TUN
+src/renderer    React UI (shared with the Tauri edition), fa/en/tr
+src/shared      Contracts + pure logic: types, i18n, stats, speed, linkcheck, masking
+src/preload     Typed bridge exposed to the renderer
+tauri/          Rust edition (commands mirror src/main/ipc.ts) + its UI shim
+android/        Native Kotlin client (VpnService + libv2ray, no root)
+website/        Static cPanel-ready site for vpn.naxlo.ir
+scripts/        Tests, icon generation, core fetching
+.github/        Release, CI, tauri and Android workflows
+```
+
+### Contributing
+
+Issues and pull requests are welcome. Please run `npm run typecheck` and `npm test` before
+sending a patch, keep new user-facing strings in all three languages, and never write a
+subscription URL or a credential to a log.
+
+### License
+
+MIT — see [LICENSE](LICENSE). Xray-core is a separate project with its own license, and the
+Wintun driver is used under its own terms.

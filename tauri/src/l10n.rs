@@ -20,6 +20,30 @@ pub fn l(fa: &str, en: &str) -> LString {
     LString { fa: fa.to_string(), en: en.to_string(), tr: tr_map(en).map(str::to_string) }
 }
 
+/// Pick the variant the user reads. Native dialogs are drawn by the OS, so
+/// they need a plain `String` in the active language rather than an LString.
+pub fn pick(value: &LString, lang: &str) -> String {
+    match lang {
+        "en" => value.en.clone(),
+        "tr" => value.tr.clone().unwrap_or_else(|| value.en.clone()),
+        _ => value.fa.clone(),
+    }
+}
+
+/// Map an OS locale tag onto the shipped languages. Used on the first launch
+/// only — later launches read the stored choice, and Persian stays the
+/// fallback for every other locale.
+pub fn language_from_locale(tag: &str) -> &'static str {
+    let code = tag.to_lowercase();
+    if code.starts_with("en") {
+        "en"
+    } else if code.starts_with("tr") {
+        "tr"
+    } else {
+        "fa"
+    }
+}
+
 /// Bilingual text for a stored "unsupported config" reason.
 ///
 /// The vault keeps whatever the parser wrote — a Persian sentence, and older
@@ -74,6 +98,8 @@ fn tr_map(en: &str) -> Option<&'static str> {
         "Applying the system proxy failed" => "Sistem proxy'si uygulanamadı",
         "Auto-connect skipped" => "Otomatik bağlantı atlandı",
         "Certificate/TLS error while contacting the subscription server" => "Abonelik sunucusuna bağlanırken sertifika/TLS hatası",
+        "Choose a config file" => "Yapılandırma dosyası seçin",
+        "Choose the Xray executable" => "Xray yürütülebilir dosyasını seçin",
         "Config credential is empty" => "Yapılandırma kimlik bilgisi boş",
         "Connect first to run a speed test" => "Hız testi için önce bağlanın",
         "Connected" => "Bağlanıldı",

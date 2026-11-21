@@ -79,11 +79,29 @@ pub fn load(dir: &Path) -> Settings {
             Err(_) => Settings::default(),
         },
         Err(_) => {
-            let settings = Settings::default();
+            let mut settings = Settings::default();
+            // First launch: follow the desktop language instead of assuming
+            // Persian. On Linux/macOS the locale lives in LC_ALL/LC_MESSAGES/
+            // LANG; Windows (the Electron edition's platform) sets neither, so
+            // it keeps the Persian default.
+            settings.language = crate::l10n::language_from_locale(&system_locale()).to_string();
             save(dir, &settings);
             settings
         }
     }
+}
+
+/// Best-effort desktop locale from the environment (no extra crate needed).
+fn system_locale() -> String {
+    for key in ["LC_ALL", "LC_MESSAGES", "LANG"] {
+        if let Ok(value) = std::env::var(key) {
+            let trimmed = value.trim();
+            if !trimmed.is_empty() && trimmed != "C" && trimmed != "POSIX" {
+                return trimmed.to_string();
+            }
+        }
+    }
+    String::new()
 }
 
 pub fn save(dir: &Path, settings: &Settings) {

@@ -9,7 +9,7 @@
 import { BrowserWindow, app, clipboard, dialog, ipcMain, shell } from 'electron'
 import { join } from 'node:path'
 import { IPC, type LogEntry, type LString, type ServerView, type Settings } from '../shared/bridge'
-import { AppError, L, toLString } from '../shared/i18n'
+import { AppError, L, pickL, toLString } from '../shared/i18n'
 import { getState, patchState, setSubscriptionFetching, syncSubscriptions, toast, toServerView } from './state'
 import { getSettings, loadSettings, updateSettings } from './lib/settings'
 import { getVault, persistNow, replaceServers, updateVault, vaultEncryptionKind, wipeVault } from './lib/secretStore'
@@ -268,9 +268,12 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
     let target = filePath ?? null
     if (!target) {
       const win = getWindow()
+      const lang = getSettings().language
       const result = await dialog.showOpenDialog(win ?? undefined!, {
-        title: 'انتخاب فایل کانفیگ',
-        buttonLabel: 'افزودن',
+        // Native dialogs are drawn by the OS, so they need a plain string in
+        // the language the user picked — not an LString.
+        title: pickL(L('انتخاب فایل کانفیگ', 'Choose a config file', 'Yapılandırma dosyası seç'), lang),
+        buttonLabel: pickL(L('افزودن', 'Add', 'Ekle'), lang),
         properties: ['openFile'],
         filters: [
           { name: 'Config / archive', extensions: ['txt', 'text', 'conf', 'json', 'sub', 'zip'] },
@@ -379,9 +382,10 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
   })
   handle(IPC.corePick, async () => {
     const win = getWindow()
+    const lang = getSettings().language
     const result = await dialog.showOpenDialog(win ?? undefined!, {
-      title: 'انتخاب فایل اجرایی Xray',
-      buttonLabel: 'انتخاب',
+      title: pickL(L('انتخاب فایل اجرایی Xray', 'Choose the Xray executable', 'Xray yürütülebilir dosyasını seç'), lang),
+      buttonLabel: pickL(L('انتخاب', 'Choose', 'Seç'), lang),
       properties: ['openFile'],
       filters: [{ name: 'Xray core', extensions: process.platform === 'win32' ? ['exe'] : ['*'] }]
     })
